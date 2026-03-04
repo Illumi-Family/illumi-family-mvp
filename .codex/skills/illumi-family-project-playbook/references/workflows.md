@@ -9,6 +9,7 @@ pnpm install
 ```bash
 pnpm dev
 ```
+Default uses `dev` bindings. Use `pnpm run dev:prod` only when explicitly validating prod binding behavior locally.
 
 ## 2) Quality Gates
 Run before commit:
@@ -30,7 +31,7 @@ pnpm db:generate
 ```
 3. Apply to dev first:
 ```bash
-pnpm db:migrate:dev
+pnpm db:migrate
 ```
 4. Validate on dev API.
 5. Apply to prod:
@@ -41,14 +42,14 @@ pnpm db:migrate:prod
 ## 4) Deployment Workflow
 ### Deploy dev
 ```bash
-pnpm run check:dev
-pnpm exec wrangler deploy --config wrangler.json --env dev
+pnpm run check
+pnpm run deploy
 ```
 
 ### Deploy prod
 ```bash
-pnpm run check
-pnpm exec wrangler deploy --config wrangler.json
+pnpm run check:prod
+pnpm run deploy:prod
 ```
 
 ## 5) Post-Deploy Smoke Checks
