@@ -18,6 +18,10 @@ pnpm run lint
 pnpm run build
 ```
 
+## 2.1) Commit Message Rule
+- `git commit` messages must be English-only (no Chinese).
+- Recommended style: concise Conventional Commit prefixes such as `feat:`, `fix:`, `docs:`.
+
 ## 3) Migration Workflow (D1 + Drizzle)
 1. Update schema in `src/worker/shared/db/schema/*`.
 2. Generate migration:

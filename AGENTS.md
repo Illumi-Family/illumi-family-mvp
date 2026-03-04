@@ -23,3 +23,7 @@
   - `docs/technical-architecture.md`
   - `.codex/skills/illumi-family-project-playbook/SKILL.md`
   - `.codex/skills/illumi-family-project-playbook/references/*.md`
+
+## Git 提交规则
+- 本仓库 `git commit` 的 message 仅允许英文（English-only），不要使用中文。
+- 建议统一使用简洁英文前缀风格（如 `feat:`、`fix:`、`docs:`）以便检索与审阅。
