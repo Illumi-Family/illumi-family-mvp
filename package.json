@@ -41,6 +41,7 @@
 		"wrangler": "4.56.0"
 	},
 	"private": true,
+	"packageManager": "pnpm@10.10.0",
 	"scripts": {
 		"build": "tsc -b && vite build",
 		"cf-typegen": "wrangler types",
@@ -48,7 +49,7 @@
 		"deploy": "wrangler deploy",
 		"dev": "vite",
 		"lint": "eslint .",
-		"preview": "npm run build && vite preview"
+		"preview": "pnpm run build && vite preview"
 	},
 	"type": "module"
 }
