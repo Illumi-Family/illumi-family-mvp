@@ -1,0 +1,4 @@
+interface:
+  display_name: "Illumi Project Playbook"
+  short_description: "Stack, architecture, deploy, and ops baseline."
+  default_prompt: "Use $illumi-family-project-playbook to guide this task with current architecture, environment boundaries, and verified dev/deploy/ops workflows."
