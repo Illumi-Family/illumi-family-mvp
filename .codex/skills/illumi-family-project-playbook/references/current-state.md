@@ -11,7 +11,7 @@ Last verified: 2026-03-04
 - `docs/technical-architecture.md`
 
 ## 2) Tech Stack Snapshot
-- Frontend: React 19 + Vite 6
+- Frontend: React 19 + Vite 6 + TanStack Router + TanStack Query
 - Backend runtime: Hono 4 on Cloudflare Workers
 - Data: D1 + Drizzle ORM, KV, R2
 - Validation: Zod + `@hono/zod-validator`
