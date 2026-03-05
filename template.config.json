@@ -1,0 +1,39 @@
+{
+	"templateDir": "tools/create-illumi-family-app/templates/base",
+	"manifestFile": "template.manifest.json",
+	"sync": {
+		"whitelist": [
+			"src",
+			"public",
+			"drizzle",
+			"wrangler.json",
+			"worker-configuration.d.ts",
+			"index.html",
+			"package.json",
+			"vite.config.ts",
+			"vitest.config.ts",
+			"tsconfig.json",
+			"tsconfig.app.json",
+			"tsconfig.node.json",
+			"tsconfig.worker.json",
+			"eslint.config.js",
+			"components.json",
+			"README.md"
+		],
+		"blacklist": [
+			".git",
+			"node_modules",
+			"dist",
+			".wrangler",
+			".dev.vars",
+			".dev.vars.*",
+			"tasks",
+			"tools/create-illumi-family-app/templates/base"
+		]
+	},
+	"replacements": {
+		"readmeTitle": {
+			"from": "illumi-family-mvp"
+		}
+	}
+}

@@ -1,6 +1,6 @@
 # Illumi Family MVP Current State
 
-Last verified: 2026-03-04
+Last verified: 2026-03-05
 
 ## 1) Canonical Fact Sources
 - `wrangler.json`
@@ -8,6 +8,8 @@ Last verified: 2026-03-04
 - `src/worker/**`
 - `drizzle.config.ts`
 - `drizzle/migrations/**`
+- `template.config.json`
+- `tools/create-illumi-family-app/**`
 - `docs/technical-architecture.md`
 
 ## 2) Tech Stack Snapshot
@@ -63,3 +65,14 @@ Last verified: 2026-03-04
 ## 8) Known Execution Notes
 - In sandbox, Wrangler may print `EPERM` log-path warnings for `~/Library/Preferences/.wrangler`; command exit code is the true success signal.
 - For dry-run checks in multi-env config, always pass explicit `--env`.
+
+## 9) Template Tooling (Local Scaffold)
+- Commands:
+  - `pnpm template:new -- --name <app> --dir <path> [--no-install]`
+  - `pnpm template:sync` (default dry-run)
+  - `pnpm template:sync -- --apply --force`
+  - `pnpm template:doctor`
+- Files:
+  - `template.config.json` controls whitelist/blacklist + replacement config.
+  - `tools/create-illumi-family-app/templates/base` stores the template snapshot.
+  - `tools/create-illumi-family-app/templates/base/template.manifest.json` stores file hashes and generation time.

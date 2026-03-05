@@ -1,0 +1,72 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "illumi-family-mvp",
+	"main": "./src/worker/index.ts",
+	"compatibility_date": "2025-10-08",
+	"compatibility_flags": ["nodejs_compat"],
+	"workers_dev": true,
+	"observability": {
+		"enabled": true
+	},
+	"upload_source_maps": true,
+	"assets": {
+		"directory": "./dist/client",
+		"not_found_handling": "single-page-application"
+	},
+	"vars": {
+		"APP_ENV": "prod",
+		"API_VERSION": "v1"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "illumi-family-db",
+			"database_id": "1c23c866-1950-439b-8379-520e7be083e2",
+			"migrations_dir": "drizzle/migrations"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "CACHE",
+			"id": "477a5460c50d4f03963d193fae3f69ac",
+			"preview_id": "251631bdcb474b3b8cab2402329e6198"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "FILES",
+			"bucket_name": "illumi-family-files"
+		}
+	],
+	"env": {
+		"dev": {
+			"name": "illumi-family-mvp-dev",
+			"workers_dev": true,
+			"vars": {
+				"APP_ENV": "dev",
+				"API_VERSION": "v1"
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "illumi-family-db-dev",
+					"database_id": "37f69f1e-7eb7-44d5-8683-f552cf2ab4c0",
+					"migrations_dir": "drizzle/migrations"
+				}
+			],
+			"kv_namespaces": [
+				{
+					"binding": "CACHE",
+					"id": "056845d903544d788875e31d7799b25c",
+					"preview_id": "e1daa9522cd64d4f91447aa505c1fc91"
+				}
+			],
+			"r2_buckets": [
+				{
+					"binding": "FILES",
+					"bucket_name": "illumi-family-files-dev"
+				}
+			]
+		}
+	}
+}
