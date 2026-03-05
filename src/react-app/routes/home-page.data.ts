@@ -1,216 +1,228 @@
-export type HomeIconKey =
-	| "book-open"
-	| "sparkles"
-	| "heart-handshake"
-	| "graduation-cap"
-	| "scroll-text"
-	| "video"
-	| "shield"
-	| "calendar"
-	| "users"
-	| "file-text";
-
 export interface NavigationItem {
 	label: string;
 	href: string;
 }
 
-export interface SiteStat {
+export interface CtaLink {
 	label: string;
-	value: string;
-	description: string;
+	href: string;
 }
 
-export interface ColumnItem {
+export interface HeroContent {
+	title: string;
+	subtitle: string;
+	descriptionLines: string[];
+	primaryCta: CtaLink;
+	secondaryCta: CtaLink;
+	image: { src: string; alt: string };
+}
+
+export interface PhilosophyItem {
 	title: string;
 	description: string;
-	tags: string[];
-	icon: HomeIconKey;
 }
 
-export interface ContentCardItem {
+export interface DailyNoteItem {
+	date: string;
 	title: string;
 	summary: string;
-	keyPoints: string[];
-	column: string;
-	ageGroup: string;
-	scene: string;
-	publishedAt: string;
+	tags: string[];
 }
 
-export interface LegacyVideoItem {
+export interface StoryItem {
 	title: string;
 	summary: string;
 	publishDate: string;
-	status: "linked" | "placeholder";
+	duration: string;
+	status: "published" | "coming_soon";
+	link?: string;
 }
 
-export interface TrustItem {
+export interface ColearningMethodItem {
 	title: string;
 	description: string;
-	icon: HomeIconKey;
 }
 
-export interface ActionCard {
-	title: string;
-	description: string;
-	actionLabel: string;
-	note: string;
-	icon: HomeIconKey;
+export interface AboutContent {
+	name: string;
+	roles: string[];
+	beliefs: string[];
+	methodKeywords: string[];
+	closing: string;
+	portrait: { src: string; alt: string };
 }
+
+export interface FooterLink {
+	label: string;
+	href: string;
+}
+
+export const siteMeta = {
+	brandName: "童蒙家塾",
+	brandSubtitle: "三代同堂家风家学实践",
+	headerCta: { label: "开始了解", href: "#philosophy" },
+};
 
 export const siteNavigation: NavigationItem[] = [
-	{ label: "首页", href: "#home" },
-	{ label: "栏目", href: "#columns" },
-	{ label: "最新内容", href: "#latest" },
-	{ label: "旧视频号", href: "#archive" },
-	{ label: "关于我们", href: "#about" },
-	{ label: "合作联系", href: "#contact" },
-	{ label: "法律声明", href: "#legal" },
+	{ label: "家风家学·理念", href: "#philosophy" },
+	{ label: "践行感悟·日思", href: "#daily" },
+	{ label: "三代同堂·故事", href: "#stories" },
+	{ label: "家庭共学·陪伴", href: "#colearning" },
+	{ label: "关于我", href: "#about" },
+	{ label: "联系", href: "#contact" },
 ];
 
-export const siteStats: SiteStat[] = [
-	{ label: "累计内容", value: "186+", description: "图文/视频主题条目（示例数据）" },
-	{ label: "服务家庭", value: "1,240+", description: "家庭教育咨询触达（示例数据）" },
-	{ label: "方法清单", value: "42", description: "可执行清单模板（示例数据）" },
-];
+export const heroContent: HeroContent = {
+	title: "三代同堂家风家学传承践行者",
+	subtitle: "每个家庭都能有属于自己的童蒙家塾",
+	descriptionLines: [
+		"以经典润心，以家风养正，以家为塾，以行践学。",
+		"立足三代同堂之根，传承中华家学之美，",
+		"让每一户寻常人家，皆可自成书香童蒙。",
+	],
+	primaryCta: { label: "阅读理念", href: "#philosophy" },
+	secondaryCta: { label: "认识小罗老师", href: "#about" },
+	image: {
+		src: "/images/background.png",
+		alt: "童蒙家塾三代同堂家庭 IP 合照，展现温暖陪伴与家学传承。",
+	},
+};
 
-export const columns: ColumnItem[] = [
+export const philosophyIntro =
+	"以经典为根，以家庭为塾，以静定为要，以养正为宗。童蒙养正，始于家庭；家风传承，始于日常。不追浮华，不逐功利，只做扎根生命的真教育。让每一个家庭，都成为滋养孩子一生的童蒙家塾。";
+
+export const philosophyItems: PhilosophyItem[] = [
 	{
-		title: "主理人理念",
-		description: "从真实家庭实践出发，讲清教育底层逻辑与边界。",
-		tags: ["价值观", "长期主义", "亲子关系"],
-		icon: "sparkles",
+		title: "静定",
+		description:
+			"先安顿家长与孩子的身心，再谈方法与效率，让家庭关系有稳定根基。",
 	},
 	{
-		title: "每日分享",
-		description: "短小、可立即执行的家庭教育微行动与提醒。",
-		tags: ["今日可做", "家庭习惯", "轻任务"],
-		icon: "book-open",
+		title: "养正",
+		description:
+			"以日常小事培养品格与边界感，让孩子在温润而坚定的秩序中成长。",
 	},
 	{
-		title: "家庭故事",
-		description: "真实案例拆解，强调方法复制，不强调天赋神话。",
-		tags: ["真实案例", "反思记录", "家长视角"],
-		icon: "heart-handshake",
-	},
-	{
-		title: "教育方法",
-		description: "把抽象理念拆成步骤、清单和家庭协同流程。",
-		tags: ["步骤化", "可复用", "操作系统"],
-		icon: "graduation-cap",
-	},
-	{
-		title: "传统文化小课",
-		description: "用儿童友好方式连接经典与当代生活。",
-		tags: ["启蒙", "经典阅读", "生活化"],
-		icon: "scroll-text",
+		title: "家塾",
+		description:
+			"把读书、习劳、感恩、自省融入一日生活，让家庭成为持续学习的场域。",
 	},
 ];
 
-export const latestContentCards: ContentCardItem[] = [
+export const dailyNotes: DailyNoteItem[] = [
 	{
-		title: "孩子总是拖延写作业？先从“十分钟启动法”开始",
+		date: "2026-03-05",
+		title: "把“催促”变“共学”：晚饭后 20 分钟共读",
 		summary:
-			"通过环境重置、计时器和任务切片，帮助孩子从“抗拒”转到“可开始”。",
-		keyPoints: ["先启动再优化", "任务切小块", "家长只给结构不夺权"],
-		column: "教育方法",
-		ageGroup: "小学 1-4 年级",
-		scene: "放学后作业时段",
-		publishedAt: "2026-03-03",
+			"今晚不讲大道理，只做一件小事：一起读 10 分钟经典，再各自复述一句触动的话。日常里的稳定节奏，比临时起意更能养成习惯。",
+		tags: ["共读", "家庭节奏", "日常践行"],
 	},
 	{
-		title: "当亲子冲突升级时：三句降温话术模板",
+		date: "2026-03-03",
+		title: "情绪起伏时，先守住语气再谈规则",
 		summary:
-			"将“对抗”转为“协同”，避免羞辱与贴标签，保持关系安全感。",
-		keyPoints: ["先共情", "再边界", "最后共创下一步"],
-		column: "每日分享",
-		ageGroup: "幼儿园-小学",
-		scene: "情绪冲突",
-		publishedAt: "2026-03-01",
+			"孩子闹情绪时，家长最先要做的是稳住自己的呼吸和语速。关系先被看见，规则才会被听见；先共情，再立界，最后再行动。",
+		tags: ["情绪教养", "亲子沟通", "养正"],
 	},
 	{
-		title: "家庭晨间流程卡：让孩子从催促模式走向自主管理",
+		date: "2026-02-28",
+		title: "周末家务轮值：让责任感在参与中长出来",
 		summary:
-			"把起床、洗漱、早餐、出门拆成可视化流程，逐周降低家长介入。",
-		keyPoints: ["可视化流程", "一周一小步", "复盘优先于责备"],
-		column: "家庭故事",
-		ageGroup: "幼儿园大班-小学",
-		scene: "晨间流程",
-		publishedAt: "2026-02-28",
+			"不以结果完美为目标，而以“全家一起做”为目标。孩子参与择菜、收纳、摆桌，哪怕动作慢，也是在练习担当和合作。",
+		tags: ["家庭劳动", "责任感", "三代同堂"],
 	},
 	{
-		title: "传统文化小课：用“家风故事”建立孩子的规则感",
+		date: "2026-02-24",
+		title: "睡前 5 分钟复盘：今天我们有没有彼此成全",
 		summary:
-			"以家庭故事代替说教，帮助孩子理解规则背后的意义与情感连接。",
-		keyPoints: ["故事先行", "规则有温度", "鼓励表达与复述"],
-		column: "传统文化小课",
-		ageGroup: "小学全年级",
-		scene: "晚间亲子共读",
-		publishedAt: "2026-02-26",
+			"每天睡前问三个问题：今天感谢谁、今天改进什么、明天先做哪件善事。日思不求多，只求真，慢慢把家风写进生活细节。",
+		tags: ["自省", "感恩", "家风传承"],
 	},
 ];
 
-export const legacyVideoItems: LegacyVideoItem[] = [
+export const stories: StoryItem[] = [
 	{
-		title: "习惯培养不是打卡：先建立家庭节奏",
-		summary: "来源：微信视频号历史内容，现提供归档入口。",
-		publishDate: "2025-12-18",
-		status: "linked",
+		title: "《一家人的晨光》：从晨读到晨劳的三代协同",
+		summary:
+			"记录祖辈、父母与孩子如何在清晨完成“读书-分工-互助”的节律，呈现家风在细节中的流动。",
+		publishDate: "2026-02-18",
+		duration: "08:24",
+		status: "published",
+		link: "#contact",
 	},
 	{
-		title: "如何和孩子讨论“输赢”而不伤害自尊",
-		summary: "来源：微信视频号历史内容，链接整理中。",
-		publishDate: "2025-11-05",
-		status: "placeholder",
+		title: "《节气饭桌课》：奶奶的二十四节气故事",
+		summary:
+			"以家庭饭桌为课堂，把节气、饮食与德行教育连接起来，帮助孩子在生活场景中理解传统文化。",
+		publishDate: "2026-03-20",
+		duration: "筹备中",
+		status: "coming_soon",
 	},
 	{
-		title: "亲子陪伴中的边界感：爱与规则并不冲突",
-		summary: "来源：微信视频号历史内容，现提供归档入口。",
-		publishDate: "2025-09-23",
-		status: "linked",
-	},
-];
-
-export const trustItems: TrustItem[] = [
-	{
-		title: "前台 IP，后台公司",
-		description: "保持真实教育理念，同时推进品牌化与合规化建设。",
-		icon: "users",
-	},
-	{
-		title: "未成年人隐私保护",
-		description: "案例默认匿名化，敏感信息不展示，授权状态全程可追踪。",
-		icon: "shield",
-	},
-	{
-		title: "内容结构化沉淀",
-		description: "图文主导、视频补充，支持后续多平台分发与自动化流程。",
-		icon: "file-text",
+		title: "《家书一封》：父母与孩子的双向表达练习",
+		summary:
+			"通过真实家书往来呈现家庭沟通的修复过程，展示“理解-边界-合作”的成长轨迹。",
+		publishDate: "2026-04-10",
+		duration: "筹备中",
+		status: "coming_soon",
 	},
 ];
 
-export const actionCards: ActionCard[] = [
+export const colearningIntro =
+	"以陪伴为灯，以共学为路，以成长为果。家长先成长，孩子自芬芳；家庭共进步，家风自绵长。";
+
+export const colearningMethods: ColearningMethodItem[] = [
 	{
-		title: "领取资料包",
-		description: "获取《家庭教育一周行动清单》与执行模板。",
-		actionLabel: "立即领取",
-		note: "【待补充】表单工具与领取流程",
-		icon: "book-open",
+		title: "共读共讲",
+		description: "每周固定家庭共读，围绕一个主题做轮流复述与提问。",
 	},
 	{
-		title: "预约咨询",
-		description: "提交家庭情况，预约 1v1 初步沟通。",
-		actionLabel: "申请预约",
-		note: "【待补充】服务类型与排期机制",
-		icon: "calendar",
+		title: "共劳共担",
+		description: "通过家务与协作任务建立责任感，让孩子在参与中练习自主。",
 	},
 	{
-		title: "商务合作",
-		description: "机构合作、媒体合作、联名活动等合作入口。",
-		actionLabel: "联系合作",
-		note: "【待补充】SLA 与联系人机制",
-		icon: "heart-handshake",
+		title: "共省共进",
+		description: "以周复盘记录家庭变化，用微调替代焦虑，用行动替代空谈。",
 	},
 ];
 
+export const colearningBenefits = [
+	"降低家庭沟通摩擦，让规则与温度并行。",
+	"提升孩子自主学习与生活管理能力。",
+	"帮助家长形成可持续的教养方法，不被焦虑牵引。",
+];
+
+export const colearningCase = {
+	title: "案例摘要｜四周家庭共学实验",
+	summary:
+		"一个普通四口之家，通过固定晚间共读 + 周末家庭议事 + 每日小复盘，四周后孩子的作息稳定度、表达意愿与家务参与度都明显提升。",
+	cta: { label: "查看共学案例", href: "#contact" },
+};
+
+export const aboutContent: AboutContent = {
+	name: "小罗老师",
+	roles: ["三娃妈妈", "家庭教育践行者", "「童蒙家塾」家庭 IP 创始人"],
+	beliefs: [
+		"最好的教育不在校外，而在家中；",
+		"最好的私塾不在远方，而在日常。",
+	],
+	methodKeywords: ["静定", "养正", "自主", "共学"],
+	closing:
+		"不焦虑、不内卷、不功利，只做扎根生命、温润心灵的真教育。愿与万千家庭同行：一人觉醒，一家书香，一门家学，三代传承。",
+	portrait: {
+		src: "/images/background.png",
+		alt: "童蒙家塾主理人家庭 IP 形象。",
+	},
+};
+
+export const footerContent = {
+	sloganLine1: "自家即是家塾，日常即是教育。",
+	sloganLine2: "童蒙养正，家风传世。",
+	copyright: "© 2026 童蒙家塾 Tongmeng Family School. All rights reserved.",
+	contactEmail: "contact@illumi-family.com",
+	links: [
+		{ label: "隐私政策（待补充）", href: "#" },
+		{ label: "未成年人保护（待补充）", href: "#" },
+		{ label: "版权声明（待补充）", href: "#" },
+	] satisfies FooterLink[],
+};

@@ -1,0 +1,62 @@
+import type { StoryItem } from "@/routes/home-page.data";
+import { PaperCard } from "@/routes/home/components/paper-card";
+import { SectionHeading } from "@/routes/home/components/section-heading";
+import { StoryStatusBadge } from "@/routes/home/components/story-status-badge";
+
+interface StoriesSectionProps {
+	items: StoryItem[];
+}
+
+export function StoriesSection({ items }: StoriesSectionProps) {
+	return (
+		<section id="stories" className="space-y-8 py-2">
+			<SectionHeading
+				label="三代同堂·故事"
+				title="用真实故事，记录家风流淌与家学传承"
+				description="三代同堂，是最好的家风课堂；一家温暖，是最稳的生命根基。故事区按上线状态区分交互，便于后续持续扩充。"
+			/>
+			<div className="grid gap-4 md:grid-cols-3">
+				{items.map((item, index) => {
+					const isPublished = item.status === "published";
+					const isExternal = typeof item.link === "string" && item.link.startsWith("http");
+
+					return (
+						<PaperCard key={item.title} motionDelayMs={90 + index * 70}>
+							<div className="flex items-center justify-between gap-2">
+								<p className="text-xs uppercase tracking-[0.12em] text-[color:var(--brand-primary)]">
+									{item.publishDate}
+								</p>
+								<StoryStatusBadge status={item.status} />
+							</div>
+							<h3 className="mt-4 font-brand text-2xl leading-snug text-foreground">{item.title}</h3>
+							<p className="mt-3 text-sm leading-relaxed text-muted-foreground md:text-base">
+								{item.summary}
+							</p>
+							<div className="mt-4 flex items-center justify-between gap-3 border-t border-[color:rgba(166,124,82,0.18)] pt-4 text-xs text-muted-foreground">
+								<span>时长/进度：{item.duration}</span>
+								{isPublished && item.link ? (
+									<a
+										href={item.link}
+										target={isExternal ? "_blank" : undefined}
+										rel={isExternal ? "noreferrer" : undefined}
+										className="inline-flex h-8 items-center justify-center rounded-full bg-primary px-4 text-xs font-medium text-primary-foreground transition-colors duration-200 hover:bg-[color:rgba(166,124,82,0.92)]"
+									>
+										观看动画
+									</a>
+								) : (
+									<button
+										type="button"
+										disabled
+										className="inline-flex h-8 items-center justify-center rounded-full border border-input px-4 text-xs font-medium text-muted-foreground"
+									>
+										敬请期待
+									</button>
+								)}
+							</div>
+						</PaperCard>
+					);
+				})}
+			</div>
+		</section>
+	);
+}
