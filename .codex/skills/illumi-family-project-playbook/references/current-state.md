@@ -15,6 +15,7 @@ Last verified: 2026-03-05
 ## 2) Tech Stack Snapshot
 - Frontend: React 19 + Vite 6 + TanStack Router + TanStack Query
 - Backend runtime: Hono 4 on Cloudflare Workers
+- Auth: Better Auth + Resend (email verification) + Google OAuth
 - Data: D1 + Drizzle ORM, KV, R2
 - Validation: Zod + `@hono/zod-validator`
 - Tests: Vitest
@@ -40,31 +41,43 @@ Last verified: 2026-03-05
   - D1: `illumi-family-db`
   - KV: `ILLUMI_CACHE`
   - R2: `illumi-family-files`
-  - URL: `https://illumi-family-mvp.lguangcong0712.workers.dev`
+  - Primary URL: `https://illumi-family.com`
+  - workers.dev fallback URL: `https://illumi-family-mvp.lguangcong0712.workers.dev`
+  - Custom domain route in wrangler: `illumi-family.com`
 - dev
   - Worker: `illumi-family-mvp-dev`
   - D1: `illumi-family-db-dev`
   - KV: `ILLUMI_CACHE_DEV`
   - R2: `illumi-family-files-dev`
-  - URL: `https://illumi-family-mvp-dev.lguangcong0712.workers.dev`
+  - Primary URL: `https://dev.illumi-family.com`
+  - workers.dev fallback URL: `https://illumi-family-mvp-dev.lguangcong0712.workers.dev`
+  - Custom domain route in wrangler: `dev.illumi-family.com`
 
 ## 6) Current API Endpoints
 - `GET /api/`
 - `GET /api/health`
+- `/api/auth/*` (Better Auth endpoints, includes email/password + Google)
+- `POST /api/auth/identities/rollback`
 - `GET /api/users`
 - `POST /api/users`
 
 ## 7) Data Model (Current)
-- Table: `users`
-  - `id` (PK)
-  - `email` (unique)
-  - `name`
-  - `created_at`
-  - `updated_at`
+- Legacy table:
+  - `users` (`id`, `email`, `name`, `created_at`, `updated_at`)
+- Auth tables:
+  - `auth_users`
+  - `auth_sessions`
+  - `auth_accounts`
+  - `auth_verifications`
+- App identity tables:
+  - `app_users`
+  - `user_identities`
+  - `user_security_events`
 
 ## 8) Known Execution Notes
 - In sandbox, Wrangler may print `EPERM` log-path warnings for `~/Library/Preferences/.wrangler`; command exit code is the true success signal.
 - For dry-run checks in multi-env config, always pass explicit `--env`.
+- Asset routing strategy uses `assets.run_worker_first = ["/api/*"]`, so SPA routes (`/auth`, `/users`, etc.) are handled by the asset layer, while API paths are handled by Worker.
 
 ## 9) Template Tooling (Local Scaffold)
 - Commands:

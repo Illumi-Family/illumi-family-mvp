@@ -1,5 +1,12 @@
 import { QueryClient } from "@tanstack/react-query";
-import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import {
+	createRootRoute,
+	createRoute,
+	createRouter,
+	redirect,
+} from "@tanstack/react-router";
+import { authClient } from "@/lib/auth-client";
+import { AuthPage } from "@/routes/auth-page";
 import { HomePage } from "@/routes/home-page";
 import { RootLayout } from "@/routes/root-layout";
 import { UsersPage } from "@/routes/users-page";
@@ -26,10 +33,22 @@ const homeRoute = createRoute({
 const usersRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/users",
+	beforeLoad: async () => {
+		const session = await authClient.getSession();
+		if (!session.data) {
+			throw redirect({ to: "/auth" });
+		}
+	},
 	component: UsersPage,
 });
 
-const routeTree = rootRoute.addChildren([homeRoute, usersRoute]);
+const authRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/auth",
+	component: AuthPage,
+});
+
+const routeTree = rootRoute.addChildren([homeRoute, usersRoute, authRoute]);
 
 export const router = createRouter({
 	routeTree,

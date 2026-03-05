@@ -64,6 +64,7 @@ pnpm db:migrate:prod
 pnpm run check
 pnpm run deploy
 ```
+Current routing baseline: `assets.run_worker_first = ["/api/*"]` (SPA routes handled by assets, Worker handles API).
 
 ### Deploy prod
 ```bash
@@ -75,12 +76,33 @@ pnpm run deploy:prod
 ## 6) Post-Deploy Smoke Checks
 - Health endpoint should match target environment:
 ```bash
+curl -s https://dev.illumi-family.com/api/health
+curl -s https://illumi-family.com/api/health
+# fallback
 curl -s https://illumi-family-mvp-dev.lguangcong0712.workers.dev/api/health
 curl -s https://illumi-family-mvp.lguangcong0712.workers.dev/api/health
 ```
 - Confirm key API paths:
+  - `GET /api/auth/ok`
   - `GET /api/users`
   - `POST /api/users` (JSON content-type)
+
+## 6.1) Auth Secrets Setup (Before Auth Deploy)
+Set secrets per environment with Wrangler (do not commit secrets):
+```bash
+wrangler secret put BETTER_AUTH_SECRET --env dev
+wrangler secret put GOOGLE_CLIENT_ID --env dev
+wrangler secret put GOOGLE_CLIENT_SECRET --env dev
+wrangler secret put RESEND_API_KEY --env dev
+```
+
+Prod:
+```bash
+wrangler secret put BETTER_AUTH_SECRET
+wrangler secret put GOOGLE_CLIENT_ID
+wrangler secret put GOOGLE_CLIENT_SECRET
+wrangler secret put RESEND_API_KEY
+```
 
 ## 7) Operational Response Basics
 1. Identify affected environment (`dev`/`prod`) first.

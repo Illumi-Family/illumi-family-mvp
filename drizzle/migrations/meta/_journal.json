@@ -8,6 +8,13 @@
       "when": 1772620313579,
       "tag": "0000_jittery_siren",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1772700424518,
+      "tag": "0001_special_jocasta",
+      "breakpoints": true
     }
   ]
 }

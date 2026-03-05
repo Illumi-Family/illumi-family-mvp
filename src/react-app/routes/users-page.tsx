@@ -1,5 +1,6 @@
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { authClient } from "@/lib/auth-client";
 import { createUser } from "@/lib/api";
 import { usersQueryKey, usersQueryOptions } from "@/lib/query-options";
 
@@ -25,6 +27,7 @@ const formatDateTime = (value: string) => {
 };
 
 export function UsersPage() {
+	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
@@ -41,6 +44,11 @@ export function UsersPage() {
 		},
 	});
 
+	const handleSignOut = async () => {
+		await authClient.signOut();
+		await navigate({ to: "/auth" });
+	};
+
 	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		if (!name.trim() || !email.trim()) return;
@@ -49,9 +57,9 @@ export function UsersPage() {
 
 	return (
 		<div className="grid gap-6 md:grid-cols-2">
-			<Card>
-				<CardHeader>
-					<CardTitle>User Query + Mutation</CardTitle>
+				<Card>
+					<CardHeader>
+						<CardTitle>User Query + Mutation</CardTitle>
 					<CardDescription>
 						读取 <code>/api/users</code> 并调用 <code>POST /api/users</code>。
 					</CardDescription>
@@ -88,10 +96,10 @@ export function UsersPage() {
 						</p>
 					)}
 				</CardContent>
-				<CardFooter className="text-xs text-muted-foreground">
-					创建成功后会触发 query invalidation，列表自动刷新。
-				</CardFooter>
-			</Card>
+					<CardFooter className="text-xs text-muted-foreground">
+						创建成功后会触发 query invalidation，列表自动刷新。
+					</CardFooter>
+				</Card>
 
 			<Card>
 				<CardHeader>
@@ -125,10 +133,13 @@ export function UsersPage() {
 						</div>
 					))}
 				</CardContent>
-				<CardFooter className="flex justify-end">
-					<Button
-						type="button"
-						variant="outline"
+					<CardFooter className="flex justify-end">
+						<Button type="button" variant="ghost" onClick={handleSignOut}>
+							Sign out
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
 						onClick={() => usersQuery.refetch()}
 						disabled={usersQuery.isFetching}
 					>

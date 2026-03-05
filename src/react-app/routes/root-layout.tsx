@@ -1,6 +1,10 @@
-import { Outlet } from "@tanstack/react-router";
+import { Link, Outlet } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth-client";
 
 export function RootLayout() {
+	const { data: session } = authClient.useSession();
+
 	return (
 		<div className="min-h-screen bg-background text-foreground">
 			<a
@@ -9,8 +13,35 @@ export function RootLayout() {
 			>
 				Skip to content
 			</a>
-			<Outlet />
+			<header className="border-b">
+				<div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3">
+					<nav className="flex items-center gap-2 text-sm">
+						<Link to="/">
+							<Button variant="ghost" size="sm">
+								Home
+							</Button>
+						</Link>
+						<Link to="/users">
+							<Button variant="ghost" size="sm">
+								Users
+							</Button>
+						</Link>
+						<Link to="/auth">
+							<Button variant="ghost" size="sm">
+								Auth
+							</Button>
+						</Link>
+					</nav>
+					<p className="text-xs text-muted-foreground">
+						{session?.user
+							? `Signed in as ${session.user.email}`
+							: "Not signed in"}
+					</p>
+				</div>
+			</header>
+			<main id="main-content">
+				<Outlet />
+			</main>
 		</div>
 	);
 }
-

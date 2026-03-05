@@ -1,4 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
+import { requireAuthSession } from "../../shared/auth/session";
 import { getDb } from "../../shared/db/client";
 import { AppError } from "../../shared/http/errors";
 import { factory } from "../../shared/http/factory";
@@ -27,13 +28,17 @@ const requireJsonBody = factory.createMiddleware(async (c, next) => {
 	await next();
 });
 
-export const listUsersHandlers = factory.createHandlers(async (c) => {
-	const service = buildUsersService(c.env);
-	const users = await service.listUsers();
-	return jsonSuccess(c, { users });
-});
+export const listUsersHandlers = factory.createHandlers(
+	requireAuthSession,
+	async (c) => {
+		const service = buildUsersService(c.env);
+		const users = await service.listUsers();
+		return jsonSuccess(c, { users });
+	},
+);
 
 export const createUserHandlers = factory.createHandlers(
+	requireAuthSession,
 	requireJsonBody,
 	zValidator("json", createUserBodySchema),
 	async (c) => {

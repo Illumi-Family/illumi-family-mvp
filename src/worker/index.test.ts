@@ -31,4 +31,15 @@ describe("worker api", () => {
 		expect(body.success).toBe(false);
 		expect(body.error.code).toBe("ROUTE_NOT_FOUND");
 	});
+
+	it("requires auth session for /api/users", async () => {
+		const response = await app.request("/api/users", {}, testEnv as never);
+		expect(response.status).toBe(401);
+		const body = (await response.json()) as {
+			success: boolean;
+			error: { code: string };
+		};
+		expect(body.success).toBe(false);
+		expect(body.error.code).toBe("UNAUTHORIZED");
+	});
 });
