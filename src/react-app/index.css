@@ -1,51 +1,57 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@500;600;700&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
-	--background: oklch(1 0 0);
-	--foreground: oklch(0.145 0 0);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.145 0 0);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.145 0 0);
-	--primary: oklch(0.205 0 0);
-	--primary-foreground: oklch(0.985 0 0);
-	--secondary: oklch(0.97 0 0);
-	--secondary-foreground: oklch(0.205 0 0);
-	--muted: oklch(0.97 0 0);
-	--muted-foreground: oklch(0.556 0 0);
-	--accent: oklch(0.97 0 0);
-	--accent-foreground: oklch(0.205 0 0);
-	--destructive: oklch(0.577 0.245 27.325);
-	--destructive-foreground: oklch(0.985 0 0);
-	--border: oklch(0.922 0 0);
-	--input: oklch(0.922 0 0);
-	--ring: oklch(0.708 0 0);
-	--radius: 0.625rem;
+	--font-sans:
+		"Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+		sans-serif;
+	--font-serif: "Noto Serif SC", "Songti SC", "STSong", serif;
+
+	--background: #f8f2e9;
+	--foreground: #2a2119;
+	--card: #fff9f1;
+	--card-foreground: #2a2119;
+	--popover: #fffaf3;
+	--popover-foreground: #2a2119;
+	--primary: #8f5b39;
+	--primary-foreground: #fff9f2;
+	--secondary: #f0dfcb;
+	--secondary-foreground: #4f3c2d;
+	--muted: #f4e9dc;
+	--muted-foreground: #6d5a49;
+	--accent: #efd8bb;
+	--accent-foreground: #4a3728;
+	--destructive: #b74226;
+	--destructive-foreground: #fff8f1;
+	--border: #dec9b1;
+	--input: #dbc2a8;
+	--ring: #8f6d4f;
+	--radius: 0.9rem;
 }
 
 .dark {
-	--background: oklch(0.145 0 0);
-	--foreground: oklch(0.985 0 0);
-	--card: oklch(0.145 0 0);
-	--card-foreground: oklch(0.985 0 0);
-	--popover: oklch(0.145 0 0);
-	--popover-foreground: oklch(0.985 0 0);
-	--primary: oklch(0.985 0 0);
-	--primary-foreground: oklch(0.205 0 0);
-	--secondary: oklch(0.269 0 0);
-	--secondary-foreground: oklch(0.985 0 0);
-	--muted: oklch(0.269 0 0);
-	--muted-foreground: oklch(0.708 0 0);
-	--accent: oklch(0.269 0 0);
-	--accent-foreground: oklch(0.985 0 0);
-	--destructive: oklch(0.704 0.191 22.216);
-	--destructive-foreground: oklch(0.985 0 0);
-	--border: oklch(1 0 0 / 10%);
-	--input: oklch(1 0 0 / 15%);
-	--ring: oklch(0.556 0 0);
+	--background: #1c1612;
+	--foreground: #f8efe3;
+	--card: #251d18;
+	--card-foreground: #f8efe3;
+	--popover: #251d18;
+	--popover-foreground: #f8efe3;
+	--primary: #e6bc95;
+	--primary-foreground: #2a1f16;
+	--secondary: #3a2d24;
+	--secondary-foreground: #f3e8da;
+	--muted: #342920;
+	--muted-foreground: #cab39a;
+	--accent: #3f3024;
+	--accent-foreground: #f8efe3;
+	--destructive: #d1674d;
+	--destructive-foreground: #fff8f1;
+	--border: #4a382b;
+	--input: #4a382b;
+	--ring: #d3b290;
 }
 
 @theme inline {
@@ -79,7 +85,60 @@
 		@apply border-border;
 	}
 
+	html {
+		scroll-behavior: smooth;
+	}
+
 	body {
 		@apply bg-background text-foreground antialiased;
+		font-family: var(--font-sans);
+	}
+
+	.font-brand {
+		font-family: var(--font-serif);
+		letter-spacing: -0.01em;
+	}
+
+	a,
+	button {
+		@apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
 	}
 }
+
+@keyframes fade-up {
+	from {
+		opacity: 0;
+		transform: translate3d(0, 18px, 0);
+	}
+
+	to {
+		opacity: 1;
+		transform: translate3d(0, 0, 0);
+	}
+}
+
+.motion-enter {
+	opacity: 0;
+	animation: fade-up 620ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+
+	.motion-enter {
+		opacity: 1;
+		animation: none !important;
+	}
+}
+
