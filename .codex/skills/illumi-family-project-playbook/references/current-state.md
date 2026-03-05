@@ -78,6 +78,7 @@ Last verified: 2026-03-05
 - In sandbox, Wrangler may print `EPERM` log-path warnings for `~/Library/Preferences/.wrangler`; command exit code is the true success signal.
 - For dry-run checks in multi-env config, always pass explicit `--env`.
 - Asset routing strategy uses `assets.run_worker_first = ["/api/*"]`, so SPA routes (`/auth`, `/users`, etc.) are handled by the asset layer, while API paths are handled by Worker.
+- Email/password auth path uses a custom `PBKDF2(SHA-256)` hasher (`src/worker/shared/auth/password-hasher.ts`) to stay within Worker CPU limits; re-benchmark sign-up/sign-in if hash parameters change.
 
 ## 9) Template Tooling (Local Scaffold)
 - Commands:
