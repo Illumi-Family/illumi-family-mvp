@@ -40,7 +40,7 @@
 	],
 	"env": {
 		"dev": {
-			"name": "illumi-family-mvp-dev",
+			"name": "illumi-family-mvp",
 			"workers_dev": true,
 			"vars": {
 				"APP_ENV": "dev",
