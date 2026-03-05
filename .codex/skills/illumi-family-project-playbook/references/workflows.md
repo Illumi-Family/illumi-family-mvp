@@ -70,6 +70,7 @@ pnpm run deploy
 pnpm run check:prod
 pnpm run deploy:prod
 ```
+`deploy:prod` uses `wrangler deploy --config wrangler.json --env=""` to explicitly target top-level prod config.
 
 ## 6) Post-Deploy Smoke Checks
 - Health endpoint should match target environment:
