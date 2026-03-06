@@ -68,8 +68,8 @@ export const siteNavigation: NavigationItem[] = [
 	{ label: "践行感悟·日思", href: "#daily" },
 	{ label: "三代同堂·故事", href: "#stories" },
 	{ label: "家庭共学·陪伴", href: "#colearning" },
-	{ label: "关于我", href: "#about" },
-	{ label: "联系", href: "#contact" },
+	{ label: "知我", href: "#about" },
+	// { label: "联系", href: "#contact" },
 ];
 
 export const heroContent: HeroContent = {

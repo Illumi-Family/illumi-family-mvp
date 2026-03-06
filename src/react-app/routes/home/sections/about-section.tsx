@@ -11,7 +11,7 @@ export function AboutSection({ content }: AboutSectionProps) {
 	return (
 		<section id="about" className="space-y-8 py-2">
 			<SectionHeading
-				label="About me"
+				label="知我"
 				title="以家为塾，让教育回到日常"
 				description="我是小罗老师，一名三娃妈妈，也是「童蒙家塾」家庭 IP 创始人。"
 			/>
