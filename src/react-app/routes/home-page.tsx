@@ -87,7 +87,7 @@ export function HomePage() {
 					<CardDescription>接入后可见行为。</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-2 text-sm text-muted-foreground">
-					<p>1. 顶部导航可在 Home / Users 路由间切换。</p>
+					<p>1. 顶部导航可在 Home / Profile 路由间切换。</p>
 					<p>2. Home 页显示 Query 状态（pending/success/fetching）。</p>
 					<p>3. 点击 Refetch 会触发新的请求并更新更新时间。</p>
 				</CardContent>

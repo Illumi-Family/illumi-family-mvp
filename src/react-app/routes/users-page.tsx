@@ -12,11 +12,23 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createUser } from "@/lib/api";
-import { usersQueryKey, usersQueryOptions } from "@/lib/query-options";
+import { ApiClientError, updateCurrentUser } from "@/lib/api";
+import {
+	currentUserQueryKey,
+	currentUserQueryOptions,
+} from "@/lib/query-options";
 
-const readErrorMessage = (error: unknown) =>
-	error instanceof Error ? error.message : "Unexpected error";
+const readErrorMessage = (error: unknown) => {
+	if (error instanceof ApiClientError) {
+		if (error.code === "CURRENT_USER_NOT_FOUND") {
+			return "尚未检测到当前账号，请先完成注册并验证邮箱。";
+		}
+
+		return error.message;
+	}
+
+	return error instanceof Error ? error.message : "Unexpected error";
+};
 
 const formatDateTime = (value: string) => {
 	const timestamp = Date.parse(value);
@@ -26,113 +38,147 @@ const formatDateTime = (value: string) => {
 
 export function UsersPage() {
 	const queryClient = useQueryClient();
-	const [name, setName] = useState("");
-	const [email, setEmail] = useState("");
+	const [draftName, setDraftName] = useState<string | null>(null);
 
-	const usersQuery = useQuery(usersQueryOptions());
-	const createUserMutation = useMutation({
-		mutationFn: createUser,
-		onSuccess: async () => {
-			await queryClient.invalidateQueries({
-				queryKey: usersQueryKey,
-			});
-			setName("");
-			setEmail("");
+	const currentUserQuery = useQuery(currentUserQueryOptions());
+	const updateProfileMutation = useMutation({
+		mutationFn: updateCurrentUser,
+		onSuccess: (user) => {
+			queryClient.setQueryData(currentUserQueryKey, user);
+			setDraftName(null);
 		},
 	});
 
 	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		if (!name.trim() || !email.trim()) return;
-		createUserMutation.mutate({ name: name.trim(), email: email.trim() });
+		const normalizedName = (draftName ?? currentUserQuery.data?.name ?? "").trim();
+		if (!currentUserQuery.data || !normalizedName) return;
+		if (normalizedName === currentUserQuery.data.name) return;
+		updateProfileMutation.mutate({ name: normalizedName });
 	};
+
+	const editableName = draftName ?? currentUserQuery.data?.name ?? "";
+	const isDirty =
+		currentUserQuery.isSuccess &&
+		editableName.trim() !== currentUserQuery.data.name;
 
 	return (
 		<div className="grid gap-6 md:grid-cols-2">
 			<Card>
 				<CardHeader>
-					<CardTitle>User Query + Mutation</CardTitle>
+					<CardTitle>Profile Settings</CardTitle>
 					<CardDescription>
-						读取 <code>/api/users</code> 并调用 <code>POST /api/users</code>。
+						账号会在注册并完成邮箱验证后自动创建。此页面仅用于管理当前用户资料。
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
-					<form className="space-y-3" onSubmit={handleSubmit}>
-						<div className="space-y-2">
-							<Label htmlFor="name">Name</Label>
-							<Input
-								id="name"
-								value={name}
-								onChange={(event) => setName(event.target.value)}
-								placeholder="Alice"
-							/>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="email">Email</Label>
-							<Input
-								id="email"
-								type="email"
-								value={email}
-								onChange={(event) => setEmail(event.target.value)}
-								placeholder="alice@example.com"
-							/>
-						</div>
-						<Button type="submit" disabled={createUserMutation.isPending}>
-							{createUserMutation.isPending ? "Creating..." : "Create user"}
-						</Button>
-					</form>
+					<div className="flex flex-wrap items-center gap-2">
+						<Badge variant={currentUserQuery.isSuccess ? "default" : "outline"}>
+							{currentUserQuery.status}
+						</Badge>
+						{currentUserQuery.isFetching && (
+							<Badge variant="secondary">fetching</Badge>
+						)}
+					</div>
 
-					{createUserMutation.isError && (
+					{currentUserQuery.isPending && (
+						<p className="text-sm text-muted-foreground">
+							Loading current profile...
+						</p>
+					)}
+
+					{currentUserQuery.isError && (
 						<p className="text-sm text-destructive">
-							{readErrorMessage(createUserMutation.error)}
+							{readErrorMessage(currentUserQuery.error)}
+						</p>
+					)}
+
+					{currentUserQuery.isSuccess && (
+						<form className="space-y-3" onSubmit={handleSubmit}>
+							<div className="space-y-2">
+								<Label htmlFor="email">Email</Label>
+								<Input
+									id="email"
+									type="email"
+									value={currentUserQuery.data.email}
+									disabled
+								/>
+							</div>
+							<div className="space-y-2">
+								<Label htmlFor="name">Display Name</Label>
+								<Input
+									id="name"
+									value={editableName}
+									onChange={(event) => setDraftName(event.target.value)}
+									placeholder="Your display name"
+								/>
+							</div>
+							<Button
+								type="submit"
+								disabled={updateProfileMutation.isPending || !isDirty}
+							>
+								{updateProfileMutation.isPending ? "Saving..." : "Save changes"}
+							</Button>
+						</form>
+					)}
+
+					{updateProfileMutation.isError && (
+						<p className="text-sm text-destructive">
+							{readErrorMessage(updateProfileMutation.error)}
 						</p>
 					)}
 				</CardContent>
 				<CardFooter className="text-xs text-muted-foreground">
-					创建成功后会触发 query invalidation，列表自动刷新。
+					不再提供手动创建用户入口，用户身份由注册流程统一生成。
 				</CardFooter>
 			</Card>
 
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center justify-between">
-						<span>Users List</span>
-						<Badge variant="secondary">
-							{usersQuery.data?.length ?? 0} records
-						</Badge>
+						<span>Profile Snapshot</span>
+						<Badge variant="secondary">Current User</Badge>
 					</CardTitle>
-					<CardDescription>查询状态与列表内容。</CardDescription>
+					<CardDescription>当前资料与账号生命周期信息。</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-3">
-					{usersQuery.isPending && (
-						<p className="text-sm text-muted-foreground">Loading users...</p>
-					)}
-					{usersQuery.isError && (
-						<p className="text-sm text-destructive">
-							{readErrorMessage(usersQuery.error)}
+					{currentUserQuery.isPending && (
+						<p className="text-sm text-muted-foreground">
+							Waiting for profile data...
 						</p>
 					)}
-					{usersQuery.isSuccess && usersQuery.data.length === 0 && (
-						<p className="text-sm text-muted-foreground">No users yet.</p>
+
+					{currentUserQuery.isError && (
+						<p className="text-sm text-destructive">
+							{readErrorMessage(currentUserQuery.error)}
+						</p>
 					)}
-					{usersQuery.data?.map((user) => (
-						<div key={user.id} className="rounded-md border p-3 text-sm">
-							<p className="font-medium">{user.name}</p>
-							<p className="text-muted-foreground">{user.email}</p>
-							<p className="text-xs text-muted-foreground">
-								Created: {formatDateTime(user.createdAt)}
-							</p>
+
+					{currentUserQuery.isSuccess && (
+						<div className="space-y-3 text-sm">
+							<div className="rounded-md border p-3">
+								<p className="text-xs text-muted-foreground">User ID</p>
+								<p className="font-mono text-xs">{currentUserQuery.data.id}</p>
+							</div>
+							<div className="rounded-md border p-3">
+								<p className="text-xs text-muted-foreground">Created At</p>
+								<p>{formatDateTime(currentUserQuery.data.createdAt)}</p>
+							</div>
+							<div className="rounded-md border p-3">
+								<p className="text-xs text-muted-foreground">Updated At</p>
+								<p>{formatDateTime(currentUserQuery.data.updatedAt)}</p>
+							</div>
 						</div>
-					))}
+					)}
 				</CardContent>
 				<CardFooter className="flex justify-end">
 					<Button
 						type="button"
 						variant="outline"
-						onClick={() => usersQuery.refetch()}
-						disabled={usersQuery.isFetching}
+						onClick={() => currentUserQuery.refetch()}
+						disabled={currentUserQuery.isFetching}
 					>
-						{usersQuery.isFetching ? "Refreshing..." : "Refresh list"}
+						{currentUserQuery.isFetching ? "Refreshing..." : "Refresh profile"}
 					</Button>
 				</CardFooter>
 			</Card>

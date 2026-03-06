@@ -17,7 +17,7 @@ type ApiSuccess<T> = {
 type ApiResponse<T> = ApiFailure | ApiSuccess<T>;
 
 type RequestOptions = {
-	method?: "GET" | "POST";
+	method?: "GET" | "PATCH";
 	body?: string;
 	headers?: HeadersInit;
 };
@@ -49,8 +49,7 @@ export type UserRecord = {
 	updatedAt: string;
 };
 
-export type CreateUserInput = {
-	email: string;
+export type UpdateCurrentUserInput = {
 	name: string;
 };
 
@@ -96,14 +95,16 @@ export const getHealth = async (): Promise<HealthPayload> => {
 	return data;
 };
 
-export const listUsers = async (): Promise<UserRecord[]> => {
-	const data = await request<{ users: UserRecord[] }>("/api/users");
-	return data.users;
+export const getCurrentUser = async (): Promise<UserRecord> => {
+	const data = await request<{ user: UserRecord }>("/api/users/me");
+	return data.user;
 };
 
-export const createUser = async (input: CreateUserInput): Promise<UserRecord> => {
-	const data = await request<{ user: UserRecord }>("/api/users", {
-		method: "POST",
+export const updateCurrentUser = async (
+	input: UpdateCurrentUserInput,
+): Promise<UserRecord> => {
+	const data = await request<{ user: UserRecord }>("/api/users/me", {
+		method: "PATCH",
 		body: JSON.stringify(input),
 		headers: {
 			"Content-Type": "application/json",

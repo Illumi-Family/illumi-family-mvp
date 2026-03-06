@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 const navigation = [
 	{ to: "/", label: "Home" },
-	{ to: "/users", label: "Users" },
+	{ to: "/users", label: "Profile" },
 ] as const;
 
 export function RootLayout() {
@@ -22,7 +22,7 @@ export function RootLayout() {
 						TanStack Router + Query Playground
 					</h1>
 					<p className="text-sm text-muted-foreground">
-						演示路由切换与 Query 缓存刷新效果（仅接入 Router + Query）。
+						演示路由切换与账号资料设置交互（Router + Query）。
 					</p>
 				</div>
 

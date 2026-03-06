@@ -1,10 +1,13 @@
 import { Hono } from "hono";
 import type { AppContext } from "../../types";
-import { createUserHandlers, listUsersHandlers } from "./users.controller";
+import {
+	getCurrentUserHandlers,
+	updateCurrentUserHandlers,
+} from "./users.controller";
 
 const usersRouter = new Hono<AppContext>();
 
-usersRouter.get("/", ...listUsersHandlers);
-usersRouter.post("/", ...createUserHandlers);
+usersRouter.get("/me", ...getCurrentUserHandlers);
+usersRouter.patch("/me", ...updateCurrentUserHandlers);
 
 export { usersRouter };

@@ -78,8 +78,8 @@ curl -s https://illumi-family-mvp-dev.lguangcong0712.workers.dev/api/health
 curl -s https://illumi-family-mvp.lguangcong0712.workers.dev/api/health
 ```
 - Confirm key API paths:
-  - `GET /api/users`
-  - `POST /api/users` (JSON content-type)
+  - `GET /api/users/me`
+  - `PATCH /api/users/me` (JSON content-type, e.g. `{ "name": "New Name" }`)
 
 ## 7) Operational Response Basics
 1. Identify affected environment (`dev`/`prod`) first.

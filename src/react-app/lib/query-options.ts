@@ -1,8 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
-import { getHealth, listUsers } from "./api";
+import { getCurrentUser, getHealth } from "./api";
 
 export const healthQueryKey = ["health"] as const;
-export const usersQueryKey = ["users"] as const;
+export const currentUserQueryKey = ["users", "me"] as const;
 
 export const healthQueryOptions = () =>
 	queryOptions({
@@ -11,9 +11,9 @@ export const healthQueryOptions = () =>
 		staleTime: 30_000,
 	});
 
-export const usersQueryOptions = () =>
+export const currentUserQueryOptions = () =>
 	queryOptions({
-		queryKey: usersQueryKey,
-		queryFn: listUsers,
+		queryKey: currentUserQueryKey,
+		queryFn: getCurrentUser,
 		staleTime: 10_000,
 	});

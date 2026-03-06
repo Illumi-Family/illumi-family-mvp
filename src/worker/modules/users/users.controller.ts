@@ -5,7 +5,7 @@ import { factory } from "../../shared/http/factory";
 import { jsonSuccess } from "../../shared/http/response";
 import type { AppBindings } from "../../types";
 import { UsersRepository } from "./users.repository";
-import { createUserBodySchema } from "./users.schema";
+import { updateCurrentUserBodySchema } from "./users.schema";
 import { UsersService } from "./users.service";
 
 const buildUsersService = (env: AppBindings) => {
@@ -27,18 +27,26 @@ const requireJsonBody = factory.createMiddleware(async (c, next) => {
 	await next();
 });
 
-export const listUsersHandlers = factory.createHandlers(async (c) => {
+export const getCurrentUserHandlers = factory.createHandlers(async (c) => {
 	const service = buildUsersService(c.env);
-	const users = await service.listUsers();
-	return jsonSuccess(c, { users });
+	const user = await service.getCurrentUser();
+	if (!user) {
+		throw new AppError(
+			"CURRENT_USER_NOT_FOUND",
+			"Current user is not available",
+			404,
+		);
+	}
+
+	return jsonSuccess(c, { user });
 });
 
-export const createUserHandlers = factory.createHandlers(
+export const updateCurrentUserHandlers = factory.createHandlers(
 	requireJsonBody,
-	zValidator("json", createUserBodySchema),
+	zValidator("json", updateCurrentUserBodySchema),
 	async (c) => {
 		const service = buildUsersService(c.env);
-		const created = await service.createUser(c.req.valid("json"));
-		return jsonSuccess(c, { user: created }, 201);
+		const user = await service.updateCurrentUser(c.req.valid("json"));
+		return jsonSuccess(c, { user });
 	},
 );

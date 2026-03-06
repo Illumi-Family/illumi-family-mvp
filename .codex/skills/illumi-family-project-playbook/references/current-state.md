@@ -1,6 +1,6 @@
 # Illumi Family MVP Current State
 
-Last verified: 2026-03-05
+Last verified: 2026-03-06
 
 ## 1) Canonical Fact Sources
 - `wrangler.json`
@@ -51,8 +51,8 @@ Last verified: 2026-03-05
 ## 6) Current API Endpoints
 - `GET /api/`
 - `GET /api/health`
-- `GET /api/users`
-- `POST /api/users`
+- `GET /api/users/me`
+- `PATCH /api/users/me`
 
 ## 7) Data Model (Current)
 - Table: `users`
