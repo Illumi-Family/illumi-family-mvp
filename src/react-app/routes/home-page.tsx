@@ -102,9 +102,9 @@ export function HomePage() {
 					caseHighlight={homeContent.colearning.caseHighlight}
 				/>
 				<AboutSection content={aboutContent} />
-			</main>
+				</main>
 
-			<FooterSection content={footerContent} />
+				<FooterSection content={footerContent} />
 		</div>
 	);
 }

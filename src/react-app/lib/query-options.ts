@@ -1,8 +1,13 @@
 import { queryOptions } from "@tanstack/react-query";
-import { getHealth, getHomeContent, listAdminHomeSections, listUsers } from "./api";
+import {
+	getCurrentUser,
+	getHealth,
+	getHomeContent,
+	listAdminHomeSections,
+} from "./api";
 
 export const healthQueryKey = ["health"] as const;
-export const usersQueryKey = ["users"] as const;
+export const currentUserQueryKey = ["users", "me"] as const;
 export const homeContentQueryKey = ["home-content"] as const;
 export const adminHomeSectionsQueryKey = ["admin-home-sections"] as const;
 
@@ -13,10 +18,10 @@ export const healthQueryOptions = () =>
 		staleTime: 30_000,
 	});
 
-export const usersQueryOptions = () =>
+export const currentUserQueryOptions = () =>
 	queryOptions({
-		queryKey: usersQueryKey,
-		queryFn: listUsers,
+		queryKey: currentUserQueryKey,
+		queryFn: getCurrentUser,
 		staleTime: 10_000,
 	});
 

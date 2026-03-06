@@ -1,14 +1,16 @@
-import type { CreateUserBody } from "./users.schema";
+import type { UpdateCurrentUserBody } from "./users.schema";
 import { UsersRepository } from "./users.repository";
 
 export class UsersService {
 	constructor(private readonly repository: UsersRepository) {}
 
-	listUsers() {
-		return this.repository.listUsers();
+	async getCurrentUser() {
+		const user = await this.repository.getCurrentUser();
+		if (!user) return null;
+		return user;
 	}
 
-	createUser(input: CreateUserBody) {
-		return this.repository.createUser(input);
+	updateCurrentUser(input: UpdateCurrentUserBody) {
+		return this.repository.updateCurrentUser(input);
 	}
 }

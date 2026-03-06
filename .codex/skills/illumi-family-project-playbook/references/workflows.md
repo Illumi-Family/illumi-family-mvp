@@ -92,8 +92,8 @@ curl -s https://illumi-family-mvp.lguangcong0712.workers.dev/api/health
 ```
 - Confirm key API paths:
   - `GET /api/auth/ok`
-  - `GET /api/users`
-  - `POST /api/users` (JSON content-type)
+  - `GET /api/users/me`
+  - `PATCH /api/users/me` (JSON content-type, e.g. `{ "name": "New Name" }`)
   - `GET /api/content/home`
   - `GET /api/admin/me` (unauthenticated should return `401`)
   - `POST /api/admin/assets/upload` (unauthenticated should return `401`)

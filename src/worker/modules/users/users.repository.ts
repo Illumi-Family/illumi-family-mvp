@@ -1,37 +1,45 @@
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import type { AppDatabase } from "../../shared/db/client";
 import { users } from "../../shared/db/schema";
 import { AppError } from "../../shared/http/errors";
-import type { CreateUserBody } from "./users.schema";
+import type { UpdateCurrentUserBody } from "./users.schema";
 
 export class UsersRepository {
 	constructor(private readonly db: AppDatabase) {}
 
-	listUsers() {
-		return this.db.select().from(users).orderBy(users.createdAt);
-	}
-
-	async createUser(input: CreateUserBody) {
-		const existing = await this.db
-			.select({ id: users.id })
+	async getCurrentUser() {
+		const records = await this.db
+			.select()
 			.from(users)
-			.where(eq(users.email, input.email))
+			.orderBy(asc(users.createdAt))
 			.limit(1);
 
-		if (existing.length > 0) {
-			throw new AppError("USER_EMAIL_TAKEN", "Email already exists", 409);
+		return records[0] ?? null;
+	}
+
+	async updateCurrentUser(input: UpdateCurrentUserBody) {
+		const currentUser = await this.getCurrentUser();
+		if (!currentUser) {
+			throw new AppError(
+				"CURRENT_USER_NOT_FOUND",
+				"Current user is not available",
+				404,
+			);
 		}
 
 		const now = new Date();
-		const record = {
-			id: crypto.randomUUID(),
-			email: input.email,
+		await this.db
+			.update(users)
+			.set({
+				name: input.name,
+				updatedAt: now,
+			})
+			.where(eq(users.id, currentUser.id));
+
+		return {
+			...currentUser,
 			name: input.name,
-			createdAt: now,
 			updatedAt: now,
 		};
-
-		await this.db.insert(users).values(record);
-		return record;
 	}
 }

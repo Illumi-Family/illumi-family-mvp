@@ -60,8 +60,8 @@ Last verified: 2026-03-06
 - `GET /api/health`
 - `/api/auth/*` (Better Auth endpoints, includes email/password + Google)
 - `POST /api/auth/identities/rollback`
-- `GET /api/users`
-- `POST /api/users`
+- `GET /api/users/me`
+- `PATCH /api/users/me`
 - `GET /api/content/home`
 - `GET /api/content/assets/:assetId`
 - `GET /api/admin/me` (whitelist + verified email required)

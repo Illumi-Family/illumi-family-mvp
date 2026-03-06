@@ -1,8 +1,7 @@
 import { z } from "zod";
 
-export const createUserBodySchema = z.object({
-	email: z.string().email(),
+export const updateCurrentUserBodySchema = z.object({
 	name: z.string().min(1).max(120),
 });
 
-export type CreateUserBody = z.infer<typeof createUserBodySchema>;
+export type UpdateCurrentUserBody = z.infer<typeof updateCurrentUserBodySchema>;

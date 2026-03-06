@@ -32,8 +32,8 @@ describe("worker api", () => {
 		expect(body.error.code).toBe("ROUTE_NOT_FOUND");
 	});
 
-	it("requires auth session for /api/users", async () => {
-		const response = await app.request("/api/users", {}, testEnv as never);
+	it("requires auth session for /api/users/me", async () => {
+		const response = await app.request("/api/users/me", {}, testEnv as never);
 		expect(response.status).toBe(401);
 		const body = (await response.json()) as {
 			success: boolean;

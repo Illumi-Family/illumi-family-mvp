@@ -27,7 +27,7 @@ export function RootLayout() {
 							</Link>
 							<Link to="/users">
 								<Button variant="ghost" size="sm">
-									Users
+									Profile
 								</Button>
 							</Link>
 							<Link to="/auth">
