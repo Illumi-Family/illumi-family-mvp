@@ -1,0 +1,10 @@
+# Local Cloudflare Worker vars for `pnpm dev` (`CLOUDFLARE_ENV=dev`).
+# Copy this file to `.dev.vars.dev` and fill real secrets locally.
+BETTER_AUTH_SECRET=replace-with-your-dev-secret
+BETTER_AUTH_BASE_URL=http://localhost:5173
+
+# Optional for full auth flow:
+# GOOGLE_CLIENT_ID=
+# GOOGLE_CLIENT_SECRET=
+# RESEND_API_KEY=
+# RESEND_FROM_EMAIL=Illumi Family <no-reply@illumi-family.com>

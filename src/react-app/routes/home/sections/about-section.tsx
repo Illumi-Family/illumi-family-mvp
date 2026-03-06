@@ -1,5 +1,6 @@
 import type { AboutContent } from "@/routes/home-page.data";
 import { Badge } from "@/components/ui/badge";
+import { MarkdownRenderer } from "@/components/common/markdown-renderer";
 import { PaperCard } from "@/routes/home/components/paper-card";
 import { SectionHeading } from "@/routes/home/components/section-heading";
 
@@ -26,9 +27,11 @@ export function AboutSection({ content }: AboutSectionProps) {
 					<div className="space-y-2 rounded-2xl border border-[color:rgba(166,124,82,0.2)] bg-[color:rgba(255,252,247,0.78)] p-4">
 						<p className="text-sm font-medium text-foreground">我相信：</p>
 						{content.beliefs.map((belief) => (
-							<p key={belief} className="text-sm leading-relaxed text-muted-foreground md:text-base">
-								{belief}
-							</p>
+							<MarkdownRenderer
+								key={belief}
+								content={belief}
+								className="text-sm leading-relaxed text-muted-foreground md:text-base"
+							/>
 						))}
 					</div>
 					<div className="flex flex-wrap gap-2">
@@ -41,9 +44,10 @@ export function AboutSection({ content }: AboutSectionProps) {
 							</Badge>
 						))}
 					</div>
-					<p className="text-sm leading-relaxed text-muted-foreground md:text-base">
-						{content.closing}
-					</p>
+					<MarkdownRenderer
+						content={content.closing}
+						className="text-sm leading-relaxed text-muted-foreground md:text-base"
+					/>
 				</PaperCard>
 
 				<PaperCard motionDelayMs={180} className="flex flex-col gap-4 p-3 md:p-4">

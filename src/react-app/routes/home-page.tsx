@@ -1,18 +1,13 @@
+import { useQuery } from "@tanstack/react-query";
 import {
 	aboutContent,
-	colearningBenefits,
-	colearningCase,
-	colearningIntro,
-	colearningMethods,
-	dailyNotes,
+	defaultHomeContent,
 	footerContent,
 	heroContent,
-	philosophyIntro,
-	philosophyItems,
 	siteMeta,
 	siteNavigation,
-	stories,
 } from "@/routes/home-page.data";
+import { homeContentQueryOptions } from "@/lib/query-options";
 import { AboutSection } from "@/routes/home/sections/about-section";
 import { ColearningSection } from "@/routes/home/sections/colearning-section";
 import { DailyNotesSection } from "@/routes/home/sections/daily-notes-section";
@@ -22,6 +17,10 @@ import { PhilosophySection } from "@/routes/home/sections/philosophy-section";
 import { StoriesSection } from "@/routes/home/sections/stories-section";
 
 export function HomePage() {
+	const homeContentQuery = useQuery(homeContentQueryOptions());
+	const homeContent = homeContentQuery.data ?? defaultHomeContent;
+	const showFallbackHint = homeContentQuery.isError;
+
 	return (
 		<div className="relative isolate min-h-screen overflow-x-clip">
 			<div
@@ -84,15 +83,23 @@ export function HomePage() {
 			</header>
 
 			<main id="main-content" className="mx-auto w-full max-w-7xl space-y-20 px-4 pb-20 pt-4 md:px-8 md:pt-6">
+				{showFallbackHint ? (
+					<div className="rounded-2xl border border-[color:rgba(166,124,82,0.22)] bg-[color:rgba(255,252,247,0.82)] px-4 py-3 text-sm text-muted-foreground">
+						内容服务暂时不可用，当前展示本地兜底内容。
+					</div>
+				) : null}
 				<HeroSection content={heroContent} />
-				<PhilosophySection intro={philosophyIntro} items={philosophyItems} />
-				<DailyNotesSection items={dailyNotes} />
-				<StoriesSection items={stories} />
+				<PhilosophySection
+					intro={homeContent.philosophy.intro}
+					items={homeContent.philosophy.items}
+				/>
+				<DailyNotesSection items={homeContent.dailyNotes.items} />
+				<StoriesSection items={homeContent.stories.items} />
 				<ColearningSection
-					intro={colearningIntro}
-					methods={colearningMethods}
-					benefits={colearningBenefits}
-					caseHighlight={colearningCase}
+					intro={homeContent.colearning.intro}
+					methods={homeContent.colearning.methods}
+					benefits={homeContent.colearning.benefits}
+					caseHighlight={homeContent.colearning.caseHighlight}
 				/>
 				<AboutSection content={aboutContent} />
 			</main>

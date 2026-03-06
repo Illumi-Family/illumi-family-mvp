@@ -1,4 +1,5 @@
 import type { CtaLink, ColearningMethodItem } from "@/routes/home-page.data";
+import { MarkdownRenderer } from "@/components/common/markdown-renderer";
 import { PaperCard } from "@/routes/home/components/paper-card";
 import { SectionHeading } from "@/routes/home/components/section-heading";
 
@@ -36,9 +37,10 @@ export function ColearningSection({
 								className="rounded-2xl border border-[color:rgba(166,124,82,0.2)] bg-[color:rgba(255,252,247,0.75)] px-4 py-3"
 							>
 								<p className="font-medium text-foreground">{item.title}</p>
-								<p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-									{item.description}
-								</p>
+								<MarkdownRenderer
+									content={item.description}
+									className="mt-1 text-sm leading-relaxed text-muted-foreground"
+								/>
 							</div>
 						))}
 					</div>
@@ -58,9 +60,10 @@ export function ColearningSection({
 					</ul>
 					<div className="rounded-2xl border border-[color:rgba(166,124,82,0.2)] bg-card p-4">
 						<p className="font-medium text-foreground">{caseHighlight.title}</p>
-						<p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-							{caseHighlight.summary}
-						</p>
+						<MarkdownRenderer
+							content={caseHighlight.summary}
+							className="mt-2 text-sm leading-relaxed text-muted-foreground"
+						/>
 						<a
 							href={caseHighlight.cta.href}
 							className="mt-4 inline-flex h-9 items-center justify-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors duration-200 hover:bg-[color:rgba(166,124,82,0.92)]"

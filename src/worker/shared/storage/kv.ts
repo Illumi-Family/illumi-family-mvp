@@ -19,3 +19,7 @@ export const writeCacheJson = async (
 	await kv.put(key, JSON.stringify(value),
 		ttlSeconds ? { expirationTtl: ttlSeconds } : undefined);
 };
+
+export const deleteCacheKey = async (kv: KVNamespace, key: string) => {
+	await kv.delete(key);
+};

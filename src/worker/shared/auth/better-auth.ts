@@ -14,9 +14,11 @@ const parseHostname = (url: string) => {
 	}
 };
 
-const getAllowedAuthHosts = (env: AppBindings) => {
+export const buildAllowedAuthHosts = (env: AppBindings) => {
 	const hosts = new Set<string>([
 		"dev.illumi-family.com",
+		"admin-dev.illumi-family.com",
+		"admin.illumi-family.com",
 		"illumi-family-mvp-dev.lguangcong0712.workers.dev",
 		"illumi-family-mvp.lguangcong0712.workers.dev",
 		"localhost",
@@ -27,6 +29,23 @@ const getAllowedAuthHosts = (env: AppBindings) => {
 	if (baseUrlHost) hosts.add(baseUrlHost);
 
 	return Array.from(hosts);
+};
+
+export const buildTrustedOrigins = (
+	env: AppBindings,
+	request?: Request,
+): string[] => {
+	const origin = request?.headers.get("origin");
+	return [
+		env.BETTER_AUTH_BASE_URL,
+		"https://dev.illumi-family.com",
+		"https://admin-dev.illumi-family.com",
+		"https://admin.illumi-family.com",
+		"https://illumi-family-mvp-dev.lguangcong0712.workers.dev",
+		"http://localhost:5173",
+		"http://127.0.0.1:5173",
+		origin,
+	].filter((value): value is string => Boolean(value));
 };
 
 const optionalGoogleProvider = (env: AppBindings) => {
@@ -42,18 +61,34 @@ const optionalGoogleProvider = (env: AppBindings) => {
 	};
 };
 
+const buildMissingBetterAuthSecretMessage = (env: AppBindings) => {
+	if (env.APP_ENV === "dev") {
+		return "Missing BETTER_AUTH_SECRET. For local dev, set BETTER_AUTH_SECRET in .dev.vars.dev (or .dev.vars), then restart `pnpm dev`. See docs/better-auth-secret-runbook.md.";
+	}
+
+	return "Missing BETTER_AUTH_SECRET. Configure it with `pnpm exec wrangler secret put BETTER_AUTH_SECRET --env <target>` before serving auth routes.";
+};
+
+const buildMissingBetterAuthBaseUrlMessage = (env: AppBindings) => {
+	if (env.APP_ENV === "dev") {
+		return "Missing BETTER_AUTH_BASE_URL. For local dev, set BETTER_AUTH_BASE_URL=http://localhost:5173 in .dev.vars.dev (or .dev.vars).";
+	}
+
+	return "Missing BETTER_AUTH_BASE_URL. Configure this variable in wrangler vars for the target environment.";
+};
+
 export const createAuth = (env: AppBindings) => {
 	if (!env.BETTER_AUTH_SECRET) {
-		throw new Error("Missing BETTER_AUTH_SECRET");
+		throw new Error(buildMissingBetterAuthSecretMessage(env));
 	}
 	if (!env.BETTER_AUTH_BASE_URL) {
-		throw new Error("Missing BETTER_AUTH_BASE_URL");
+		throw new Error(buildMissingBetterAuthBaseUrlMessage(env));
 	}
 
 	const db = getDb(env);
 	const identitySync = new IdentitySyncService(db);
 	const googleProvider = optionalGoogleProvider(env);
-	const allowedAuthHosts = getAllowedAuthHosts(env);
+	const allowedAuthHosts = buildAllowedAuthHosts(env);
 
 	return betterAuth({
 		appName: "Illumi Family",
@@ -148,17 +183,7 @@ export const createAuth = (env: AppBindings) => {
 				updatedAt: "updated_at",
 			},
 		},
-		trustedOrigins: (request) => {
-			const origin = request?.headers.get("origin");
-			return [
-				env.BETTER_AUTH_BASE_URL,
-				"https://dev.illumi-family.com",
-				"https://illumi-family-mvp-dev.lguangcong0712.workers.dev",
-				"http://localhost:5173",
-				"http://127.0.0.1:5173",
-				origin,
-			].filter((value): value is string => Boolean(value));
-		},
+		trustedOrigins: (request) => buildTrustedOrigins(env, request),
 		advanced: {
 			useSecureCookies: env.APP_ENV === "prod",
 		},

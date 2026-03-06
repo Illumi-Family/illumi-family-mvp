@@ -18,7 +18,6 @@ describe("official website home data", () => {
 			"#stories",
 			"#colearning",
 			"#about",
-			"#contact",
 		]);
 	});
 

@@ -6,6 +6,8 @@ import {
 	redirect,
 } from "@tanstack/react-router";
 import { authClient } from "@/lib/auth-client";
+import { getAdminMe } from "@/lib/api";
+import { AdminPage } from "@/routes/admin-page";
 import { AuthPage } from "@/routes/auth-page";
 import { HomePage } from "@/routes/home-page";
 import { RootLayout } from "@/routes/root-layout";
@@ -48,7 +50,29 @@ const authRoute = createRoute({
 	component: AuthPage,
 });
 
-const routeTree = rootRoute.addChildren([homeRoute, usersRoute, authRoute]);
+const adminRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/admin",
+	beforeLoad: async () => {
+		const session = await authClient.getSession();
+		if (!session.data) {
+			throw redirect({ to: "/auth" });
+		}
+		try {
+			await getAdminMe();
+		} catch {
+			throw redirect({ to: "/" });
+		}
+	},
+	component: AdminPage,
+});
+
+const routeTree = rootRoute.addChildren([
+	homeRoute,
+	usersRoute,
+	authRoute,
+	adminRoute,
+]);
 
 export const router = createRouter({
 	routeTree,

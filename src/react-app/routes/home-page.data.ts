@@ -199,6 +199,25 @@ export const colearningCase = {
 	cta: { label: "查看共学案例", href: "#contact" },
 };
 
+export const defaultHomeContent = {
+	philosophy: {
+		intro: philosophyIntro,
+		items: philosophyItems,
+	},
+	dailyNotes: {
+		items: dailyNotes,
+	},
+	stories: {
+		items: stories,
+	},
+	colearning: {
+		intro: colearningIntro,
+		methods: colearningMethods,
+		benefits: colearningBenefits,
+		caseHighlight: colearningCase,
+	},
+};
+
 export const aboutContent: AboutContent = {
 	name: "小罗老师",
 	roles: ["三娃妈妈", "家庭教育践行者", "「童蒙家塾」家庭 IP 创始人"],

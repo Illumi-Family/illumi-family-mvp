@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createUser, getHealth, listUsers } from "./api";
+import {
+	createUser,
+	getHealth,
+	getHomeContent,
+	listUsers,
+	uploadAdminAsset,
+} from "./api";
 
 describe("react api client", () => {
 	const fetchMock = vi.fn<typeof fetch>();
@@ -96,5 +102,90 @@ describe("react api client", () => {
 		await expect(listUsers()).rejects.toThrow(
 			"USER_EMAIL_TAKEN: Email already exists",
 		);
+	});
+
+	it("loads home cms content from /api/content/home", async () => {
+		fetchMock.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					success: true,
+					data: {
+						philosophy: { intro: "理念", items: [] },
+						dailyNotes: { items: [] },
+						stories: { items: [] },
+						colearning: {
+							intro: "共学",
+							methods: [],
+							benefits: [],
+							caseHighlight: {
+								title: "案例",
+								summary: "摘要",
+								cta: { label: "查看", href: "#contact" },
+							},
+						},
+						updatedAt: "2026-03-06T00:00:00.000Z",
+					},
+					requestId: "req-4",
+				}),
+				{ status: 200, headers: { "content-type": "application/json" } },
+			),
+		);
+
+		const result = await getHomeContent();
+		expect(fetchMock).toHaveBeenCalledWith("/api/content/home", {
+			headers: { Accept: "application/json" },
+		});
+		expect(result.philosophy.intro).toBe("理念");
+	});
+
+	it("uploads admin asset with json payload", async () => {
+		fetchMock.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					success: true,
+					data: {
+						asset: {
+							id: "asset-1",
+							r2Key: "cms/dev/2026/03/asset-1-cover.webp",
+							fileName: "cover.webp",
+							mimeType: "image/webp",
+							sizeBytes: 5,
+							width: 800,
+							height: 600,
+							sha256: "abc",
+							uploadedByAuthUserId: "auth-1",
+							createdAt: "2026-03-06T00:00:00.000Z",
+						},
+					},
+					requestId: "req-5",
+				}),
+				{ status: 201, headers: { "content-type": "application/json" } },
+			),
+		);
+
+		const asset = await uploadAdminAsset({
+			fileName: "cover.webp",
+			contentType: "image/webp",
+			dataBase64: "aGVsbG8=",
+			width: 800,
+			height: 600,
+		});
+
+		expect(fetchMock).toHaveBeenCalledWith("/api/admin/assets/upload", {
+			method: "POST",
+			headers: {
+				Accept: "application/json",
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				fileName: "cover.webp",
+				contentType: "image/webp",
+				dataBase64: "aGVsbG8=",
+				width: 800,
+				height: 600,
+			}),
+		});
+		expect(asset.id).toBe("asset-1");
+		expect(asset.mimeType).toBe("image/webp");
 	});
 });

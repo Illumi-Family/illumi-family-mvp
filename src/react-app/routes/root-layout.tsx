@@ -35,6 +35,11 @@ export function RootLayout() {
 									Auth
 								</Button>
 							</Link>
+							<Link to="/admin">
+								<Button variant="ghost" size="sm">
+									Admin
+								</Button>
+							</Link>
 						</nav>
 						<p className="text-xs text-muted-foreground">
 							{session?.user

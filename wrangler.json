@@ -24,6 +24,10 @@
 		{
 			"pattern": "illumi-family.com",
 			"custom_domain": true
+		},
+		{
+			"pattern": "admin.illumi-family.com",
+			"custom_domain": true
 		}
 	],
 	"d1_databases": [
@@ -54,6 +58,10 @@
 			"routes": [
 				{
 					"pattern": "dev.illumi-family.com",
+					"custom_domain": true
+				},
+				{
+					"pattern": "admin-dev.illumi-family.com",
 					"custom_domain": true
 				}
 			],

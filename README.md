@@ -78,6 +78,16 @@ Install dependencies:
 pnpm install
 ```
 
+Prepare local Worker vars for auth (first run):
+
+```bash
+cp .dev.vars.example .dev.vars.dev
+```
+
+Then edit `.dev.vars.dev` and set:
+- `BETTER_AUTH_SECRET` (required)
+- `BETTER_AUTH_BASE_URL=http://localhost:5173` (recommended for local callback/origin checks)
+
 Start the development server with:
 
 ```bash

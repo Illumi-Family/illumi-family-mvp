@@ -52,10 +52,18 @@ pnpm db:generate
 ```bash
 pnpm db:migrate
 ```
-4. Validate on dev API.
-5. Apply to prod:
+4. If local dev hits missing-table errors, apply local dev migrations:
+```bash
+pnpm db:migrate:local
+```
+5. Validate on dev API.
+6. Apply to prod:
 ```bash
 pnpm db:migrate:prod
+```
+7. For CMS schema changes, verify seeded home sections on dev:
+```bash
+pnpm exec wrangler d1 execute DB --env dev --remote --command "SELECT entry_key,status,published_revision_id FROM cms_entries ORDER BY entry_key;"
 ```
 
 ## 5) Deployment Workflow
@@ -86,6 +94,10 @@ curl -s https://illumi-family-mvp.lguangcong0712.workers.dev/api/health
   - `GET /api/auth/ok`
   - `GET /api/users`
   - `POST /api/users` (JSON content-type)
+  - `GET /api/content/home`
+  - `GET /api/admin/me` (unauthenticated should return `401`)
+  - `POST /api/admin/assets/upload` (unauthenticated should return `401`)
+  - `HEAD /admin` on admin domains returns `200` HTML
 
 ## 6.1) Auth Secrets Setup (Before Auth Deploy)
 Set secrets per environment with Wrangler (do not commit secrets):

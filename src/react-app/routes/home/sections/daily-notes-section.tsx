@@ -1,5 +1,6 @@
 import type { DailyNoteItem } from "@/routes/home-page.data";
 import { Badge } from "@/components/ui/badge";
+import { MarkdownRenderer } from "@/components/common/markdown-renderer";
 import { PaperCard } from "@/routes/home/components/paper-card";
 import { SectionHeading } from "@/routes/home/components/section-heading";
 
@@ -38,9 +39,10 @@ export function DailyNotesSection({ items }: DailyNotesSectionProps) {
 							</div>
 						</div>
 						<h3 className="mt-4 font-brand text-2xl text-foreground">{item.title}</h3>
-						<p className="mt-3 text-sm leading-relaxed text-muted-foreground md:text-base">
-							{item.summary}
-						</p>
+						<MarkdownRenderer
+							content={item.summary}
+							className="mt-3 text-sm leading-relaxed text-muted-foreground md:text-base"
+						/>
 					</PaperCard>
 				))}
 			</div>

@@ -60,6 +60,7 @@
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "wrangler d1 migrations apply DB --env dev --remote",
 		"db:migrate:dev": "wrangler d1 migrations apply DB --env dev --remote",
+		"db:migrate:local": "wrangler d1 migrations apply DB --env dev --local",
 		"db:migrate:prod": "wrangler d1 migrations apply DB --remote",
 		"deploy": "wrangler deploy --config wrangler.json --env dev",
 		"deploy:dev": "wrangler deploy --config wrangler.json --env dev",

@@ -16,6 +16,11 @@ export type AppBindings = Env & {
 export type ContextVariables = {
 	requestId: string;
 	authUserId?: string;
+	homeSectionEntryKey?:
+		| "home.philosophy"
+		| "home.daily_notes"
+		| "home.stories"
+		| "home.colearning";
 };
 
 export type AppContext = {

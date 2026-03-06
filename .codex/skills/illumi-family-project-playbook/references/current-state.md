@@ -1,6 +1,6 @@
 # Illumi Family MVP Current State
 
-Last verified: 2026-03-05
+Last verified: 2026-03-06
 
 ## 1) Canonical Fact Sources
 - `wrangler.json`
@@ -42,16 +42,18 @@ Last verified: 2026-03-05
   - KV: `ILLUMI_CACHE`
   - R2: `illumi-family-files`
   - Primary URL: `https://illumi-family.com`
+  - Admin URL: `https://admin.illumi-family.com`
   - workers.dev fallback URL: `https://illumi-family-mvp.lguangcong0712.workers.dev`
-  - Custom domain route in wrangler: `illumi-family.com`
+  - Custom domain routes in wrangler: `illumi-family.com`, `admin.illumi-family.com`
 - dev
   - Worker: `illumi-family-mvp-dev`
   - D1: `illumi-family-db-dev`
   - KV: `ILLUMI_CACHE_DEV`
   - R2: `illumi-family-files-dev`
   - Primary URL: `https://dev.illumi-family.com`
+  - Admin URL: `https://admin-dev.illumi-family.com`
   - workers.dev fallback URL: `https://illumi-family-mvp-dev.lguangcong0712.workers.dev`
-  - Custom domain route in wrangler: `dev.illumi-family.com`
+  - Custom domain routes in wrangler: `dev.illumi-family.com`, `admin-dev.illumi-family.com`
 
 ## 6) Current API Endpoints
 - `GET /api/`
@@ -60,6 +62,13 @@ Last verified: 2026-03-05
 - `POST /api/auth/identities/rollback`
 - `GET /api/users`
 - `POST /api/users`
+- `GET /api/content/home`
+- `GET /api/content/assets/:assetId`
+- `GET /api/admin/me` (whitelist + verified email required)
+- `GET /api/admin/content/home` (whitelist + verified email required)
+- `PUT /api/admin/content/home/:entryKey` (whitelist + verified email required)
+- `POST /api/admin/content/home/:entryKey/publish` (whitelist + verified email required)
+- `POST /api/admin/assets/upload` (whitelist + verified email required)
 
 ## 7) Data Model (Current)
 - Legacy table:
@@ -73,12 +82,19 @@ Last verified: 2026-03-05
   - `app_users`
   - `user_identities`
   - `user_security_events`
+- CMS tables:
+  - `cms_entries`
+  - `cms_revisions`
+  - `cms_assets`
+  - `cms_entry_assets`
 
 ## 8) Known Execution Notes
 - In sandbox, Wrangler may print `EPERM` log-path warnings for `~/Library/Preferences/.wrangler`; command exit code is the true success signal.
 - For dry-run checks in multi-env config, always pass explicit `--env`.
 - Asset routing strategy uses `assets.run_worker_first = ["/api/*"]`, so SPA routes (`/auth`, `/users`, etc.) are handled by the asset layer, while API paths are handled by Worker.
 - Email/password auth path uses a custom `PBKDF2(SHA-256)` hasher (`src/worker/shared/auth/password-hasher.ts`) to stay within Worker CPU limits; re-benchmark sign-up/sign-in if hash parameters change.
+- Admin access is enforced by hard-coded whitelist + verified-email check (`src/worker/shared/auth/admin-access.ts` + `requireAdminSession`).
+- Public home content is served by `GET /api/content/home` backed by D1 published revisions with KV cache key `cms:home:published:v1`.
 
 ## 9) Template Tooling (Local Scaffold)
 - Commands:

@@ -1,3 +1,4 @@
+import { MarkdownRenderer } from "@/components/common/markdown-renderer";
 import type { PhilosophyItem } from "@/routes/home-page.data";
 import { PaperCard } from "@/routes/home/components/paper-card";
 import { SectionHeading } from "@/routes/home/components/section-heading";
@@ -19,9 +20,10 @@ export function PhilosophySection({ intro, items }: PhilosophySectionProps) {
 				{items.map((item, index) => (
 					<PaperCard key={item.title} tone="soft" motionDelayMs={100 + index * 70}>
 						<h3 className="font-brand text-2xl text-foreground">{item.title}</h3>
-						<p className="mt-3 text-sm leading-relaxed text-muted-foreground md:text-base">
-							{item.description}
-						</p>
+						<MarkdownRenderer
+							content={item.description}
+							className="mt-3 text-sm leading-relaxed text-muted-foreground md:text-base"
+						/>
 					</PaperCard>
 				))}
 			</div>

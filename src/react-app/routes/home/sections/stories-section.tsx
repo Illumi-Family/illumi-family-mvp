@@ -1,4 +1,5 @@
 import type { StoryItem } from "@/routes/home-page.data";
+import { MarkdownRenderer } from "@/components/common/markdown-renderer";
 import { PaperCard } from "@/routes/home/components/paper-card";
 import { SectionHeading } from "@/routes/home/components/section-heading";
 import { StoryStatusBadge } from "@/routes/home/components/story-status-badge";
@@ -29,9 +30,10 @@ export function StoriesSection({ items }: StoriesSectionProps) {
 								<StoryStatusBadge status={item.status} />
 							</div>
 							<h3 className="mt-4 font-brand text-2xl leading-snug text-foreground">{item.title}</h3>
-							<p className="mt-3 text-sm leading-relaxed text-muted-foreground md:text-base">
-								{item.summary}
-							</p>
+							<MarkdownRenderer
+								content={item.summary}
+								className="mt-3 text-sm leading-relaxed text-muted-foreground md:text-base"
+							/>
 							<div className="mt-4 flex items-center justify-between gap-3 border-t border-[color:rgba(166,124,82,0.18)] pt-4 text-xs text-muted-foreground">
 								<span>时长/进度：{item.duration}</span>
 								{isPublished && item.link ? (

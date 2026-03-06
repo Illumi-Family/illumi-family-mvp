@@ -6,7 +6,6 @@ import {
 	CheckCircle2,
 	LoaderCircle,
 	Mail,
-	ShieldCheck,
 	UserRound,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
