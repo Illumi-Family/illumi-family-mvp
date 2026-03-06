@@ -193,39 +193,7 @@ export function AuthPage() {
 		<div className="relative isolate overflow-hidden bg-[radial-gradient(circle_at_10%_15%,rgba(219,234,254,0.8),rgba(248,250,252,1)_45%,rgba(241,245,249,1)_100%)]">
 			<div className="pointer-events-none absolute -top-24 left-1/2 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-blue-200/45 blur-3xl" />
 			<div className="pointer-events-none absolute -bottom-24 -left-16 -z-10 h-72 w-72 rounded-full bg-slate-200/60 blur-3xl" />
-			<div className="mx-auto grid min-h-[calc(100vh-57px)] w-full max-w-6xl items-center gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:py-14">
-				<section className="motion-enter rounded-3xl border border-slate-200/75 bg-white/72 p-6 shadow-[0_28px_120px_-76px_rgba(15,23,42,0.8)] backdrop-blur-xl sm:p-8">
-					<div className="inline-flex items-center gap-2 rounded-full border border-slate-300/80 bg-white/75 px-3 py-1 text-xs font-medium tracking-wide text-slate-700">
-						<ShieldCheck className="h-3.5 w-3.5 text-blue-600" />
-						Security-first Access
-					</div>
-					<h1 className="mt-6 text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-						统一登录体验，安全进入 Illumi Family
-					</h1>
-					<p className="mt-4 text-sm leading-relaxed text-slate-600 sm:text-base">
-						参考现代身份系统的设计节奏，保留清晰引导、可信反馈和低认知负担。登录、注册、验证都在一个流程中完成。
-					</p>
-					<div className="mt-7 grid gap-4 sm:grid-cols-2">
-						<div className="rounded-2xl border border-slate-200/75 bg-white/80 p-4">
-							<p className="text-sm font-semibold text-slate-900">即时状态反馈</p>
-							<p className="mt-1.5 text-sm text-slate-600">
-								提交、错误、成功状态可视且可读，减少误操作。
-							</p>
-						</div>
-						<div className="rounded-2xl border border-slate-200/75 bg-white/80 p-4">
-							<p className="text-sm font-semibold text-slate-900">跨设备一致</p>
-							<p className="mt-1.5 text-sm text-slate-600">
-								桌面双栏，移动端单栏，不牺牲可用性与层次感。
-							</p>
-						</div>
-					</div>
-					{sessionData?.user?.email && (
-						<div className="mt-7 rounded-2xl border border-blue-200/80 bg-blue-50/80 p-4 text-sm text-blue-900">
-							当前登录账号：{sessionData.user.email}
-						</div>
-					)}
-				</section>
-
+			<div className="mx-auto flex items-center justify-center min-h-[calc(100vh-57px)] w-full  max-w-6xl px-4 py-8 sm:px-6 lg:gap-10 lg:py-14">
 				<section className="motion-enter [animation-delay:120ms]">
 					<Card className="overflow-hidden rounded-3xl border-slate-200/80 bg-white/87 shadow-[0_40px_120px_-72px_rgba(15,23,42,0.85)] backdrop-blur-xl">
 						<CardHeader className="space-y-5 p-6 sm:p-8">
