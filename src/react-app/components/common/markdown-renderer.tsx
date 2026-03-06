@@ -8,7 +8,43 @@ type MarkdownRendererProps = {
 };
 
 const IMAGE_ONLY_REGEX = /^!\[([^\]]*)\]\(([^)\s]+)\)$/;
-const INLINE_REGEX = /!\[([^\]]*)\]\(([^)\s]+)\)|\[([^\]]+)\]\(([^)\s]+)\)|\*\*([^*]+)\*\*/g;
+const INLINE_REGEX =
+	/!\[([^\]]*)\]\(([^)\s]+)\)|\[([^\]]+)\]\(([^)\s]+)\)|\*\*([^*]+)\*\*/g;
+
+const isSafeRelativeUrl = (value: string) =>
+	value.startsWith("/") ||
+	value.startsWith("./") ||
+	value.startsWith("../") ||
+	value.startsWith("#");
+
+const isSafeHttpUrl = (value: string) => {
+	try {
+		const parsed = new URL(value);
+		return parsed.protocol === "https:" || parsed.protocol === "http:";
+	} catch {
+		return false;
+	}
+};
+
+const sanitizeLinkUrl = (value: string) => {
+	const normalized = value.trim();
+	if (!normalized) return null;
+	if (isSafeRelativeUrl(normalized)) return normalized;
+	if (isSafeHttpUrl(normalized)) return normalized;
+	if (normalized.startsWith("mailto:")) return normalized;
+	return null;
+};
+
+const sanitizeImageUrl = (value: string) => {
+	const normalized = value.trim();
+	if (!normalized) return null;
+	if (isSafeHttpUrl(normalized)) return normalized;
+	if (normalized.startsWith("/api/content/assets/")) return normalized;
+	if (normalized.startsWith("/") || normalized.startsWith("./") || normalized.startsWith("../")) {
+		return normalized;
+	}
+	return null;
+};
 
 const renderInline = (text: string) => {
 	const nodes: ReactNode[] = [];
@@ -27,28 +63,38 @@ const renderInline = (text: string) => {
 
 		const [, imageAlt, imageSrc, linkText, linkHref, boldText] = match;
 		if (imageSrc) {
-			nodes.push(
-				<img
-					key={`img-${index}`}
-					src={imageSrc}
-					alt={imageAlt || "markdown image"}
-					loading="lazy"
-					className="my-2 max-h-80 w-auto rounded-xl border border-[color:rgba(166,124,82,0.22)] bg-[color:rgba(255,252,247,0.75)]"
-				/>,
-			);
+			const safeSrc = sanitizeImageUrl(imageSrc);
+			if (safeSrc) {
+				nodes.push(
+					<img
+						key={`img-${index}`}
+						src={safeSrc}
+						alt={imageAlt || "markdown image"}
+						loading="lazy"
+						className="my-2 max-h-80 w-auto rounded-xl border border-[color:rgba(166,124,82,0.22)] bg-[color:rgba(255,252,247,0.75)]"
+					/>,
+				);
+			} else {
+				nodes.push(<Fragment key={`img-text-${index}`}>{full}</Fragment>);
+			}
 		} else if (linkHref && linkText) {
-			const isExternal = /^https?:\/\//.test(linkHref);
-			nodes.push(
-				<a
-					key={`link-${index}`}
-					href={linkHref}
-					target={isExternal ? "_blank" : undefined}
-					rel={isExternal ? "noreferrer" : undefined}
-					className="underline decoration-[color:rgba(166,124,82,0.55)] underline-offset-2 transition-colors hover:text-foreground"
-				>
-					{linkText}
-				</a>,
-			);
+			const safeHref = sanitizeLinkUrl(linkHref);
+			if (safeHref) {
+				const isExternal = /^https?:\/\//.test(safeHref);
+				nodes.push(
+					<a
+						key={`link-${index}`}
+						href={safeHref}
+						target={isExternal ? "_blank" : undefined}
+						rel={isExternal ? "noreferrer" : undefined}
+						className="underline decoration-[color:rgba(166,124,82,0.55)] underline-offset-2 transition-colors hover:text-foreground"
+					>
+						{linkText}
+					</a>,
+				);
+			} else {
+				nodes.push(<Fragment key={`link-text-${index}`}>{full}</Fragment>);
+			}
 		} else if (boldText) {
 			nodes.push(
 				<strong key={`strong-${index}`} className="font-semibold text-foreground">
@@ -71,7 +117,24 @@ const renderInline = (text: string) => {
 	return nodes;
 };
 
-const isBulletLine = (line: string) => /^[-*]\s+/.test(line);
+const BULLET_REGEX = /^[-*]\s+/;
+const ORDERED_BULLET_REGEX = /^\d+\.\s+/;
+
+const getListLine = (line: string) => {
+	if (BULLET_REGEX.test(line)) {
+		return {
+			ordered: false,
+			value: line.replace(BULLET_REGEX, ""),
+		};
+	}
+	if (ORDERED_BULLET_REGEX.test(line)) {
+		return {
+			ordered: true,
+			value: line.replace(ORDERED_BULLET_REGEX, ""),
+		};
+	}
+	return null;
+};
 
 export function MarkdownRenderer({
 	content,
@@ -96,17 +159,25 @@ export function MarkdownRenderer({
 		const imageOnly = line.match(IMAGE_ONLY_REGEX);
 		if (imageOnly) {
 			const alt = imageOnly[1] || "markdown image";
-			const src = imageOnly[2];
-			blocks.push(
-				<figure key={`figure-${i}`} className="my-2">
-					<img
-						src={src}
-						alt={alt}
-						loading="lazy"
-						className="max-h-[24rem] w-full rounded-2xl border border-[color:rgba(166,124,82,0.24)] object-contain bg-[color:rgba(255,252,247,0.78)]"
-					/>
-				</figure>,
-			);
+			const safeSrc = sanitizeImageUrl(imageOnly[2]);
+			if (safeSrc) {
+				blocks.push(
+					<figure key={`figure-${i}`} className="my-2">
+						<img
+							src={safeSrc}
+							alt={alt}
+							loading="lazy"
+							className="max-h-[24rem] w-full rounded-2xl border border-[color:rgba(166,124,82,0.24)] object-contain bg-[color:rgba(255,252,247,0.78)]"
+						/>
+					</figure>,
+				);
+			} else {
+				blocks.push(
+					<p key={`unsafe-image-${i}`} className="text-inherit">
+						{line}
+					</p>,
+				);
+			}
 			i += 1;
 			continue;
 		}
@@ -141,21 +212,39 @@ export function MarkdownRenderer({
 			continue;
 		}
 
-		if (isBulletLine(line)) {
+		const listLine = getListLine(line);
+		if (listLine) {
 			const items: string[] = [];
-			while (i < lines.length && isBulletLine((lines[i] ?? "").trim())) {
-				items.push((lines[i] ?? "").trim().replace(/^[-*]\s+/, ""));
+			const ordered = listLine.ordered;
+			while (i < lines.length) {
+				const currentLine = (lines[i] ?? "").trim();
+				const currentItem = getListLine(currentLine);
+				if (!currentItem || currentItem.ordered !== ordered) break;
+				items.push(currentItem.value);
 				i += 1;
 			}
-			blocks.push(
-				<ul key={`ul-${i}`} className="list-disc space-y-1 pl-5">
-					{items.map((item, itemIndex) => (
-						<li key={`${itemIndex}-${item}`} className="text-inherit">
-							{renderInline(item)}
-						</li>
-					))}
-				</ul>,
-			);
+
+			if (ordered) {
+				blocks.push(
+					<ol key={`ol-${i}`} className="list-decimal space-y-1 pl-5">
+						{items.map((item, itemIndex) => (
+							<li key={`${itemIndex}-${item}`} className="text-inherit">
+								{renderInline(item)}
+							</li>
+						))}
+					</ol>,
+				);
+			} else {
+				blocks.push(
+					<ul key={`ul-${i}`} className="list-disc space-y-1 pl-5">
+						{items.map((item, itemIndex) => (
+							<li key={`${itemIndex}-${item}`} className="text-inherit">
+								{renderInline(item)}
+							</li>
+						))}
+					</ul>,
+				);
+			}
 			continue;
 		}
 
@@ -163,7 +252,7 @@ export function MarkdownRenderer({
 		i += 1;
 		while (i < lines.length) {
 			const next = (lines[i] ?? "").trim();
-			if (!next || next.startsWith("#") || isBulletLine(next)) break;
+			if (!next || next.startsWith("#") || getListLine(next)) break;
 			paragraphLines.push(next);
 			i += 1;
 		}

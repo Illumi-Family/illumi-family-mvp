@@ -50,20 +50,22 @@ const authRoute = createRoute({
 	component: AuthPage,
 });
 
+const requireAdminAccess = async () => {
+	const session = await authClient.getSession();
+	if (!session.data) {
+		throw redirect({ to: "/auth" });
+	}
+	try {
+		await getAdminMe();
+	} catch {
+		throw redirect({ to: "/" });
+	}
+};
+
 const adminRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/admin",
-	beforeLoad: async () => {
-		const session = await authClient.getSession();
-		if (!session.data) {
-			throw redirect({ to: "/auth" });
-		}
-		try {
-			await getAdminMe();
-		} catch {
-			throw redirect({ to: "/" });
-		}
-	},
+	beforeLoad: requireAdminAccess,
 	component: AdminPage,
 });
 
