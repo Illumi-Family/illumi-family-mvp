@@ -11,7 +11,7 @@ export function HeroSection({ content }: HeroSectionProps) {
 		<section
 			id="hero"
 			aria-label={content.image.alt}
-			className="relative min-h-[78svh] overflow-hidden rounded-[2rem] border border-[color:rgba(166,124,82,0.24)]"
+			className="relative overflow-hidden rounded-[2rem] border border-[color:rgba(166,124,82,0.24)]"
 		>
 			<img
 				src={content.image.src}
@@ -29,7 +29,7 @@ export function HeroSection({ content }: HeroSectionProps) {
 				className="absolute inset-0 bg-[linear-gradient(180deg,rgba(250,243,234,0.06)_0%,rgba(34,23,14,0.32)_100%)]"
 			/>
 
-			<div className="relative z-10 flex min-h-[78svh] items-end p-5 md:p-8 lg:p-12">
+			<div className="relative z-10 flex items-end p-5 md:p-8 lg:p-12">
 				<div className="max-w-3xl space-y-6 motion-enter" style={{ animationDelay: "60ms" }}>
 					<Badge className="w-fit rounded-full bg-[color:rgba(248,245,240,0.22)] px-3 py-1 text-[color:#fff8ef]">
 						新中式 · 书香家风 · 三代同堂
