@@ -1,0 +1,14 @@
+diff --git a/dist/d1-sqlite-dialect-sYHNqBte.mjs b/dist/d1-sqlite-dialect-sYHNqBte.mjs
+index b63a8b43dfc4471bc820a4dc4e3d51d15f208d93..e6cc23214eddcc12fac28b8ab1552b02753907bd 100644
+--- a/dist/d1-sqlite-dialect-sYHNqBte.mjs
++++ b/dist/d1-sqlite-dialect-sYHNqBte.mjs
+@@ -38,8 +38,7 @@ var D1SqliteConnection = class {
+ 		return {
+ 			insertId: results.meta.last_row_id === void 0 || results.meta.last_row_id === null ? void 0 : BigInt(results.meta.last_row_id),
+ 			rows: results?.results || [],
+-			numAffectedRows,
+-			numUpdatedOrDeletedRows: numAffectedRows
++			numAffectedRows
+ 		};
+ 	}
+ 	async *streamQuery() {
