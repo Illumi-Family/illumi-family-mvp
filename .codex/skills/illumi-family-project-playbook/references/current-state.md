@@ -1,6 +1,6 @@
 # Illumi Family MVP Current State
 
-Last verified: 2026-03-06
+Last verified: 2026-03-18
 
 ## 1) Canonical Fact Sources
 - `wrangler.json`
@@ -14,6 +14,7 @@ Last verified: 2026-03-06
 
 ## 2) Tech Stack Snapshot
 - Frontend: React 19 + Vite 6 + TanStack Router + TanStack Query
+- i18n: i18next + react-i18next + dayjs
 - Backend runtime: Hono 4 on Cloudflare Workers
 - Auth: Better Auth + Resend (email verification) + Google OAuth
 - Data: D1 + Drizzle ORM, KV, R2
@@ -62,12 +63,12 @@ Last verified: 2026-03-06
 - `POST /api/auth/identities/rollback`
 - `GET /api/users/me`
 - `PATCH /api/users/me`
-- `GET /api/content/home`
+- `GET /api/content/home?locale=zh-CN|en-US|alias` (invalid locale falls back to `zh-CN`)
 - `GET /api/content/assets/:assetId`
 - `GET /api/admin/me` (whitelist + verified email required)
-- `GET /api/admin/content/home` (whitelist + verified email required)
-- `PUT /api/admin/content/home/:entryKey` (whitelist + verified email required)
-- `POST /api/admin/content/home/:entryKey/publish` (whitelist + verified email required)
+- `GET /api/admin/content/home?locale=...` (whitelist + verified email required; invalid locale => 400)
+- `PUT /api/admin/content/home/:entryKey?locale=...` (whitelist + verified email required; invalid locale => 400)
+- `POST /api/admin/content/home/:entryKey/publish?locale=...` (whitelist + verified email required; invalid locale => 400)
 - `POST /api/admin/assets/upload` (whitelist + verified email required)
 
 ## 7) Data Model (Current)
@@ -87,6 +88,9 @@ Last verified: 2026-03-06
   - `cms_revisions`
   - `cms_assets`
   - `cms_entry_assets`
+- CMS locale dimension:
+  - `cms_entries.locale` exists (`zh-CN` default)
+  - uniqueness is `UNIQUE(entry_key, locale)` (not `entry_key` only)
 
 ## 8) Known Execution Notes
 - In sandbox, Wrangler may print `EPERM` log-path warnings for `~/Library/Preferences/.wrangler`; command exit code is the true success signal.
@@ -94,7 +98,11 @@ Last verified: 2026-03-06
 - Asset routing strategy uses `assets.run_worker_first = ["/api/*"]`, so SPA routes (`/auth`, `/users`, etc.) are handled by the asset layer, while API paths are handled by Worker.
 - Email/password auth path uses a custom `PBKDF2(SHA-256)` hasher (`src/worker/shared/auth/password-hasher.ts`) to stay within Worker CPU limits; re-benchmark sign-up/sign-in if hash parameters change.
 - Admin access is enforced by hard-coded whitelist + verified-email check (`src/worker/shared/auth/admin-access.ts` + `requireAdminSession`).
-- Public home content is served by `GET /api/content/home` backed by D1 published revisions with KV cache key `cms:home:published:v1`.
+- Public home content is served by `GET /api/content/home?locale=...` backed by D1 published revisions with KV cache key `cms:home:published:v1:{locale}`.
+- Home content fallback rule: missing/invalid target-locale section falls back to `zh-CN` and returns `fallbackFrom`.
+- Admin publish cache invalidation matrix:
+  - publish `zh-CN` => invalidate all supported locale home caches (currently `zh-CN`, `en-US`)
+  - publish `en-US` => invalidate `en-US` home cache only
 
 ## 9) Template Tooling (Local Scaffold)
 - Commands:

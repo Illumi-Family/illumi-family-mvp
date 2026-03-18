@@ -12,12 +12,22 @@ pnpm dev
 Default uses `dev` bindings. Use `pnpm run dev:prod` only when explicitly validating prod binding behavior locally.
 
 ## 2) Quality Gates
-Run before commit:
+Minimum before commit:
+```bash
+pnpm test
+```
+
+Recommended full local gate before opening PR:
 ```bash
 pnpm test
 pnpm run lint
 pnpm run build
 ```
+
+Gate matrix (must follow):
+- commit: `pnpm test`
+- dev deploy: `pnpm test && pnpm run check`
+- prod deploy: `pnpm test && pnpm run check:prod`
 
 ## 2.1) Commit Message Rule
 - `git commit` messages must be English-only (no Chinese).
@@ -48,20 +58,29 @@ pnpm template:new -- --name my-app --dir ../my-app --no-install
 ```bash
 pnpm db:generate
 ```
-3. Apply to dev first:
-```bash
-pnpm db:migrate
-```
-4. If local dev hits missing-table errors, apply local dev migrations:
+3. Apply to local first (avoid local runtime/schema mismatch):
 ```bash
 pnpm db:migrate:local
 ```
-5. Validate on dev API.
-6. Apply to prod:
+4. Check migration status explicitly:
+```bash
+pnpm exec wrangler d1 migrations list DB --env dev --local
+pnpm exec wrangler d1 migrations list DB --env dev --remote
+```
+5. Apply to dev remote:
+```bash
+pnpm db:migrate
+```
+6. Validate on dev API (include locale contract):
+```bash
+curl -s 'https://dev.illumi-family.com/api/content/home?locale=zh-CN'
+curl -s 'https://dev.illumi-family.com/api/content/home?locale=en-US'
+```
+7. Apply to prod:
 ```bash
 pnpm db:migrate:prod
 ```
-7. For CMS schema changes, verify seeded home sections on dev:
+8. For CMS schema changes, verify seeded home sections on dev:
 ```bash
 pnpm exec wrangler d1 execute DB --env dev --remote --command "SELECT entry_key,status,published_revision_id FROM cms_entries ORDER BY entry_key;"
 ```
@@ -69,6 +88,7 @@ pnpm exec wrangler d1 execute DB --env dev --remote --command "SELECT entry_key,
 ## 5) Deployment Workflow
 ### Deploy dev
 ```bash
+pnpm test
 pnpm run check
 pnpm run deploy
 ```
@@ -76,6 +96,7 @@ Current routing baseline: `assets.run_worker_first = ["/api/*"]` (SPA routes han
 
 ### Deploy prod
 ```bash
+pnpm test
 pnpm run check:prod
 pnpm run deploy:prod
 ```
@@ -84,8 +105,8 @@ pnpm run deploy:prod
 ## 6) Post-Deploy Smoke Checks
 - Health endpoint should match target environment:
 ```bash
-curl -s https://dev.illumi-family.com/api/health
-curl -s https://illumi-family.com/api/health
+curl -s https://dev.illumi-family.com/api/health | grep -q '"appEnv":"dev"'
+curl -s https://illumi-family.com/api/health | grep -q '"appEnv":"prod"'
 # fallback
 curl -s https://illumi-family-mvp-dev.lguangcong0712.workers.dev/api/health
 curl -s https://illumi-family-mvp.lguangcong0712.workers.dev/api/health
@@ -94,7 +115,8 @@ curl -s https://illumi-family-mvp.lguangcong0712.workers.dev/api/health
   - `GET /api/auth/ok`
   - `GET /api/users/me`
   - `PATCH /api/users/me` (JSON content-type, e.g. `{ "name": "New Name" }`)
-  - `GET /api/content/home`
+  - `GET /api/content/home?locale=zh-CN`
+  - `GET /api/content/home?locale=en-US`
   - `GET /api/admin/me` (unauthenticated should return `401`)
   - `POST /api/admin/assets/upload` (unauthenticated should return `401`)
   - `HEAD /admin` on admin domains returns `200` HTML
@@ -102,26 +124,27 @@ curl -s https://illumi-family-mvp.lguangcong0712.workers.dev/api/health
 ## 6.1) Auth Secrets Setup (Before Auth Deploy)
 Set secrets per environment with Wrangler (do not commit secrets):
 ```bash
-wrangler secret put BETTER_AUTH_SECRET --env dev
-wrangler secret put GOOGLE_CLIENT_ID --env dev
-wrangler secret put GOOGLE_CLIENT_SECRET --env dev
-wrangler secret put RESEND_API_KEY --env dev
+pnpm exec wrangler secret put BETTER_AUTH_SECRET --env dev
+pnpm exec wrangler secret put GOOGLE_CLIENT_ID --env dev
+pnpm exec wrangler secret put GOOGLE_CLIENT_SECRET --env dev
+pnpm exec wrangler secret put RESEND_API_KEY --env dev
 ```
 
 Prod:
 ```bash
-wrangler secret put BETTER_AUTH_SECRET
-wrangler secret put GOOGLE_CLIENT_ID
-wrangler secret put GOOGLE_CLIENT_SECRET
-wrangler secret put RESEND_API_KEY
+pnpm exec wrangler secret put BETTER_AUTH_SECRET
+pnpm exec wrangler secret put GOOGLE_CLIENT_ID
+pnpm exec wrangler secret put GOOGLE_CLIENT_SECRET
+pnpm exec wrangler secret put RESEND_API_KEY
 ```
 
 ## 7) Operational Response Basics
 1. Identify affected environment (`dev`/`prod`) first.
 2. Reproduce with explicit target URL and command.
 3. Check deployment bindings (`wrangler deploy --dry-run --config wrangler.json --env ...`).
-4. If schema-related, confirm migration status in D1.
-5. Roll forward with fix when possible; avoid risky manual hot edits.
+4. If schema-related, confirm migration status in D1 (`--local` and `--remote`).
+5. If error is `no such column`/`no such table`, prioritize migration apply on the affected environment.
+6. Roll forward with fix when possible; avoid risky manual hot edits.
 
 ## 8) Custom Domain Onboarding (When Needed)
 1. Prepare domain in Cloudflare zone.
