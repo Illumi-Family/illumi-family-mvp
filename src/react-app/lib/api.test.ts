@@ -3,6 +3,9 @@ import {
 	getCurrentUser,
 	getHealth,
 	getHomeContent,
+	listAdminHomeSections,
+	publishAdminHomeSection,
+	saveAdminHomeSectionDraft,
 	updateCurrentUser,
 	uploadAdminAsset,
 } from "./api";
@@ -151,6 +154,8 @@ describe("react api client", () => {
 								cta: { label: "查看", href: "#contact" },
 							},
 						},
+						locale: "en-US",
+						fallbackFrom: ["zh-CN"],
 						updatedAt: "2026-03-06T00:00:00.000Z",
 					},
 					requestId: "req-4",
@@ -159,11 +164,101 @@ describe("react api client", () => {
 			),
 		);
 
-		const result = await getHomeContent();
-		expect(fetchMock).toHaveBeenCalledWith("/api/content/home", {
+		const result = await getHomeContent("en-US");
+		expect(fetchMock).toHaveBeenCalledWith("/api/content/home?locale=en-US", {
 			headers: { Accept: "application/json" },
 		});
 		expect(result.philosophy.intro).toBe("理念");
+		expect(result.locale).toBe("en-US");
+		expect(result.fallbackFrom).toEqual(["zh-CN"]);
+	});
+
+	it("passes locale query to admin list api", async () => {
+		fetchMock.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					success: true,
+					data: { sections: [] },
+					requestId: "req-admin-list",
+				}),
+				{ status: 200, headers: { "content-type": "application/json" } },
+			),
+		);
+
+		await listAdminHomeSections("en-US");
+
+		expect(fetchMock).toHaveBeenCalledWith("/api/admin/content/home?locale=en-US", {
+			headers: { Accept: "application/json" },
+		});
+	});
+
+	it("passes locale query to admin save draft api", async () => {
+		fetchMock.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					success: true,
+					data: { entryId: "entry-1", revisionId: "rev-1", revisionNo: 1 },
+					requestId: "req-admin-save",
+				}),
+				{ status: 201, headers: { "content-type": "application/json" } },
+			),
+		);
+
+		await saveAdminHomeSectionDraft({
+			locale: "zh-CN",
+			entryKey: "home.philosophy",
+			title: "t",
+			contentJson: {},
+		});
+
+		expect(fetchMock).toHaveBeenCalledWith(
+			"/api/admin/content/home/home.philosophy?locale=zh-CN",
+			{
+				method: "PUT",
+				headers: {
+					Accept: "application/json",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					title: "t",
+					summaryMd: undefined,
+					bodyMd: undefined,
+					contentJson: {},
+				}),
+			},
+		);
+	});
+
+	it("passes locale query to admin publish api", async () => {
+		fetchMock.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					success: true,
+					data: { changed: true, entryId: "entry-1", revisionId: "rev-1" },
+					requestId: "req-admin-publish",
+				}),
+				{ status: 200, headers: { "content-type": "application/json" } },
+			),
+		);
+
+		await publishAdminHomeSection({
+			locale: "en-US",
+			entryKey: "home.philosophy",
+		});
+
+		expect(fetchMock).toHaveBeenCalledWith(
+			"/api/admin/content/home/home.philosophy/publish?locale=en-US",
+			{
+				method: "POST",
+				headers: {
+					Accept: "application/json",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					revisionId: undefined,
+				}),
+			},
+		);
 	});
 
 	it("uploads admin asset with json payload", async () => {

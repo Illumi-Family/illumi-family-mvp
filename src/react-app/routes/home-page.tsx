@@ -1,12 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-	aboutContent,
-	defaultHomeContent,
-	footerContent,
-	heroContent,
-	siteMeta,
-	siteNavigation,
-} from "@/routes/home-page.data";
+import { useTranslation } from "react-i18next";
+import { getHomePageData } from "@/routes/home-page.data";
+import { LanguageSwitcher } from "@/i18n/language-switcher";
+import { useAppI18n } from "@/i18n/context";
 import { homeContentQueryOptions } from "@/lib/query-options";
 import { AboutSection } from "@/routes/home/sections/about-section";
 import { ColearningSection } from "@/routes/home/sections/colearning-section";
@@ -17,8 +13,11 @@ import { PhilosophySection } from "@/routes/home/sections/philosophy-section";
 import { StoriesSection } from "@/routes/home/sections/stories-section";
 
 export function HomePage() {
-	const homeContentQuery = useQuery(homeContentQueryOptions());
-	const homeContent = homeContentQuery.data ?? defaultHomeContent;
+	const { t } = useTranslation("home");
+	const { locale } = useAppI18n();
+	const homeData = getHomePageData(locale);
+	const homeContentQuery = useQuery(homeContentQueryOptions(locale));
+	const homeContent = homeContentQuery.data ?? homeData.defaultHomeContent;
 	const showFallbackHint = homeContentQuery.isError;
 
 	return (
@@ -41,13 +40,17 @@ export function HomePage() {
 							className="h-9 w-auto rounded-md border border-[color:rgba(166,124,82,0.2)] bg-card p-1"
 						/>
 						<div className="min-w-0">
-							{/* <p className="truncate font-brand text-lg text-foreground">{siteMeta.brandName}</p> */}
-							<p className="truncate text-xs text-muted-foreground">{siteMeta.brandSubtitle}</p>
+							<p className="truncate text-xs text-muted-foreground">
+								{homeData.siteMeta.brandSubtitle}
+							</p>
 						</div>
 					</a>
 
-					<nav className="hidden items-center gap-1 lg:flex" aria-label="主导航">
-						{siteNavigation.map((item) => (
+					<nav
+						className="hidden items-center gap-1 lg:flex"
+						aria-label={t("navigation.mainAriaLabel")}
+					>
+						{homeData.siteNavigation.map((item) => (
 							<a
 								key={item.href}
 								href={item.href}
@@ -58,19 +61,22 @@ export function HomePage() {
 						))}
 					</nav>
 
-					<a
-						href={siteMeta.headerCta.href}
-						className="inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors duration-200 hover:bg-[color:rgba(166,124,82,0.92)]"
-					>
-						{siteMeta.headerCta.label}
-					</a>
+					<div className="flex items-center gap-2">
+						<LanguageSwitcher className="hidden items-center gap-2 md:flex" />
+						<a
+							href={homeData.siteMeta.headerCta.href}
+							className="inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors duration-200 hover:bg-[color:rgba(166,124,82,0.92)]"
+						>
+							{homeData.siteMeta.headerCta.label}
+						</a>
+					</div>
 				</div>
 
 				<nav
 					className="mx-auto mt-2 flex w-full max-w-7xl gap-2 overflow-x-auto rounded-xl border border-[color:rgba(166,124,82,0.24)] bg-[color:rgba(255,252,247,0.88)] px-3 py-2 lg:hidden"
-					aria-label="移动端快捷导航"
+					aria-label={t("navigation.mobileAriaLabel")}
 				>
-					{siteNavigation.map((item) => (
+					{homeData.siteNavigation.map((item) => (
 						<a
 							key={`mobile-${item.href}`}
 							href={item.href}
@@ -79,16 +85,20 @@ export function HomePage() {
 							{item.label}
 						</a>
 					))}
+					<LanguageSwitcher className="ml-auto flex items-center gap-2 md:hidden" />
 				</nav>
 			</header>
 
-			<main id="main-content" className="mx-auto w-full max-w-7xl space-y-20 px-4 pb-20 pt-4 md:px-8 md:pt-6">
+			<main
+				id="main-content"
+				className="mx-auto w-full max-w-7xl space-y-20 px-4 pb-20 pt-4 md:px-8 md:pt-6"
+			>
 				{showFallbackHint ? (
 					<div className="rounded-2xl border border-[color:rgba(166,124,82,0.22)] bg-[color:rgba(255,252,247,0.82)] px-4 py-3 text-sm text-muted-foreground">
-						内容服务暂时不可用，当前展示本地兜底内容。
+						{t("fallbackNotice")}
 					</div>
 				) : null}
-				<HeroSection content={heroContent} />
+				<HeroSection content={homeData.heroContent} />
 				<PhilosophySection
 					intro={homeContent.philosophy.intro}
 					items={homeContent.philosophy.items}
@@ -101,10 +111,10 @@ export function HomePage() {
 					benefits={homeContent.colearning.benefits}
 					caseHighlight={homeContent.colearning.caseHighlight}
 				/>
-				<AboutSection content={aboutContent} />
-				</main>
+				<AboutSection content={homeData.aboutContent} />
+			</main>
 
-				<FooterSection content={footerContent} />
+			<FooterSection content={homeData.footerContent} />
 		</div>
 	);
 }

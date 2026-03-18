@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import app from "./index";
 
 const testEnv = {
@@ -52,5 +52,44 @@ describe("worker api", () => {
 		};
 		expect(body.success).toBe(false);
 		expect(body.error.code).toBe("UNAUTHORIZED");
+	});
+
+	it("normalizes locale alias for /api/content/home cache key", async () => {
+		const cache = {
+			get: vi.fn().mockResolvedValue(
+				JSON.stringify({
+					philosophy: { intro: "", items: [] },
+					dailyNotes: { items: [] },
+					stories: { items: [] },
+					colearning: {
+						intro: "",
+						methods: [],
+						benefits: [],
+						caseHighlight: { title: "", summary: "", cta: { label: "", href: "#" } },
+					},
+					locale: "en-US",
+					fallbackFrom: [],
+					updatedAt: "2026-03-18T00:00:00.000Z",
+				}),
+			),
+		};
+
+		const response = await app.request(
+			"/api/content/home?locale=en",
+			{},
+			{
+				...testEnv,
+				CACHE: cache,
+			} as never,
+		);
+		expect(response.status).toBe(200);
+		expect(cache.get).toHaveBeenCalledWith("cms:home:published:v1:en-US");
+
+		const body = (await response.json()) as {
+			success: boolean;
+			data: { locale: string };
+		};
+		expect(body.success).toBe(true);
+		expect(body.data.locale).toBe("en-US");
 	});
 });

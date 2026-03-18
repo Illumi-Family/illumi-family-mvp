@@ -1,0 +1,19 @@
+{
+  "skipToContent": "跳转到主要内容",
+  "utilityNav": {
+    "ariaLabel": "系统导航",
+    "home": "首页",
+    "profile": "个人资料",
+    "auth": "登录",
+    "admin": "后台"
+  },
+  "session": {
+    "signedInAs": "已登录：{{email}}",
+    "notSignedIn": "未登录"
+  },
+  "languageSwitcher": {
+    "label": "语言",
+    "zh": "中文",
+    "en": "English"
+  }
+}

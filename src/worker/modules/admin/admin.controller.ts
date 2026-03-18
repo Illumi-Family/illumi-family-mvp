@@ -4,6 +4,10 @@ import { requireAdminSession } from "../../shared/auth/session";
 import { AppError } from "../../shared/http/errors";
 import { factory } from "../../shared/http/factory";
 import { jsonSuccess } from "../../shared/http/response";
+import {
+	DEFAULT_CONTENT_LOCALE,
+	parseContentLocale,
+} from "../../shared/i18n/locale";
 import type { AppBindings } from "../../types";
 import { AdminRepository } from "./admin.repository";
 import {
@@ -44,6 +48,19 @@ const requireHomeSectionKey = factory.createMiddleware(async (c, next) => {
 	await next();
 });
 
+const resolveLocaleQuery = (rawValue: string | null | undefined) => {
+	if (!rawValue || rawValue.trim() === "") {
+		return DEFAULT_CONTENT_LOCALE;
+	}
+
+	const locale = parseContentLocale(rawValue);
+	if (locale) {
+		return locale;
+	}
+
+	throw new AppError("BAD_REQUEST", "Invalid locale query", 400);
+};
+
 export const adminMeHandlers = factory.createHandlers(
 	requireAdminSession,
 	async (c) => {
@@ -58,8 +75,9 @@ export const adminMeHandlers = factory.createHandlers(
 export const adminListHomeContentHandlers = factory.createHandlers(
 	requireAdminSession,
 	async (c) => {
+		const locale = resolveLocaleQuery(c.req.query("locale"));
 		const service = buildAdminService(c.env);
-		const sections = await service.listHomeSections();
+		const sections = await service.listHomeSections(locale);
 		return jsonSuccess(c, { sections });
 	},
 );
@@ -72,6 +90,7 @@ export const adminSaveHomeContentDraftHandlers = factory.createHandlers(
 	async (c) => {
 		const authUserId = c.get("authUserId");
 		const entryKey = c.get("homeSectionEntryKey");
+		const locale = resolveLocaleQuery(c.req.query("locale"));
 		if (!authUserId) {
 			throw new AppError("UNAUTHORIZED", "Authentication required", 401);
 		}
@@ -81,6 +100,7 @@ export const adminSaveHomeContentDraftHandlers = factory.createHandlers(
 		const service = buildAdminService(c.env);
 		const result = await service.saveHomeSectionDraft({
 			entryKey,
+			locale,
 			body: c.req.valid("json"),
 			authUserId,
 		});
@@ -95,12 +115,14 @@ export const adminPublishHomeContentHandlers = factory.createHandlers(
 	zValidator("json", adminPublishHomeSectionBodySchema),
 	async (c) => {
 		const entryKey = c.get("homeSectionEntryKey");
+		const locale = resolveLocaleQuery(c.req.query("locale"));
 		if (!entryKey) {
 			throw new AppError("BAD_REQUEST", "Invalid home section key", 400);
 		}
 		const service = buildAdminService(c.env);
 		const result = await service.publishHomeSection(c.env, {
 			entryKey,
+			locale,
 			body: c.req.valid("json"),
 		});
 		return jsonSuccess(c, result);

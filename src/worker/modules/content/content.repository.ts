@@ -1,6 +1,7 @@
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { AppDatabase } from "../../shared/db/client";
 import { cmsAssets, cmsEntries, cmsRevisions } from "../../shared/db/schema";
+import type { ContentLocale } from "../../shared/i18n/locale";
 import {
 	HOME_SECTION_ENTRY_KEYS,
 	type HomeSectionEntryKey,
@@ -9,11 +10,16 @@ import {
 export class ContentRepository {
 	constructor(private readonly db: AppDatabase) {}
 
-	async getPublishedHomeSectionContent() {
+	async getPublishedHomeSectionContent(locale: ContentLocale) {
 		const entries = await this.db
 			.select()
 			.from(cmsEntries)
-			.where(inArray(cmsEntries.entryKey, [...HOME_SECTION_ENTRY_KEYS]));
+			.where(
+				and(
+					inArray(cmsEntries.entryKey, [...HOME_SECTION_ENTRY_KEYS]),
+					eq(cmsEntries.locale, locale),
+				),
+			);
 
 		const revisionIds = entries
 			.map((entry) => entry.publishedRevisionId)

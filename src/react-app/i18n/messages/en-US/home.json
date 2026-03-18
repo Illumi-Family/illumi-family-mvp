@@ -1,0 +1,46 @@
+{
+  "hero": {
+    "badge": "Neo-Chinese · Family Learning · Three Generations"
+  },
+  "navigation": {
+    "mainAriaLabel": "Main navigation",
+    "mobileAriaLabel": "Mobile quick navigation"
+  },
+  "fallbackNotice": "Content service is temporarily unavailable. Showing local fallback content.",
+  "philosophy": {
+    "label": "Family Philosophy",
+    "title": "Rooted family education without anxiety-driven pressure"
+  },
+  "daily": {
+    "label": "Daily Reflections",
+    "title": "Turn everyday life into education and reflection into strength",
+    "description": "Capture small awakenings in daily life and real lessons from parenting practice.",
+    "viewMore": "View more reflections"
+  },
+  "stories": {
+    "label": "Family Stories",
+    "title": "Real stories of family values and learning inheritance",
+    "description": "Three generations living together become a living classroom for values and care.",
+    "durationPrefix": "Duration/Progress: ",
+    "watch": "Watch animation",
+    "comingSoon": "Coming soon",
+    "status": {
+      "published": "Published",
+      "comingSoon": "In preparation"
+    }
+  },
+  "colearning": {
+    "label": "Co-learning",
+    "title": "Parents grow first, then children blossom",
+    "methodsTitle": "Co-learning methods",
+    "benefitsTitle": "Co-learning benefits"
+  },
+  "about": {
+    "label": "About",
+    "title": "Bring education back to everyday family life",
+    "description": "I am Teacher Xiao Luo, a mother of three and the founder of Tongmeng Family School.",
+    "beliefsLabel": "I believe:",
+    "contactTitle": "Contact & collaboration",
+    "contactDescription": "Welcome to discuss family co-learning, content collaboration, and speaking invitations."
+  }
+}

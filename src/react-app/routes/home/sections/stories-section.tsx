@@ -1,4 +1,5 @@
 import type { StoryItem } from "@/routes/home-page.data";
+import { useTranslation } from "react-i18next";
 import { MarkdownRenderer } from "@/components/common/markdown-renderer";
 import { PaperCard } from "@/routes/home/components/paper-card";
 import { SectionHeading } from "@/routes/home/components/section-heading";
@@ -9,12 +10,14 @@ interface StoriesSectionProps {
 }
 
 export function StoriesSection({ items }: StoriesSectionProps) {
+	const { t } = useTranslation("home");
+
 	return (
 		<section id="stories" className="space-y-8 py-2">
 			<SectionHeading
-				label="三代同堂·故事"
-				title="用真实故事，记录家风流淌与家学传承"
-				description="三代同堂，是最好的家风课堂；一家温暖，是最稳的生命根基。故事区按上线状态区分交互，便于后续持续扩充。"
+				label={t("stories.label")}
+				title={t("stories.title")}
+				description={t("stories.description")}
 			/>
 			<div className="grid gap-4 md:grid-cols-3">
 				{items.map((item, index) => {
@@ -35,7 +38,10 @@ export function StoriesSection({ items }: StoriesSectionProps) {
 								className="mt-3 text-sm leading-relaxed text-muted-foreground md:text-base"
 							/>
 							<div className="mt-4 flex items-center justify-between gap-3 border-t border-[color:rgba(166,124,82,0.18)] pt-4 text-xs text-muted-foreground">
-								<span>时长/进度：{item.duration}</span>
+								<span>
+									{t("stories.durationPrefix")}
+									{item.duration}
+								</span>
 								{isPublished && item.link ? (
 									<a
 										href={item.link}
@@ -43,7 +49,7 @@ export function StoriesSection({ items }: StoriesSectionProps) {
 										rel={isExternal ? "noreferrer" : undefined}
 										className="inline-flex h-8 items-center justify-center rounded-full bg-primary px-4 text-xs font-medium text-primary-foreground transition-colors duration-200 hover:bg-[color:rgba(166,124,82,0.92)]"
 									>
-										观看动画
+										{t("stories.watch")}
 									</a>
 								) : (
 									<button
@@ -51,7 +57,7 @@ export function StoriesSection({ items }: StoriesSectionProps) {
 										disabled
 										className="inline-flex h-8 items-center justify-center rounded-full border border-input px-4 text-xs font-medium text-muted-foreground"
 									>
-										敬请期待
+										{t("stories.comingSoon")}
 									</button>
 								)}
 							</div>

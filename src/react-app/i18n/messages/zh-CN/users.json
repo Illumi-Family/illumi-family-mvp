@@ -1,0 +1,36 @@
+{
+  "titles": {
+    "profileSettings": "个人资料设置",
+    "profileSnapshot": "资料快照"
+  },
+  "descriptions": {
+    "profileSettings": "账号会在注册并完成邮箱验证后自动创建。此页面仅用于管理当前用户资料。",
+    "snapshot": "当前资料与账号生命周期信息。",
+    "pending": "正在加载当前资料...",
+    "waiting": "等待资料数据...",
+    "footer": "不再提供手动创建用户入口，用户身份由注册流程统一生成。"
+  },
+  "labels": {
+    "email": "邮箱",
+    "displayName": "显示名称",
+    "displayNamePlaceholder": "请输入显示名称",
+    "userId": "用户 ID",
+    "createdAt": "创建时间",
+    "updatedAt": "更新时间",
+    "currentUser": "当前用户"
+  },
+  "buttons": {
+    "save": "保存修改",
+    "saving": "保存中...",
+    "signOut": "退出登录",
+    "refresh": "刷新资料",
+    "refreshing": "刷新中..."
+  },
+  "status": {
+    "fetching": "加载中"
+  },
+  "errors": {
+    "currentUserNotFound": "尚未检测到当前账号，请先完成注册并验证邮箱。",
+    "unexpected": "发生未知错误"
+  }
+}

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { MarkdownRenderer } from "@/components/common/markdown-renderer";
 import type { PhilosophyItem } from "@/routes/home-page.data";
 import { PaperCard } from "@/routes/home/components/paper-card";
@@ -9,11 +10,13 @@ interface PhilosophySectionProps {
 }
 
 export function PhilosophySection({ intro, items }: PhilosophySectionProps) {
+	const { t } = useTranslation("home");
+
 	return (
 		<section id="philosophy" className="space-y-8 py-2">
 			<SectionHeading
-				label="家风家学·理念"
-				title="扎根生命的家庭教育，不靠焦虑驱动"
+				label={t("philosophy.label")}
+				title={t("philosophy.title")}
 				description={intro}
 			/>
 			<div className="grid gap-4 md:grid-cols-3">

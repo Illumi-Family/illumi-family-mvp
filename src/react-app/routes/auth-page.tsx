@@ -1,5 +1,6 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import {
 	AlertCircle,
 	ArrowRight,
@@ -17,26 +18,13 @@ import { authClient } from "@/lib/auth-client";
 
 type AuthMode = "sign-in" | "sign-up";
 
-const modeCopy: Record<AuthMode, { title: string; subtitle: string; action: string }> = {
-	"sign-in": {
-		title: "欢迎回来",
-		subtitle: "使用邮箱或 Google 继续，安全进入家庭空间。",
-		action: "Sign In",
-	},
-	"sign-up": {
-		title: "创建账户",
-		subtitle: "注册后我们会发送验证邮件，完成后即可开始使用。",
-		action: "Create Account",
-	},
-};
-
-const readErrorMessage = (error: unknown) => {
+const readErrorMessage = (error: unknown, fallbackMessage: string) => {
 	if (!error) return null;
 	if (error instanceof Error) return error.message;
 	if (typeof error === "object" && error && "message" in error) {
 		return String(error.message);
 	}
-	return "Authentication failed";
+	return fallbackMessage;
 };
 
 function GoogleMark() {
@@ -68,6 +56,7 @@ function GoogleMark() {
 }
 
 export function AuthPage() {
+	const { t } = useTranslation("auth");
 	const navigate = useNavigate();
 	const { data: sessionData, isPending } = authClient.useSession();
 	const [mode, setMode] = useState<AuthMode>("sign-in");
@@ -78,7 +67,22 @@ export function AuthPage() {
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
-	const modeMeta = useMemo(() => modeCopy[mode], [mode]);
+	const modeCopy: Record<AuthMode, { title: string; subtitle: string; action: string }> = useMemo(
+		() => ({
+			"sign-in": {
+				title: t("mode.signIn.title"),
+				subtitle: t("mode.signIn.subtitle"),
+				action: t("mode.signIn.action"),
+			},
+			"sign-up": {
+				title: t("mode.signUp.title"),
+				subtitle: t("mode.signUp.subtitle"),
+				action: t("mode.signUp.action"),
+			},
+		}),
+		[t],
+	);
+	const modeMeta = modeCopy[mode];
 	const isAuthenticated = Boolean(sessionData?.user);
 
 	const resetMessages = () => {
@@ -95,7 +99,7 @@ export function AuthPage() {
 			if (mode === "sign-up") {
 				const normalizedName = name.trim();
 				if (!normalizedName) {
-					setErrorMessage("请输入姓名后再注册。");
+					setErrorMessage(t("messages.requireName"));
 					return;
 				}
 
@@ -107,11 +111,11 @@ export function AuthPage() {
 				});
 
 				if (result.error) {
-					setErrorMessage(readErrorMessage(result.error));
+					setErrorMessage(readErrorMessage(result.error, t("messages.authenticationFailed")));
 					return;
 				}
 
-				setInfoMessage("注册成功，请前往邮箱验证；验证完成后会自动登录。");
+				setInfoMessage(t("messages.registerSuccess"));
 				setMode("sign-in");
 				return;
 			}
@@ -123,13 +127,13 @@ export function AuthPage() {
 			});
 
 			if (result.error) {
-				setErrorMessage(readErrorMessage(result.error));
+				setErrorMessage(readErrorMessage(result.error, t("messages.authenticationFailed")));
 				return;
 			}
 
 			await navigate({ to: "/users" });
 		} catch (error) {
-			setErrorMessage(readErrorMessage(error));
+			setErrorMessage(readErrorMessage(error, t("messages.authenticationFailed")));
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -144,16 +148,16 @@ export function AuthPage() {
 				callbackURL: "/users",
 			});
 			if (result.error) {
-				setErrorMessage(readErrorMessage(result.error));
+				setErrorMessage(readErrorMessage(result.error, t("messages.authenticationFailed")));
 				return;
 			}
 			if (result.data?.url) {
 				window.location.href = result.data.url;
 				return;
 			}
-			setInfoMessage("Google 登录请求已发起。");
+			setInfoMessage(t("status.googleRequested"));
 		} catch (error) {
-			setErrorMessage(readErrorMessage(error));
+			setErrorMessage(readErrorMessage(error, t("messages.authenticationFailed")));
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -164,7 +168,7 @@ export function AuthPage() {
 		try {
 			const normalizedEmail = email.trim().toLowerCase();
 			if (!normalizedEmail) {
-				setErrorMessage("请先输入邮箱地址。");
+				setErrorMessage(t("messages.emailRequired"));
 				return;
 			}
 
@@ -173,19 +177,19 @@ export function AuthPage() {
 				callbackURL: "/users",
 			});
 			if (result.error) {
-				setErrorMessage(readErrorMessage(result.error));
+				setErrorMessage(readErrorMessage(result.error, t("messages.authenticationFailed")));
 				return;
 			}
-			setInfoMessage("验证邮件已发送，请检查邮箱。");
+			setInfoMessage(t("messages.verificationSent"));
 		} catch (error) {
-			setErrorMessage(readErrorMessage(error));
+			setErrorMessage(readErrorMessage(error, t("messages.authenticationFailed")));
 		}
 	};
 
 	const onSignOut = async () => {
 		await authClient.signOut();
 		resetMessages();
-		setInfoMessage("已退出登录。");
+		setInfoMessage(t("messages.signedOut"));
 	};
 
 	return (
@@ -199,7 +203,7 @@ export function AuthPage() {
 							<div className="flex items-start justify-between gap-3">
 								<div>
 									<p className="text-xs font-medium tracking-wide text-slate-500">
-										ILLUMI FAMILY ACCESS
+										{t("meta.badge")}
 									</p>
 									<CardTitle className="mt-1 text-2xl font-semibold text-slate-900">
 										{modeMeta.title}
@@ -210,7 +214,7 @@ export function AuthPage() {
 									variant="secondary"
 									className="border border-slate-200/90 bg-white/85 text-slate-700"
 								>
-									{isAuthenticated ? "Authenticated" : "Guest"}
+									{isAuthenticated ? t("status.authenticated") : t("status.guest")}
 								</Badge>
 							</div>
 
@@ -224,7 +228,7 @@ export function AuthPage() {
 											: "text-slate-600 hover:text-slate-900"
 									}`}
 								>
-									登录
+									{t("mode.signIn.tab")}
 								</button>
 								<button
 									type="button"
@@ -235,7 +239,7 @@ export function AuthPage() {
 											: "text-slate-600 hover:text-slate-900"
 									}`}
 								>
-									注册
+									{t("mode.signUp.tab")}
 								</button>
 							</div>
 						</CardHeader>
@@ -250,7 +254,7 @@ export function AuthPage() {
 								{mode === "sign-up" && (
 									<div className="space-y-2">
 										<Label htmlFor="name" className="text-slate-700">
-											姓名
+											{t("fields.name")}
 										</Label>
 										<div className="relative">
 											<UserRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -259,7 +263,7 @@ export function AuthPage() {
 												value={name}
 												onChange={(event) => setName(event.target.value)}
 												required
-												placeholder="请输入姓名"
+												placeholder={t("fields.namePlaceholder")}
 												className="h-11 rounded-xl border-slate-200/90 bg-white/90 pl-10 text-[15px] placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500/70"
 											/>
 										</div>
@@ -267,7 +271,7 @@ export function AuthPage() {
 								)}
 								<div className="space-y-2">
 									<Label htmlFor="email" className="text-slate-700">
-										邮箱
+										{t("fields.email")}
 									</Label>
 									<div className="relative">
 										<Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -277,14 +281,14 @@ export function AuthPage() {
 											value={email}
 											onChange={(event) => setEmail(event.target.value)}
 											required
-											placeholder="name@example.com"
+											placeholder={t("fields.emailPlaceholder")}
 											className="h-11 rounded-xl border-slate-200/90 bg-white/90 pl-10 text-[15px] placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500/70"
 										/>
 									</div>
 								</div>
 								<div className="space-y-2">
 									<Label htmlFor="password" className="text-slate-700">
-										密码
+										{t("fields.password")}
 									</Label>
 									<Input
 										id="password"
@@ -293,7 +297,7 @@ export function AuthPage() {
 										onChange={(event) => setPassword(event.target.value)}
 										required
 										minLength={8}
-										placeholder="至少 8 位"
+										placeholder={t("fields.passwordPlaceholder")}
 										className="h-11 rounded-xl border-slate-200/90 bg-white/90 text-[15px] placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500/70"
 									/>
 								</div>
@@ -305,7 +309,7 @@ export function AuthPage() {
 									{isSubmitting ? (
 										<>
 											<LoaderCircle className="h-4 w-4 animate-spin" />
-											提交中...
+											{t("buttons.submitting")}
 										</>
 									) : (
 										<>
@@ -321,7 +325,7 @@ export function AuthPage() {
 									<span className="w-full border-t border-slate-200" />
 								</div>
 								<div className="relative flex justify-center text-xs uppercase tracking-wide text-slate-500">
-									<span className="bg-white px-2">or continue with</span>
+									<span className="bg-white px-2">{t("meta.orContinueWith")}</span>
 								</div>
 							</div>
 
@@ -333,7 +337,7 @@ export function AuthPage() {
 								className="h-11 w-full cursor-pointer rounded-xl border-slate-300 bg-white text-slate-700 transition-all duration-200 hover:bg-slate-50"
 							>
 								<GoogleMark />
-								Continue with Google
+								{t("buttons.google")}
 							</Button>
 
 							<div className="flex flex-wrap items-center justify-between gap-3 text-sm">
@@ -343,7 +347,7 @@ export function AuthPage() {
 									onClick={onSendVerification}
 									className="h-auto cursor-pointer p-0 text-slate-600 hover:bg-transparent hover:text-slate-900"
 								>
-									重发验证邮件
+									{t("buttons.resendVerification")}
 								</Button>
 								{isAuthenticated && (
 									<Button
@@ -352,7 +356,7 @@ export function AuthPage() {
 										onClick={onSignOut}
 										className="h-auto cursor-pointer p-0 text-slate-600 hover:bg-transparent hover:text-slate-900"
 									>
-										退出登录
+										{t("buttons.signOut")}
 									</Button>
 								)}
 							</div>
@@ -361,7 +365,7 @@ export function AuthPage() {
 								{isPending && (
 									<p className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100/70 px-3 py-2 text-sm text-slate-700">
 										<LoaderCircle className="h-4 w-4 animate-spin text-slate-500" />
-										正在检查会话状态...
+										{t("status.checkingSession")}
 									</p>
 								)}
 								{errorMessage && (

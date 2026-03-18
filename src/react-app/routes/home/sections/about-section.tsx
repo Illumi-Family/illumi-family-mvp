@@ -1,4 +1,5 @@
 import type { AboutContent } from "@/routes/home-page.data";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { MarkdownRenderer } from "@/components/common/markdown-renderer";
 import { PaperCard } from "@/routes/home/components/paper-card";
@@ -9,12 +10,14 @@ interface AboutSectionProps {
 }
 
 export function AboutSection({ content }: AboutSectionProps) {
+	const { t } = useTranslation("home");
+
 	return (
 		<section id="about" className="space-y-8 py-2">
 			<SectionHeading
-				label="知我"
-				title="以家为塾，让教育回到日常"
-				description="我是小罗老师，一名三娃妈妈，也是「童蒙家塾」家庭 IP 创始人。"
+				label={t("about.label")}
+				title={t("about.title")}
+				description={t("about.description")}
 			/>
 			<div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr] lg:items-stretch">
 				<PaperCard motionDelayMs={100} className="space-y-4">
@@ -25,7 +28,7 @@ export function AboutSection({ content }: AboutSectionProps) {
 						))}
 					</ul>
 					<div className="space-y-2 rounded-2xl border border-[color:rgba(166,124,82,0.2)] bg-[color:rgba(255,252,247,0.78)] p-4">
-						<p className="text-sm font-medium text-foreground">我相信：</p>
+						<p className="text-sm font-medium text-foreground">{t("about.beliefsLabel")}</p>
 						{content.beliefs.map((belief) => (
 							<MarkdownRenderer
 								key={belief}
@@ -63,9 +66,9 @@ export function AboutSection({ content }: AboutSectionProps) {
 						id="contact"
 						className="rounded-2xl border border-[color:rgba(166,124,82,0.24)] bg-[color:rgba(255,252,247,0.82)] p-4"
 					>
-						<p className="font-medium text-foreground">联系与合作</p>
+						<p className="font-medium text-foreground">{t("about.contactTitle")}</p>
 						<p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-							欢迎进行家庭共学交流、内容合作与讲座邀请，当前邮箱为占位信息。
+							{t("about.contactDescription")}
 						</p>
 						<a
 							href="mailto:contact@illumi-family.com"

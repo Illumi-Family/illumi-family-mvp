@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { AppDatabase } from "../../shared/db/client";
 import { cmsAssets, cmsEntries, cmsRevisions } from "../../shared/db/schema";
+import type { ContentLocale } from "../../shared/i18n/locale";
 import {
 	HOME_SECTION_ENTRY_KEYS,
 	type AdminUpsertHomeSectionBody,
@@ -10,23 +11,29 @@ import {
 export class AdminRepository {
 	constructor(private readonly db: AppDatabase) {}
 
-	private async getEntryByKey(entryKey: HomeSectionEntryKey) {
+	private async getEntryByKey(entryKey: HomeSectionEntryKey, locale: ContentLocale) {
 		const rows = await this.db
 			.select()
 			.from(cmsEntries)
-			.where(eq(cmsEntries.entryKey, entryKey))
+			.where(
+				and(
+					eq(cmsEntries.entryKey, entryKey),
+					eq(cmsEntries.locale, locale),
+				),
+			)
 			.limit(1);
 		return rows[0] ?? null;
 	}
 
-	private async ensureEntry(entryKey: HomeSectionEntryKey) {
-		const existing = await this.getEntryByKey(entryKey);
+	private async ensureEntry(entryKey: HomeSectionEntryKey, locale: ContentLocale) {
+		const existing = await this.getEntryByKey(entryKey, locale);
 		if (existing) return existing;
 
 		const now = new Date();
 		const record = {
 			id: crypto.randomUUID(),
 			entryKey,
+			locale,
 			entryType: "home_section",
 			schemaKey: entryKey,
 			status: "draft",
@@ -49,15 +56,21 @@ export class AdminRepository {
 		return current + 1;
 	}
 
-	async listHomeSections() {
+	async listHomeSections(locale: ContentLocale) {
 		const entries = await this.db
 			.select()
 			.from(cmsEntries)
-			.where(inArray(cmsEntries.entryKey, [...HOME_SECTION_ENTRY_KEYS]));
+			.where(
+				and(
+					inArray(cmsEntries.entryKey, [...HOME_SECTION_ENTRY_KEYS]),
+					eq(cmsEntries.locale, locale),
+				),
+			);
 
 		if (entries.length === 0) {
 			return [] as Array<{
 				entryKey: string;
+				locale: ContentLocale;
 				status: string;
 				publishedRevisionId: string | null;
 				latestRevisionId: string | null;
@@ -92,6 +105,7 @@ export class AdminRepository {
 			}
 			return {
 				entryKey: entry.entryKey,
+				locale: entry.locale as ContentLocale,
 				status: entry.status,
 				publishedRevisionId: entry.publishedRevisionId,
 				latestRevisionId: latest?.id ?? null,
@@ -107,10 +121,11 @@ export class AdminRepository {
 
 	async createHomeSectionDraft(input: {
 		entryKey: HomeSectionEntryKey;
+		locale: ContentLocale;
 		body: AdminUpsertHomeSectionBody;
 		authUserId: string;
 	}) {
-		const entry = await this.ensureEntry(input.entryKey);
+		const entry = await this.ensureEntry(input.entryKey, input.locale);
 		const revisionNo = await this.getNextRevisionNo(entry.id);
 		const now = new Date();
 		const revision = {
@@ -143,9 +158,10 @@ export class AdminRepository {
 
 	async publishHomeSection(input: {
 		entryKey: HomeSectionEntryKey;
+		locale: ContentLocale;
 		revisionId?: string;
 	}) {
-		const entry = await this.getEntryByKey(input.entryKey);
+		const entry = await this.getEntryByKey(input.entryKey, input.locale);
 		if (!entry) {
 			return { changed: false as const, reason: "ENTRY_NOT_FOUND" as const };
 		}

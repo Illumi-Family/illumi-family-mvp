@@ -1,3 +1,5 @@
+import type { AppLocale } from "@/i18n/types";
+
 type ApiFailure = {
 	success: false;
 	error: {
@@ -86,6 +88,8 @@ export type HomeContentPayload = {
 			cta: { label: string; href: string };
 		};
 	};
+	locale: AppLocale;
+	fallbackFrom: AppLocale[];
 	updatedAt: string;
 };
 
@@ -103,6 +107,7 @@ export type HomeSectionEntryKey =
 
 export type AdminHomeSectionRecord = {
 	entryKey: HomeSectionEntryKey;
+	locale: AppLocale;
 	status: string;
 	publishedRevisionId: string | null;
 	latestRevisionId: string | null;
@@ -115,6 +120,7 @@ export type AdminHomeSectionRecord = {
 };
 
 export type SaveHomeSectionDraftInput = {
+	locale: AppLocale;
 	entryKey: HomeSectionEntryKey;
 	title: string;
 	summaryMd?: string;
@@ -123,6 +129,7 @@ export type SaveHomeSectionDraftInput = {
 };
 
 export type PublishHomeSectionInput = {
+	locale: AppLocale;
 	entryKey: HomeSectionEntryKey;
 	revisionId?: string;
 };
@@ -208,17 +215,25 @@ export const updateCurrentUser = async (
 	return data.user;
 };
 
-export const getHomeContent = async (): Promise<HomeContentPayload> => {
-	return request<HomeContentPayload>("/api/content/home");
+export const getHomeContent = async (
+	locale?: AppLocale,
+): Promise<HomeContentPayload> => {
+	const query = locale ? `?locale=${encodeURIComponent(locale)}` : "";
+	return request<HomeContentPayload>(`/api/content/home${query}`);
 };
+
+const withLocaleQuery = (path: string, locale: AppLocale) =>
+	`${path}?locale=${encodeURIComponent(locale)}`;
 
 export const getAdminMe = async (): Promise<AdminMePayload> => {
 	return request<AdminMePayload>("/api/admin/me");
 };
 
-export const listAdminHomeSections = async (): Promise<AdminHomeSectionRecord[]> => {
+export const listAdminHomeSections = async (
+	locale: AppLocale,
+): Promise<AdminHomeSectionRecord[]> => {
 	const data = await request<{ sections: AdminHomeSectionRecord[] }>(
-		"/api/admin/content/home",
+		withLocaleQuery("/api/admin/content/home", locale),
 	);
 	return data.sections;
 };
@@ -230,25 +245,31 @@ export const saveAdminHomeSectionDraft = async (
 		entryId: string;
 		revisionId: string;
 		revisionNo: number;
-	}>(`/api/admin/content/home/${input.entryKey}`, {
-		method: "PUT",
-		body: JSON.stringify({
-			title: input.title,
-			summaryMd: input.summaryMd,
-			bodyMd: input.bodyMd,
-			contentJson: input.contentJson,
-		}),
-		headers: {
-			"Content-Type": "application/json",
+	}>(
+		withLocaleQuery(`/api/admin/content/home/${input.entryKey}`, input.locale),
+		{
+			method: "PUT",
+			body: JSON.stringify({
+				title: input.title,
+				summaryMd: input.summaryMd,
+				bodyMd: input.bodyMd,
+				contentJson: input.contentJson,
+			}),
+			headers: {
+				"Content-Type": "application/json",
+			},
 		},
-	});
+	);
 };
 
 export const publishAdminHomeSection = async (
 	input: PublishHomeSectionInput,
 ) => {
 	return request<{ changed: boolean; entryId: string; revisionId: string }>(
-		`/api/admin/content/home/${input.entryKey}/publish`,
+		withLocaleQuery(
+			`/api/admin/content/home/${input.entryKey}/publish`,
+			input.locale,
+		),
 		{
 			method: "POST",
 			body: JSON.stringify({

@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,30 +16,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
 import { ApiClientError, updateCurrentUser } from "@/lib/api";
+import { formatDateTime } from "@/i18n/format";
+import { useAppI18n } from "@/i18n/context";
 import {
 	currentUserQueryKey,
 	currentUserQueryOptions,
 } from "@/lib/query-options";
 
-const readErrorMessage = (error: unknown) => {
+const readErrorMessage = (
+	error: unknown,
+	t: (key: string) => string,
+) => {
 	if (error instanceof ApiClientError) {
 		if (error.code === "CURRENT_USER_NOT_FOUND") {
-			return "尚未检测到当前账号，请先完成注册并验证邮箱。";
+			return t("errors.currentUserNotFound");
 		}
 
 		return error.message;
 	}
 
-	return error instanceof Error ? error.message : "Unexpected error";
-};
-
-const formatDateTime = (value: string) => {
-	const timestamp = Date.parse(value);
-	if (Number.isNaN(timestamp)) return value;
-	return new Date(timestamp).toLocaleString();
+	return error instanceof Error ? error.message : t("errors.unexpected");
 };
 
 export function UsersPage() {
+	const { t } = useTranslation("users");
+	const { locale } = useAppI18n();
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 	const [draftName, setDraftName] = useState<string | null>(null);
@@ -74,9 +76,9 @@ export function UsersPage() {
 		<div className="grid gap-6 md:grid-cols-2">
 			<Card>
 				<CardHeader>
-					<CardTitle>Profile Settings</CardTitle>
+					<CardTitle>{t("titles.profileSettings")}</CardTitle>
 					<CardDescription>
-						账号会在注册并完成邮箱验证后自动创建。此页面仅用于管理当前用户资料。
+						{t("descriptions.profileSettings")}
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
@@ -85,26 +87,26 @@ export function UsersPage() {
 							{currentUserQuery.status}
 						</Badge>
 						{currentUserQuery.isFetching && (
-							<Badge variant="secondary">fetching</Badge>
+							<Badge variant="secondary">{t("status.fetching")}</Badge>
 						)}
 					</div>
 
 					{currentUserQuery.isPending && (
 						<p className="text-sm text-muted-foreground">
-							Loading current profile...
+							{t("descriptions.pending")}
 						</p>
 					)}
 
 					{currentUserQuery.isError && (
 						<p className="text-sm text-destructive">
-							{readErrorMessage(currentUserQuery.error)}
+							{readErrorMessage(currentUserQuery.error, t)}
 						</p>
 					)}
 
 					{currentUserQuery.isSuccess && (
 						<form className="space-y-3" onSubmit={handleSubmit}>
 							<div className="space-y-2">
-								<Label htmlFor="email">Email</Label>
+								<Label htmlFor="email">{t("labels.email")}</Label>
 								<Input
 									id="email"
 									type="email"
@@ -113,75 +115,77 @@ export function UsersPage() {
 								/>
 							</div>
 							<div className="space-y-2">
-								<Label htmlFor="name">Display Name</Label>
+								<Label htmlFor="name">{t("labels.displayName")}</Label>
 								<Input
 									id="name"
 									value={editableName}
 									onChange={(event) => setDraftName(event.target.value)}
-									placeholder="Your display name"
+									placeholder={t("labels.displayNamePlaceholder")}
 								/>
 							</div>
 							<Button
 								type="submit"
 								disabled={updateProfileMutation.isPending || !isDirty}
 							>
-								{updateProfileMutation.isPending ? "Saving..." : "Save changes"}
+								{updateProfileMutation.isPending
+									? t("buttons.saving")
+									: t("buttons.save")}
 							</Button>
 						</form>
 					)}
 
 					{updateProfileMutation.isError && (
 						<p className="text-sm text-destructive">
-							{readErrorMessage(updateProfileMutation.error)}
+							{readErrorMessage(updateProfileMutation.error, t)}
 						</p>
 					)}
 				</CardContent>
 				<CardFooter className="text-xs text-muted-foreground">
-					不再提供手动创建用户入口，用户身份由注册流程统一生成。
+					{t("descriptions.footer")}
 				</CardFooter>
 			</Card>
 
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center justify-between">
-						<span>Profile Snapshot</span>
-						<Badge variant="secondary">Current User</Badge>
+						<span>{t("titles.profileSnapshot")}</span>
+						<Badge variant="secondary">{t("labels.currentUser")}</Badge>
 					</CardTitle>
-					<CardDescription>当前资料与账号生命周期信息。</CardDescription>
+					<CardDescription>{t("descriptions.snapshot")}</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-3">
 					{currentUserQuery.isPending && (
 						<p className="text-sm text-muted-foreground">
-							Waiting for profile data...
+							{t("descriptions.waiting")}
 						</p>
 					)}
 
 					{currentUserQuery.isError && (
 						<p className="text-sm text-destructive">
-							{readErrorMessage(currentUserQuery.error)}
+							{readErrorMessage(currentUserQuery.error, t)}
 						</p>
 					)}
 
 					{currentUserQuery.isSuccess && (
 						<div className="space-y-3 text-sm">
 							<div className="rounded-md border p-3">
-								<p className="text-xs text-muted-foreground">User ID</p>
+								<p className="text-xs text-muted-foreground">{t("labels.userId")}</p>
 								<p className="font-mono text-xs">{currentUserQuery.data.id}</p>
 							</div>
 							<div className="rounded-md border p-3">
-								<p className="text-xs text-muted-foreground">Created At</p>
-								<p>{formatDateTime(currentUserQuery.data.createdAt)}</p>
+								<p className="text-xs text-muted-foreground">{t("labels.createdAt")}</p>
+								<p>{formatDateTime(currentUserQuery.data.createdAt, locale)}</p>
 							</div>
 							<div className="rounded-md border p-3">
-								<p className="text-xs text-muted-foreground">Updated At</p>
-								<p>{formatDateTime(currentUserQuery.data.updatedAt)}</p>
+								<p className="text-xs text-muted-foreground">{t("labels.updatedAt")}</p>
+								<p>{formatDateTime(currentUserQuery.data.updatedAt, locale)}</p>
 							</div>
 						</div>
 					)}
 				</CardContent>
 				<CardFooter className="flex justify-end">
 					<Button type="button" variant="ghost" onClick={handleSignOut}>
-						Sign out
+						{t("buttons.signOut")}
 					</Button>
 					<Button
 						type="button"
@@ -189,7 +193,7 @@ export function UsersPage() {
 						onClick={() => currentUserQuery.refetch()}
 						disabled={currentUserQuery.isFetching}
 					>
-						{currentUserQuery.isFetching ? "Refreshing..." : "Refresh profile"}
+						{currentUserQuery.isFetching ? t("buttons.refreshing") : t("buttons.refresh")}
 					</Button>
 				</CardFooter>
 			</Card>

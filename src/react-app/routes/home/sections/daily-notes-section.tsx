@@ -1,4 +1,5 @@
 import type { DailyNoteItem } from "@/routes/home-page.data";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { MarkdownRenderer } from "@/components/common/markdown-renderer";
 import { PaperCard } from "@/routes/home/components/paper-card";
@@ -9,12 +10,14 @@ interface DailyNotesSectionProps {
 }
 
 export function DailyNotesSection({ items }: DailyNotesSectionProps) {
+	const { t } = useTranslation("home");
+
 	return (
 		<section id="daily" className="space-y-8 py-2">
 			<SectionHeading
-				label="践行感悟·日思"
-				title="把日子过成教育，把感悟变成力量"
-				description="记录生活里的点滴觉醒，书写教养中的真实体悟。在日常里观心，在陪伴中成长，在践行中传承。"
+				label={t("daily.label")}
+				title={t("daily.title")}
+				description={t("daily.description")}
 			/>
 			<div className="grid gap-4 lg:grid-cols-2">
 				{items.map((item, index) => (
@@ -51,7 +54,7 @@ export function DailyNotesSection({ items }: DailyNotesSectionProps) {
 					href="#contact"
 					className="inline-flex h-10 items-center justify-center rounded-full border border-input bg-background px-5 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-[color:rgba(243,236,227,0.65)]"
 				>
-					查看更多日思
+					{t("daily.viewMore")}
 				</a>
 			</div>
 		</section>

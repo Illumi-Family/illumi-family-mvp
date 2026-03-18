@@ -2,6 +2,7 @@ import { getDb } from "../../shared/db/client";
 import { AppError } from "../../shared/http/errors";
 import { factory } from "../../shared/http/factory";
 import { jsonSuccess } from "../../shared/http/response";
+import { normalizeContentLocale } from "../../shared/i18n/locale";
 import { readCacheJson, writeCacheJson } from "../../shared/storage/kv";
 import { getObject } from "../../shared/storage/r2";
 import type { AppBindings } from "../../types";
@@ -15,14 +16,15 @@ const buildContentService = (env: AppBindings) => {
 };
 
 export const getHomeContentHandlers = factory.createHandlers(async (c) => {
-	const cacheKey = ContentService.getCacheKey();
+	const locale = normalizeContentLocale(c.req.query("locale"));
+	const cacheKey = ContentService.getCacheKey(locale);
 	const cached = await readCacheJson<HomeContentPayload>(c.env.CACHE, cacheKey);
 	if (cached) {
 		return jsonSuccess(c, cached);
 	}
 
 	const service = buildContentService(c.env);
-	const payload = await service.getPublishedHomeContent();
+	const payload = await service.getPublishedHomeContent(locale);
 	await writeCacheJson(
 		c.env.CACHE,
 		cacheKey,

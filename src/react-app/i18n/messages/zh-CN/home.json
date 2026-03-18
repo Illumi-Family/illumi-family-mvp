@@ -1,0 +1,46 @@
+{
+  "hero": {
+    "badge": "新中式 · 书香家风 · 三代同堂"
+  },
+  "navigation": {
+    "mainAriaLabel": "主导航",
+    "mobileAriaLabel": "移动端快捷导航"
+  },
+  "fallbackNotice": "内容服务暂时不可用，当前展示本地兜底内容。",
+  "philosophy": {
+    "label": "家风家学·理念",
+    "title": "扎根生命的家庭教育，不靠焦虑驱动"
+  },
+  "daily": {
+    "label": "践行感悟·日思",
+    "title": "把日子过成教育，把感悟变成力量",
+    "description": "记录生活里的点滴觉醒，书写教养中的真实体悟。在日常里观心，在陪伴中成长，在践行中传承。",
+    "viewMore": "查看更多日思"
+  },
+  "stories": {
+    "label": "三代同堂·故事",
+    "title": "用真实故事，记录家风流淌与家学传承",
+    "description": "三代同堂，是最好的家风课堂；一家温暖，是最稳的生命根基。故事区按上线状态区分交互，便于后续持续扩充。",
+    "durationPrefix": "时长/进度：",
+    "watch": "观看动画",
+    "comingSoon": "敬请期待",
+    "status": {
+      "published": "已上线",
+      "comingSoon": "筹备中"
+    }
+  },
+  "colearning": {
+    "label": "家庭共学·陪伴",
+    "title": "家长先成长，孩子自芬芳",
+    "methodsTitle": "共学方法论",
+    "benefitsTitle": "共学收益点"
+  },
+  "about": {
+    "label": "知我",
+    "title": "以家为塾，让教育回到日常",
+    "description": "我是小罗老师，一名三娃妈妈，也是「童蒙家塾」家庭 IP 创始人。",
+    "beliefsLabel": "我相信：",
+    "contactTitle": "联系与合作",
+    "contactDescription": "欢迎进行家庭共学交流、内容合作与讲座邀请，当前邮箱为占位信息。"
+  }
+}

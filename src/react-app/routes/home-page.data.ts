@@ -1,3 +1,5 @@
+import type { AppLocale } from "@/i18n/types";
+
 export interface NavigationItem {
 	label: string;
 	href: string;
@@ -244,4 +246,197 @@ export const footerContent = {
 		{ label: "未成年人保护（待补充）", href: "#" },
 		{ label: "版权声明（待补充）", href: "#" },
 	] satisfies FooterLink[],
+};
+
+const siteMetaEn = {
+	brandName: "Tongmeng Family School",
+	brandSubtitle: "Three-generation family culture in practice",
+	headerCta: { label: "Start Exploring", href: "#philosophy" },
+};
+
+const siteNavigationEn: NavigationItem[] = [
+	{ label: "Philosophy", href: "#philosophy" },
+	{ label: "Daily Notes", href: "#daily" },
+	{ label: "Stories", href: "#stories" },
+	{ label: "Co-learning", href: "#colearning" },
+	{ label: "About", href: "#about" },
+];
+
+const heroContentEn: HeroContent = {
+	title: "A three-generation practitioner of family values and learning",
+	subtitle: "Every family can build its own Tongmeng Family School",
+	descriptionLines: [
+		"Root hearts in classics, nurture character through family culture.",
+		"Stand on the foundation of three generations living together,",
+		"and let ordinary homes become places of lifelong learning.",
+	],
+	primaryCta: { label: "Read the philosophy", href: "#philosophy" },
+	secondaryCta: { label: "Meet Teacher Luo", href: "#about" },
+	image: {
+		src: "/images/background.png",
+		alt: "Family portrait showing warm companionship and cultural inheritance.",
+	},
+};
+
+const defaultHomeContentEn = {
+	philosophy: {
+		intro:
+			"Classics as roots, family as school, calmness as method, integrity as purpose. True education grows in daily family life.",
+		items: [
+			{
+				title: "Calmness",
+				description:
+					"Stabilize parents and children before discussing methods or efficiency.",
+			},
+			{
+				title: "Character",
+				description:
+					"Build boundaries and virtues through daily habits with warmth and consistency.",
+			},
+			{
+				title: "Family School",
+				description:
+					"Integrate reading, responsibility, gratitude, and reflection into everyday life.",
+			},
+		],
+	},
+	dailyNotes: {
+		items: [
+			{
+				date: "2026-03-05",
+				title: "From urging to co-learning: 20 minutes after dinner",
+				summary:
+					"Read classics together for ten minutes, then each person shares one key takeaway.",
+				tags: ["Co-reading", "Family rhythm", "Daily practice"],
+			},
+			{
+				date: "2026-03-03",
+				title: "When emotions rise, stabilize tone before rules",
+				summary:
+					"Connection comes first, then rules can be heard. Empathize, set boundaries, then act.",
+				tags: ["Emotional coaching", "Parent-child communication", "Character"],
+			},
+			{
+				date: "2026-02-28",
+				title: "Weekend chores rotation grows responsibility",
+				summary:
+					"Focus on participation over perfection so children learn responsibility and cooperation.",
+				tags: ["Family labor", "Responsibility", "Three generations"],
+			},
+			{
+				date: "2026-02-24",
+				title: "5-minute bedtime review for mutual growth",
+				summary:
+					"Ask three questions: gratitude, improvement, and tomorrow's first good deed.",
+				tags: ["Reflection", "Gratitude", "Family values"],
+			},
+		],
+	},
+	stories: {
+		items: [
+			{
+				title: "\"Morning Light of a Family\": reading and chores in sync",
+				summary:
+					"A story of grandparents, parents, and children building a steady morning rhythm.",
+				publishDate: "2026-02-18",
+				duration: "08:24",
+				status: "published" as const,
+				link: "#contact",
+			},
+			{
+				title: "\"Solar-Term Table Class\": grandma's seasonal stories",
+				summary:
+					"Connect seasonal traditions, food, and moral education at the family table.",
+				publishDate: "2026-03-20",
+				duration: "In preparation",
+				status: "coming_soon" as const,
+			},
+			{
+				title: "\"A Letter Home\": two-way expression between parents and children",
+				summary:
+					"Real letters showing how understanding, boundaries, and collaboration are rebuilt.",
+				publishDate: "2026-04-10",
+				duration: "In preparation",
+				status: "coming_soon" as const,
+			},
+		],
+	},
+	colearning: {
+		intro:
+			"Companionship lights the way, co-learning builds the path, growth becomes the result.",
+		methods: [
+			{
+				title: "Read and explain together",
+				description: "Weekly co-reading with rotating retell and questions.",
+			},
+			{
+				title: "Work and share responsibility",
+				description: "Use household tasks to build ownership and autonomy.",
+			},
+			{
+				title: "Reflect and improve",
+				description: "Track changes weekly and replace anxiety with small actions.",
+			},
+		],
+		benefits: [
+			"Reduce communication friction while keeping warmth and boundaries.",
+			"Improve children's self-management in learning and life.",
+			"Help parents build sustainable education methods.",
+		],
+		caseHighlight: {
+			title: "Case Summary | 4-week family co-learning experiment",
+			summary:
+				"With fixed evening reading, weekend family meetings, and daily mini reviews, one family saw clear progress in routines and participation.",
+			cta: { label: "View case", href: "#contact" },
+		},
+	},
+};
+
+const aboutContentEn: AboutContent = {
+	name: "Teacher Xiao Luo",
+	roles: ["Mother of three", "Family education practitioner", "Founder of Tongmeng Family School"],
+	beliefs: [
+		"The best education happens at home;",
+		"The best private school is in everyday life.",
+	],
+	methodKeywords: ["Calmness", "Character", "Autonomy", "Co-learning"],
+	closing:
+		"Reject anxiety and utilitarian pressure. Practice education rooted in life, with warmth and depth.",
+	portrait: {
+		src: "/images/background.png",
+		alt: "Family IP portrait of Tongmeng Family School.",
+	},
+};
+
+const footerContentEn = {
+	sloganLine1: "Your home is a school, your daily life is education.",
+	sloganLine2: "Nurture character early, pass family values forward.",
+	copyright: "© 2026 Tongmeng Family School. All rights reserved.",
+	contactEmail: "contact@illumi-family.com",
+	links: [
+		{ label: "Privacy Policy (TBD)", href: "#" },
+		{ label: "Minor Protection (TBD)", href: "#" },
+		{ label: "Copyright Notice (TBD)", href: "#" },
+	] satisfies FooterLink[],
+};
+
+export const getHomePageData = (locale: AppLocale) => {
+	if (locale === "en-US") {
+		return {
+			siteMeta: siteMetaEn,
+			siteNavigation: siteNavigationEn,
+			heroContent: heroContentEn,
+			defaultHomeContent: defaultHomeContentEn,
+			aboutContent: aboutContentEn,
+			footerContent: footerContentEn,
+		};
+	}
+	return {
+		siteMeta,
+		siteNavigation,
+		heroContent,
+		defaultHomeContent,
+		aboutContent,
+		footerContent,
+	};
 };

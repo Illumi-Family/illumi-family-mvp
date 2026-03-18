@@ -1,0 +1,19 @@
+{
+  "skipToContent": "Skip to content",
+  "utilityNav": {
+    "ariaLabel": "System navigation",
+    "home": "Home",
+    "profile": "Profile",
+    "auth": "Auth",
+    "admin": "Admin"
+  },
+  "session": {
+    "signedInAs": "Signed in as {{email}}",
+    "notSignedIn": "Not signed in"
+  },
+  "languageSwitcher": {
+    "label": "Language",
+    "zh": "中文",
+    "en": "English"
+  }
+}

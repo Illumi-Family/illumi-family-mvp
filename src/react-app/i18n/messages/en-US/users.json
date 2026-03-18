@@ -1,0 +1,36 @@
+{
+  "titles": {
+    "profileSettings": "Profile Settings",
+    "profileSnapshot": "Profile Snapshot"
+  },
+  "descriptions": {
+    "profileSettings": "An account is created automatically after sign-up and verified email. Use this page to manage the current profile.",
+    "snapshot": "Current profile and account lifecycle details.",
+    "pending": "Loading current profile...",
+    "waiting": "Waiting for profile data...",
+    "footer": "Manual user creation is no longer supported. Registration creates identities consistently."
+  },
+  "labels": {
+    "email": "Email",
+    "displayName": "Display Name",
+    "displayNamePlaceholder": "Your display name",
+    "userId": "User ID",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At",
+    "currentUser": "Current User"
+  },
+  "buttons": {
+    "save": "Save changes",
+    "saving": "Saving...",
+    "signOut": "Sign out",
+    "refresh": "Refresh profile",
+    "refreshing": "Refreshing..."
+  },
+  "status": {
+    "fetching": "fetching"
+  },
+  "errors": {
+    "currentUserNotFound": "Current account is not ready. Please finish sign-up and email verification.",
+    "unexpected": "Unexpected error"
+  }
+}

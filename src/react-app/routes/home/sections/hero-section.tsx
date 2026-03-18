@@ -1,4 +1,5 @@
 import { ArrowRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { HeroContent } from "@/routes/home-page.data";
 import { Badge } from "@/components/ui/badge";
 
@@ -7,6 +8,8 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ content }: HeroSectionProps) {
+	const { t } = useTranslation("home");
+
 	return (
 		<section
 			id="hero"
@@ -32,7 +35,7 @@ export function HeroSection({ content }: HeroSectionProps) {
 			<div className="relative z-10 flex items-end p-5 md:p-8 lg:p-12">
 				<div className="max-w-3xl space-y-6 motion-enter" style={{ animationDelay: "60ms" }}>
 					<Badge className="w-fit rounded-full bg-[color:rgba(248,245,240,0.22)] px-3 py-1 text-[color:#fff8ef]">
-						新中式 · 书香家风 · 三代同堂
+						{t("hero.badge")}
 					</Badge>
 					<div className="space-y-4">
 						<h1 className="font-brand text-4xl leading-tight text-[#fff8ef] md:text-6xl">

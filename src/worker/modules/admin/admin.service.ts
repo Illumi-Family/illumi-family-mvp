@@ -3,6 +3,11 @@ import { putObject } from "../../shared/storage/r2";
 import type { AppBindings } from "../../types";
 import type { AdminRepository } from "./admin.repository";
 import {
+	DEFAULT_CONTENT_LOCALE,
+	SUPPORTED_CONTENT_LOCALES,
+	type ContentLocale,
+} from "../../shared/i18n/locale";
+import {
 	parseHomeSectionContent,
 	type AdminPublishHomeSectionBody,
 	type AdminUpsertHomeSectionBody,
@@ -55,12 +60,13 @@ export class AdminService {
 		};
 	}
 
-	listHomeSections() {
-		return this.repository.listHomeSections();
+	listHomeSections(locale: ContentLocale) {
+		return this.repository.listHomeSections(locale);
 	}
 
 	async saveHomeSectionDraft(input: {
 		entryKey: HomeSectionEntryKey;
+		locale: ContentLocale;
 		body: AdminUpsertHomeSectionBody;
 		authUserId: string;
 	}) {
@@ -72,11 +78,13 @@ export class AdminService {
 		env: AppBindings,
 		input: {
 			entryKey: HomeSectionEntryKey;
+			locale: ContentLocale;
 			body: AdminPublishHomeSectionBody;
 		},
 	) {
 		const result = await this.repository.publishHomeSection({
 			entryKey: input.entryKey,
+			locale: input.locale,
 			revisionId: input.body.revisionId,
 		});
 		if (!result.changed) {
@@ -86,7 +94,13 @@ export class AdminService {
 			throw new AppError("NOT_FOUND", "Revision not found", 404);
 		}
 
-		await deleteCacheKey(env.CACHE, ContentService.getCacheKey());
+		const cacheLocales: ContentLocale[] =
+			input.locale === DEFAULT_CONTENT_LOCALE
+				? [...SUPPORTED_CONTENT_LOCALES]
+				: [input.locale];
+		for (const locale of cacheLocales) {
+			await deleteCacheKey(env.CACHE, ContentService.getCacheKey(locale));
+		}
 		return result;
 	}
 

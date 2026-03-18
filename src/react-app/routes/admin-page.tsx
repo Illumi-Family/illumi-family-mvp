@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { AppLocale } from "@/i18n/types";
 import {
 	type HomeSectionEntryKey,
 	type UploadAdminAssetInput,
@@ -24,7 +25,7 @@ import {
 import {
 	adminHomeSectionsQueryKey,
 	adminHomeSectionsQueryOptions,
-	homeContentQueryKey,
+	homeContentQueryKeyPrefix,
 } from "@/lib/query-options";
 
 const ENTRY_KEY_OPTIONS: Array<{ value: HomeSectionEntryKey; label: string }> = [
@@ -32,6 +33,11 @@ const ENTRY_KEY_OPTIONS: Array<{ value: HomeSectionEntryKey; label: string }> = 
 	{ value: "home.daily_notes", label: "践行感悟·日思" },
 	{ value: "home.stories", label: "三代同堂·故事" },
 	{ value: "home.colearning", label: "家庭共学·陪伴" },
+];
+
+const LOCALE_OPTIONS: Array<{ value: AppLocale; label: string }> = [
+	{ value: "zh-CN", label: "ZH" },
+	{ value: "en-US", label: "EN" },
 ];
 
 type PhilosophyContent = {
@@ -268,13 +274,15 @@ type DraftFormState = {
 	content: SectionContentByEntry[HomeSectionEntryKey];
 };
 
+const buildDraftKey = (locale: AppLocale, entryKey: HomeSectionEntryKey) =>
+	`${locale}:${entryKey}`;
+
 export function AdminPage() {
 	const queryClient = useQueryClient();
-	const sectionsQuery = useQuery(adminHomeSectionsQueryOptions());
+	const [locale, setLocale] = useState<AppLocale>("zh-CN");
+	const sectionsQuery = useQuery(adminHomeSectionsQueryOptions(locale));
 	const [entryKey, setEntryKey] = useState<HomeSectionEntryKey>("home.philosophy");
-	const [draftByEntry, setDraftByEntry] = useState<
-		Partial<Record<HomeSectionEntryKey, DraftFormState>>
-	>({});
+	const [draftByEntry, setDraftByEntry] = useState<Record<string, DraftFormState>>({});
 	const [statusMessage, setStatusMessage] = useState<string | null>(null);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -305,10 +313,10 @@ export function AdminPage() {
 	);
 
 	const resolvedFormState = useMemo<DraftFormState>(() => {
-		const existingDraft = draftByEntry[activeEntryKey];
+		const existingDraft = draftByEntry[buildDraftKey(locale, activeEntryKey)];
 		if (existingDraft) return existingDraft;
 		return baselineFormState;
-	}, [draftByEntry, activeEntryKey, baselineFormState]);
+	}, [draftByEntry, locale, activeEntryKey, baselineFormState]);
 
 	const hasUnsavedChanges = useMemo(
 		() =>
@@ -321,7 +329,7 @@ export function AdminPage() {
 	const setFormState = (partial: Partial<DraftFormState>) => {
 		setDraftByEntry((prev) => ({
 			...prev,
-			[activeEntryKey]: {
+			[buildDraftKey(locale, activeEntryKey)]: {
 				...resolvedFormState,
 				...partial,
 			},
@@ -335,10 +343,12 @@ export function AdminPage() {
 
 	const saveDraftMutation = useMutation({
 		mutationFn: saveAdminHomeSectionDraft,
-		onSuccess: async () => {
+		onSuccess: async (_data, variables) => {
 			setStatusMessage("草稿已保存");
 			setErrorMessage(null);
-			await queryClient.invalidateQueries({ queryKey: adminHomeSectionsQueryKey });
+			await queryClient.invalidateQueries({
+				queryKey: adminHomeSectionsQueryKey(variables.locale),
+			});
 		},
 		onError: (error) => {
 			setStatusMessage(null);
@@ -348,11 +358,13 @@ export function AdminPage() {
 
 	const publishMutation = useMutation({
 		mutationFn: publishAdminHomeSection,
-		onSuccess: async () => {
+		onSuccess: async (_data, variables) => {
 			setStatusMessage("发布成功");
 			setErrorMessage(null);
-			await queryClient.invalidateQueries({ queryKey: adminHomeSectionsQueryKey });
-			await queryClient.invalidateQueries({ queryKey: homeContentQueryKey });
+			await queryClient.invalidateQueries({
+				queryKey: adminHomeSectionsQueryKey(variables.locale),
+			});
+			await queryClient.invalidateQueries({ queryKey: homeContentQueryKeyPrefix });
 		},
 		onError: (error) => {
 			setStatusMessage(null);
@@ -394,6 +406,7 @@ export function AdminPage() {
 			return;
 		}
 		saveDraftMutation.mutate({
+			locale,
 			entryKey: activeEntryKey,
 			title: resolvedFormState.title,
 			summaryMd: resolvedFormState.summaryMd || undefined,
@@ -419,6 +432,7 @@ export function AdminPage() {
 		if (!shouldPublish) return;
 
 		publishMutation.mutate({
+			locale,
 			entryKey: activeEntryKey,
 			revisionId: selectedSection.latestRevisionId,
 		});
@@ -981,7 +995,33 @@ export function AdminPage() {
 							</h1>
 						</div>
 						<div className="flex flex-wrap gap-2">
+							<div className="inline-flex items-center rounded-full border border-border/70 bg-background/70 p-1">
+								{LOCALE_OPTIONS.map((option) => {
+									const active = option.value === locale;
+									return (
+										<button
+											key={option.value}
+											type="button"
+											aria-pressed={active}
+											onClick={() => {
+												if (option.value === locale) return;
+												setLocale(option.value);
+												resetMessage();
+											}}
+											className={[
+												"rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+												active
+													? "bg-primary text-primary-foreground"
+													: "text-muted-foreground hover:text-foreground",
+											].join(" ")}
+										>
+											{option.label}
+										</button>
+									);
+								})}
+							</div>
 							<Badge variant="secondary">{SECTION_EDITOR_META[activeEntryKey].moduleName}</Badge>
+							<Badge variant="outline">{locale}</Badge>
 							<Badge variant="outline">rev {selectedSection?.latestRevisionNo ?? "-"}</Badge>
 							<Badge variant={hasUnsavedChanges ? "outline" : "secondary"}>
 								{hasUnsavedChanges ? "未保存" : "已保存"}

@@ -5,6 +5,7 @@ export const cmsEntries = sqliteTable(
 	{
 		id: text("id").primaryKey(),
 		entryKey: text("entry_key").notNull(),
+		locale: text("locale").notNull().default("zh-CN"),
 		entryType: text("entry_type").notNull().default("home_section"),
 		schemaKey: text("schema_key").notNull(),
 		status: text("status").notNull().default("draft"),
@@ -14,7 +15,11 @@ export const cmsEntries = sqliteTable(
 		publishedAt: integer("published_at", { mode: "timestamp_ms" }),
 	},
 	(table) => [
-		uniqueIndex("cms_entries_entry_key_unique").on(table.entryKey),
+		uniqueIndex("cms_entries_entry_key_locale_unique").on(
+			table.entryKey,
+			table.locale,
+		),
+		index("cms_entries_locale_idx").on(table.locale),
 		index("cms_entries_status_idx").on(table.status),
 	],
 );
