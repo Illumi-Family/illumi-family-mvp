@@ -8,10 +8,12 @@ import {
 import { authClient } from "@/lib/auth-client";
 import { getAdminMe } from "@/lib/api";
 import { AdminPage } from "@/routes/admin-page";
+import { AdminVideosPage } from "@/routes/admin-videos-page";
 import { AuthPage } from "@/routes/auth-page";
 import { HomePage } from "@/routes/home-page";
 import { RootLayout } from "@/routes/root-layout";
 import { UsersPage } from "@/routes/users-page";
+import { VideosPage } from "@/routes/videos-page";
 
 export const queryClient = new QueryClient({
 	defaultOptions: {
@@ -69,11 +71,26 @@ const adminRoute = createRoute({
 	component: AdminPage,
 });
 
+const adminVideosRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/admin/videos",
+	beforeLoad: requireAdminAccess,
+	component: AdminVideosPage,
+});
+
+const videosRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/videos",
+	component: VideosPage,
+});
+
 const routeTree = rootRoute.addChildren([
 	homeRoute,
+	videosRoute,
 	usersRoute,
 	authRoute,
 	adminRoute,
+	adminVideosRoute,
 ]);
 
 export const router = createRouter({

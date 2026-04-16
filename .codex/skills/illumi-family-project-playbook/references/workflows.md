@@ -75,6 +75,7 @@ pnpm db:migrate
 ```bash
 curl -s 'https://dev.illumi-family.com/api/content/home?locale=zh-CN'
 curl -s 'https://dev.illumi-family.com/api/content/home?locale=en-US'
+curl -s 'https://dev.illumi-family.com/api/content/videos'
 ```
 7. Apply to prod:
 ```bash
@@ -117,8 +118,10 @@ curl -s https://illumi-family-mvp.lguangcong0712.workers.dev/api/health
   - `PATCH /api/users/me` (JSON content-type, e.g. `{ "name": "New Name" }`)
   - `GET /api/content/home?locale=zh-CN`
   - `GET /api/content/home?locale=en-US`
+  - `GET /api/content/videos`
   - `GET /api/admin/me` (unauthenticated should return `401`)
   - `POST /api/admin/assets/upload` (unauthenticated should return `401`)
+  - `GET /api/admin/videos` (unauthenticated should return `401`)
   - `HEAD /admin` on admin domains returns `200` HTML
 
 ## 6.1) Auth Secrets Setup (Before Auth Deploy)
@@ -128,6 +131,8 @@ pnpm exec wrangler secret put BETTER_AUTH_SECRET --env dev
 pnpm exec wrangler secret put GOOGLE_CLIENT_ID --env dev
 pnpm exec wrangler secret put GOOGLE_CLIENT_SECRET --env dev
 pnpm exec wrangler secret put RESEND_API_KEY --env dev
+pnpm exec wrangler secret put STREAM_API_TOKEN --env dev
+pnpm exec wrangler secret put STREAM_WEBHOOK_SECRET --env dev
 ```
 
 Prod:
@@ -136,6 +141,8 @@ pnpm exec wrangler secret put BETTER_AUTH_SECRET
 pnpm exec wrangler secret put GOOGLE_CLIENT_ID
 pnpm exec wrangler secret put GOOGLE_CLIENT_SECRET
 pnpm exec wrangler secret put RESEND_API_KEY
+pnpm exec wrangler secret put STREAM_API_TOKEN
+pnpm exec wrangler secret put STREAM_WEBHOOK_SECRET
 ```
 
 ## 7) Operational Response Basics

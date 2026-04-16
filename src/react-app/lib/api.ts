@@ -19,7 +19,7 @@ type ApiSuccess<T> = {
 type ApiResponse<T> = ApiFailure | ApiSuccess<T>;
 
 type RequestOptions = {
-	method?: "GET" | "POST" | "PUT" | "PATCH";
+	method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 	body?: string;
 	headers?: HeadersInit;
 };
@@ -153,6 +153,50 @@ export type AdminAssetRecord = {
 	sha256: string;
 	uploadedByAuthUserId: string | null;
 	createdAt: string;
+};
+
+export type VideoProcessingStatus = "processing" | "ready" | "failed";
+export type VideoPublishStatus = "draft" | "published";
+
+export type AdminVideoRecord = {
+	id: string;
+	streamVideoId: string;
+	processingStatus: VideoProcessingStatus;
+	publishStatus: VideoPublishStatus;
+	title: string;
+	posterUrl: string | null;
+	durationSeconds: number | null;
+	createdByAuthUserId: string | null;
+	updatedByAuthUserId: string | null;
+	createdAt: string;
+	updatedAt: string;
+	publishedAt: string | null;
+};
+
+export type PublicVideoRecord = {
+	id: string;
+	streamVideoId: string;
+	title: string;
+	posterUrl: string | null;
+	durationSeconds: number | null;
+	publishedAt: string;
+};
+
+export type CreateAdminVideoUploadUrlInput = {
+	title?: string;
+	maxDurationSeconds?: number;
+};
+
+export type CreateAdminVideoUploadUrlResult = {
+	videoId: string;
+	uploadUrl: string;
+	expiresAt: string | null;
+};
+
+export type UpdateAdminVideoInput = {
+	videoId: string;
+	title?: string;
+	posterUrl?: string | null;
 };
 
 const readJson = async <T>(response: Response): Promise<ApiResponse<T>> => {
@@ -296,4 +340,90 @@ export const uploadAdminAsset = async (
 		},
 	);
 	return data.asset;
+};
+
+export const listAdminVideos = async (): Promise<AdminVideoRecord[]> => {
+	const data = await request<{ videos: AdminVideoRecord[] }>("/api/admin/videos");
+	return data.videos;
+};
+
+export const createAdminVideoUploadUrl = async (
+	input: CreateAdminVideoUploadUrlInput,
+): Promise<CreateAdminVideoUploadUrlResult> => {
+	return request<CreateAdminVideoUploadUrlResult>("/api/admin/videos/upload-url", {
+		method: "POST",
+		body: JSON.stringify(input),
+		headers: {
+			"Content-Type": "application/json",
+		},
+	});
+};
+
+export const updateAdminVideo = async (
+	input: UpdateAdminVideoInput,
+): Promise<AdminVideoRecord> => {
+	const data = await request<{ video: AdminVideoRecord }>(
+		`/api/admin/videos/${encodeURIComponent(input.videoId)}`,
+		{
+			method: "PATCH",
+			body: JSON.stringify({
+				title: input.title,
+				posterUrl: input.posterUrl,
+			}),
+			headers: {
+				"Content-Type": "application/json",
+			},
+		},
+	);
+	return data.video;
+};
+
+export const publishAdminVideo = async (
+	videoId: string,
+): Promise<{ changed: boolean; video: AdminVideoRecord | null }> => {
+	return request<{ changed: boolean; video: AdminVideoRecord | null }>(
+		`/api/admin/videos/${encodeURIComponent(videoId)}/publish`,
+		{
+			method: "POST",
+		},
+	);
+};
+
+export const unpublishAdminVideo = async (
+	videoId: string,
+): Promise<{ changed: boolean; video: AdminVideoRecord | null }> => {
+	return request<{ changed: boolean; video: AdminVideoRecord | null }>(
+		`/api/admin/videos/${encodeURIComponent(videoId)}/unpublish`,
+		{
+			method: "POST",
+		},
+	);
+};
+
+export const syncAdminVideoStatus = async (
+	videoId: string,
+): Promise<AdminVideoRecord> => {
+	const data = await request<{ video: AdminVideoRecord }>(
+		`/api/admin/videos/${encodeURIComponent(videoId)}/sync-status`,
+		{
+			method: "POST",
+		},
+	);
+	return data.video;
+};
+
+export const deleteAdminVideoDraft = async (
+	videoId: string,
+): Promise<{ deleted: boolean; videoId: string; remoteDeleted: boolean }> => {
+	return request<{ deleted: boolean; videoId: string; remoteDeleted: boolean }>(
+		`/api/admin/videos/${encodeURIComponent(videoId)}`,
+		{
+			method: "DELETE",
+		},
+	);
+};
+
+export const listPublicVideos = async (): Promise<PublicVideoRecord[]> => {
+	const data = await request<{ videos: PublicVideoRecord[] }>("/api/content/videos");
+	return data.videos;
 };

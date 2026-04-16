@@ -1,6 +1,6 @@
 # Illumi Family MVP Current State
 
-Last verified: 2026-03-18
+Last verified: 2026-04-16
 
 ## 1) Canonical Fact Sources
 - `wrangler.json`
@@ -14,6 +14,7 @@ Last verified: 2026-03-18
 
 ## 2) Tech Stack Snapshot
 - Frontend: React 19 + Vite 6 + TanStack Router + TanStack Query
+- Video player: `@cloudflare/stream-react`
 - i18n: i18next + react-i18next + dayjs
 - Backend runtime: Hono 4 on Cloudflare Workers
 - Auth: Better Auth + Resend (email verification) + Google OAuth
@@ -70,6 +71,15 @@ Last verified: 2026-03-18
 - `PUT /api/admin/content/home/:entryKey?locale=...` (whitelist + verified email required; invalid locale => 400)
 - `POST /api/admin/content/home/:entryKey/publish?locale=...` (whitelist + verified email required; invalid locale => 400)
 - `POST /api/admin/assets/upload` (whitelist + verified email required)
+- `GET /api/admin/videos` (whitelist + verified email required)
+- `POST /api/admin/videos/upload-url` (whitelist + verified email required)
+- `PATCH /api/admin/videos/:videoId` (whitelist + verified email required)
+- `POST /api/admin/videos/:videoId/publish` (whitelist + verified email required)
+- `POST /api/admin/videos/:videoId/unpublish` (whitelist + verified email required)
+- `POST /api/admin/videos/:videoId/sync-status` (whitelist + verified email required)
+- `DELETE /api/admin/videos/:videoId` (whitelist + verified email required; cleanup draft/zombie records)
+- `GET /api/content/videos` (public published+ready videos only)
+- `POST /api/webhooks/stream` (HMAC signature via `Webhook-Signature`)
 
 ## 7) Data Model (Current)
 - Legacy table:
@@ -88,6 +98,8 @@ Last verified: 2026-03-18
   - `cms_revisions`
   - `cms_assets`
   - `cms_entry_assets`
+- Video tables:
+  - `video_assets`
 - CMS locale dimension:
   - `cms_entries.locale` exists (`zh-CN` default)
   - uniqueness is `UNIQUE(entry_key, locale)` (not `entry_key` only)
@@ -103,6 +115,8 @@ Last verified: 2026-03-18
 - Admin publish cache invalidation matrix:
   - publish `zh-CN` => invalidate all supported locale home caches (currently `zh-CN`, `en-US`)
   - publish `en-US` => invalidate `en-US` home cache only
+- Public video list cache key: `videos:public:v1` (publish/unpublish + ready-state drift triggers invalidation)
+- Stream webhook validation uses HMAC SHA-256 + header `Webhook-Signature` (`time` + `sig1`) with `STREAM_WEBHOOK_SECRET`.
 
 ## 9) Template Tooling (Local Scaffold)
 - Commands:

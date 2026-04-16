@@ -54,6 +54,35 @@ describe("worker api", () => {
 		expect(body.error.code).toBe("UNAUTHORIZED");
 	});
 
+	it("requires auth session for /api/admin/videos", async () => {
+		const response = await app.request("/api/admin/videos", {}, testEnv as never);
+		expect(response.status).toBe(401);
+		const body = (await response.json()) as {
+			success: boolean;
+			error: { code: string };
+		};
+		expect(body.success).toBe(false);
+		expect(body.error.code).toBe("UNAUTHORIZED");
+	});
+
+	it("returns 400 for empty stream webhook body", async () => {
+		const response = await app.request(
+			"/api/webhooks/stream",
+			{
+				method: "POST",
+				body: "",
+			},
+			testEnv as never,
+		);
+		expect(response.status).toBe(400);
+		const body = (await response.json()) as {
+			success: boolean;
+			error: { code: string };
+		};
+		expect(body.success).toBe(false);
+		expect(body.error.code).toBe("BAD_REQUEST");
+	});
+
 	it("normalizes locale alias for /api/content/home cache key", async () => {
 		const cache = {
 			get: vi.fn().mockResolvedValue(

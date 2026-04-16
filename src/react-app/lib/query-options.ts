@@ -4,7 +4,9 @@ import {
 	getCurrentUser,
 	getHealth,
 	getHomeContent,
+	listAdminVideos,
 	listAdminHomeSections,
+	listPublicVideos,
 } from "./api";
 
 export const healthQueryKey = ["health"] as const;
@@ -14,6 +16,8 @@ export const homeContentQueryKey = (locale: AppLocale) =>
 	[...homeContentQueryKeyPrefix, locale] as const;
 export const adminHomeSectionsQueryKey = (locale: AppLocale) =>
 	["admin-home-sections", locale] as const;
+export const adminVideosQueryKey = ["admin-videos"] as const;
+export const publicVideosQueryKey = ["public-videos"] as const;
 
 export const healthQueryOptions = () =>
 	queryOptions({
@@ -41,4 +45,18 @@ export const adminHomeSectionsQueryOptions = (locale: AppLocale) =>
 		queryKey: adminHomeSectionsQueryKey(locale),
 		queryFn: () => listAdminHomeSections(locale),
 		staleTime: 5_000,
+	});
+
+export const adminVideosQueryOptions = () =>
+	queryOptions({
+		queryKey: adminVideosQueryKey,
+		queryFn: listAdminVideos,
+		staleTime: 5_000,
+	});
+
+export const publicVideosQueryOptions = () =>
+	queryOptions({
+		queryKey: publicVideosQueryKey,
+		queryFn: listPublicVideos,
+		staleTime: 30_000,
 	});

@@ -2,10 +2,10 @@
 
 ## 0. 文档信息
 - 项目：`illumi-family-mvp`
-- 文档版本：`v1.1.0`
-- 最近更新：`2026-03-18`
+- 文档版本：`v1.2.0`
+- 最近更新：`2026-04-16`
 - 运行规范入口：`docs/runbooks/development-deployment-cicd-runbook.md`
-- 当前阶段：模板初始化后已完成 UI 基础设施 + 前端路由/数据缓存（TanStack Router + Query）+ 后端基础能力（dev/prod + D1/KV/R2 + Drizzle + Hono API 分层）+ Better Auth + Resend 鉴权主链路（邮箱密码 + Google）+ Admin CMS 基础能力（白名单鉴权 + admin 子域 + D1 内容版本化 + R2 资产 + 内容发布 API）+ i18n Phase 1/2（前端双语、CMS locale、内容 fallback、locale 缓存分片）+ 本地模板脚手架（template:new/sync/doctor）
+- 当前阶段：模板初始化后已完成 UI 基础设施 + 前端路由/数据缓存（TanStack Router + Query）+ 后端基础能力（dev/prod + D1/KV/R2 + Drizzle + Hono API 分层）+ Better Auth + Resend 鉴权主链路（邮箱密码 + Google）+ Admin CMS 基础能力（白名单鉴权 + admin 子域 + D1 内容版本化 + R2 资产 + 内容发布 API）+ i18n Phase 1/2（前端双语、CMS locale、内容 fallback、locale 缓存分片）+ Cloudflare Stream 视频能力层（后台直传签发、webhook 状态回写、发布门禁、公网播放）+ 本地模板脚手架（template:new/sync/doctor）
 
 ## 1. 架构目标与边界
 本项目采用 **React + Vite + Hono + Cloudflare Workers** 的一体化架构，目标是在 Cloudflare 边缘网络上实现：
@@ -29,6 +29,7 @@
 - UI 与样式：`tailwindcss@^4.2.1`、`@tailwindcss/vite@^4.2.1`、`tw-animate-css@^1.4.0`
 - 组件体系：`shadcn/ui`（本地组件模式 + `components.json`） 、`@base-ui/react@^1.2.0`
 - 关键插件：`@cloudflare/vite-plugin@1.15.3`、`@vitejs/plugin-react@5.1.1`
+- 视频播放：`@cloudflare/stream-react@1.9.3`
 - 测试与质量：`vitest@4.0.18`、`typescript@5.8.3`、`eslint@9.39.2`
 
 ## 3. 总体架构
@@ -41,6 +42,7 @@ flowchart LR
   BA --> D1
   BA --> RESEND[Resend]
   BA --> GOOGLE[Google OAuth]
+  SVC --> STREAM[Cloudflare Stream API]
   CF -->|Hono Router/Controller/Service| SVC[业务层]
   SVC --> D1[(D1 / Drizzle)]
   SVC --> KV[(KV)]
@@ -51,9 +53,10 @@ flowchart LR
 ### 3.1 运行时职责划分
 - React 应用负责页面渲染与交互；
 - Worker 作为统一入口：
-  - 提供 API 路由（`/api/health`、`/api/users`、`/api/auth/*`、`/api/`）；
+  - 提供 API 路由（`/api/health`、`/api/users`、`/api/auth/*`、`/api/admin/videos/*`、`/api/content/videos`、`/api/webhooks/stream`、`/api/`）；
   - 通过 Router/Controller/Service/Repository 分层处理请求；
   - 接入 D1（关系型）、KV（缓存/轻配置）、R2（对象存储）；
+  - 通过 Stream 集成层对接 Cloudflare Stream（直传 URL 签发 + 状态同步）；
   - 托管并分发构建后的前端资源（`dist/client`）。
 
 ### 3.2 核心请求路径
@@ -61,7 +64,8 @@ flowchart LR
 2. 前端触发 `fetch("/api/*")`。
 3. Hono 路由进入统一中间件（request-id、错误处理、校验）。
 4. Controller 调 Service，Service 调 Repository（Drizzle/D1）或 KV/R2 访问层。
-5. 返回统一 JSON 响应结构（`success/data/error/requestId`）。
+5. 视频链路通过 integration 层调用 Stream API，并由 `/api/webhooks/stream` 回写处理状态。
+6. 返回统一 JSON 响应结构（`success/data/error/requestId`）。
 
 ## 4. 代码结构与模块职责
 ```text
@@ -77,8 +81,9 @@ flowchart LR
 │   ├── react-app/          # 前端 SPA
 │   │   ├── main.tsx        # React 启动入口
 │   │   ├── router.tsx      # TanStack Router 路由树与 QueryClient
-│   │   ├── routes/         # 页面路由组件（home/users/auth/admin）
+│   │   ├── routes/         # 页面路由组件（home/users/auth/admin/videos）
 │   │   ├── components/ui/  # shadcn 组件目录
+│   │   ├── components/video/ # 视频播放弹窗组件
 │   │   ├── lib/            # 前端工具方法与 API/Query/Auth client 配置
 │   │   └── *.css, assets/  # 样式与静态资源
 │   └── worker/
@@ -86,8 +91,8 @@ flowchart LR
 │       ├── app.ts          # Hono app 组装（middleware + route + error）
 │       ├── types.ts        # Worker Bindings 与 Context 类型
 │       ├── config/env.ts   # APP_ENV/API_VERSION 运行时读取
-│       ├── modules/        # 领域模块（health/users/auth/admin/content）
-│       └── shared/         # 跨模块能力（http/db/storage/auth/email）
+│       ├── modules/        # 领域模块（health/users/auth/admin/content/video）
+│       └── shared/         # 跨模块能力（http/db/storage/auth/email/integrations）
 ├── drizzle.config.ts       # Drizzle Kit 配置
 ├── drizzle/migrations/     # Drizzle SQL 迁移文件
 ├── wrangler.json           # Worker 部署与资产托管配置
@@ -99,18 +104,22 @@ flowchart LR
 
 ### 4.1 前端 UI 基础设施说明
 - Tailwind v4 采用 CSS-first 模式，入口样式文件为 `src/react-app/index.css`。
-- TanStack Router 负责前端页面路由管理，当前已落地 `home/users/auth/admin` 页面路由。
+- TanStack Router 负责前端页面路由管理，当前已落地 `home/users/auth/admin/videos` 页面路由。
 - TanStack Query 负责 server-state 请求、缓存与失效刷新，当前示例接入 `/api/health` 与 `/api/users`。
+- 视频播放页采用 `@cloudflare/stream-react` 组件，配合 `VideoPlayerModal` 弹窗完成公网播放。
 - shadcn/ui 采用本地组件模式：
   - 组件规范文件：`components.json`；
   - 通用工具：`src/react-app/lib/utils.ts`（`cn`）。
 - Base UI 以 primitive 方式使用（当前示例：`Switch`），用于低层可组合交互组件。
 - alias 统一为 `@ -> src/react-app`，在 `vite.config.ts` 与 `tsconfig*.json` 中同时配置。
 
-### 4.2 Admin CMS 代码落点
+### 4.2 Admin CMS 与 Video 能力代码落点
 - `src/worker/modules/admin/*`：后台白名单鉴权后的内容管理与资产上传 API。
 - `src/worker/modules/content/*`：公网内容读取与资产回源 API。
+- `src/worker/modules/video/*`：视频上传签发、状态同步、生命周期管理与公网视频读取 API。
+- `src/worker/shared/integrations/stream/*`：Stream API 与 webhook 校验封装。
 - `src/worker/shared/db/schema/cms.ts`：CMS 主档/版本/资产/关联表定义。
+- `src/worker/shared/db/schema/video.ts`：视频能力层表结构定义（`video_assets`）。
 - `src/worker/shared/auth/admin-access.ts`：硬编码白名单与邮箱归一化逻辑。
 
 ## 5. 配置基线（Cloudflare 侧）
@@ -123,6 +132,10 @@ flowchart LR
 - `assets.directory: "./dist/client"`：将前端构建产物作为静态资产；
 - `assets.not_found_handling: "single-page-application"`：SPA 回退路由策略。
 - `assets.run_worker_first: ["/api/*"]`：仅 API 请求先进入 Worker，前端路由由资产层处理。
+- Stream 运行配置（通过 vars/secrets 注入）：
+  - `STREAM_ACCOUNT_ID`
+  - `STREAM_API_TOKEN`（secret）
+  - `STREAM_WEBHOOK_SECRET`（secret）
 - `routes` / `env.dev.routes`：自定义域名路由（prod=`illumi-family.com` + `admin.illumi-family.com`，dev=`dev.illumi-family.com` + `admin-dev.illumi-family.com`）。
 - 顶层（prod）绑定：
   - D1: `illumi-family-db`
@@ -247,6 +260,11 @@ flowchart LR
 - i18n Phase 1/2 能力：前端 `zh-CN/en-US` 切换、`/api/content/home?locale=` 契约、`cms_entries(entry_key, locale)` 维度、内容 fallback 与 `fallbackFrom`；
 - locale 缓存分片与发布失效矩阵：`cms:home:published:v1:{locale}`，中文发布联动失效英文缓存；
 - R2 资产上传与读取链路（`/api/admin/assets/upload`、`/api/content/assets/:assetId`）；
+- Cloudflare Stream 视频能力层：
+  - admin 直传 URL 签发（`POST /api/admin/videos/upload-url`）；
+  - webhook 状态回写（`POST /api/webhooks/stream`）；
+  - 视频生命周期管理（list/edit/publish/unpublish/sync）；
+  - 公网视频列表与播放（`GET /api/content/videos` + `/videos` 弹窗播放器）；
 - 业务用户身份映射与审计模型（`app_users`、`user_identities`、`user_security_events`）；
 - `dev/prod` 双环境与独立自定义域名（`illumi-family.com` / `dev.illumi-family.com` / `admin.illumi-family.com` / `admin-dev.illumi-family.com`）+ workers.dev 回退域名；
 - D1/KV/R2 数据存储绑定；
@@ -259,6 +277,7 @@ flowchart LR
 ### 7.2 待引入能力（后续配置阶段可扩展）
 - 手机号 OTP 登录（当前仅预留数据与配置位）；
 - 更完整的业务域模型（families/tasks 等）；
+- 视频能力层与业务内容模块（如 stories）编排集成；
 - 细粒度鉴权、审计日志、限流；
 - 扩展更多 custom domain（如 `api/admin/cms`）与证书路由策略；
 - CI/CD 自动化发布策略。
@@ -295,3 +314,4 @@ flowchart LR
 | 2026-03-05 | v0.9.4 | 固化鉴权运行时坑点：记录 Worker CPU 1102 风险与密码哈希参数调整回归要求（PBKDF2 方案） |
 | 2026-03-17 | v1.0.1 | 新增中英双语国际化规划入口：在“待引入能力”补充 i18n 目标与详细方案文档链接（`docs/plans/2026-03-17-i18n-architecture-plan.md`） |
 | 2026-03-18 | v1.1.0 | i18n Phase 1/2 已落地（前端双语 + API/CMS locale + 缓存分片），并新增开发部署运行规范（`docs/runbooks/development-deployment-cicd-runbook.md`） |
+| 2026-04-16 | v1.2.0 | 新增 Cloudflare Stream 视频能力层：后台直传签发、webhook 状态回写、发布门禁、公网视频列表与弹窗播放，并同步更新文档与 runbook |

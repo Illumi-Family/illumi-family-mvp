@@ -33,6 +33,11 @@ export function RootLayout() {
 									{t("utilityNav.profile")}
 								</Button>
 							</Link>
+							<Link to="/videos">
+								<Button variant="ghost" size="sm">
+									{t("utilityNav.videos", { defaultValue: "Videos" })}
+								</Button>
+							</Link>
 							<Link to="/auth">
 								<Button variant="ghost" size="sm">
 									{t("utilityNav.auth")}
@@ -41,6 +46,11 @@ export function RootLayout() {
 							<Link to="/admin">
 								<Button variant="ghost" size="sm">
 									{t("utilityNav.admin")}
+								</Button>
+							</Link>
+							<Link to="/admin/videos">
+								<Button variant="ghost" size="sm">
+									{t("utilityNav.adminVideos", { defaultValue: "Admin Videos" })}
 								</Button>
 							</Link>
 						</nav>

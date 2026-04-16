@@ -1,11 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	createAdminVideoUploadUrl,
+	deleteAdminVideoDraft,
 	getCurrentUser,
 	getHealth,
 	getHomeContent,
+	listAdminVideos,
 	listAdminHomeSections,
+	listPublicVideos,
+	publishAdminVideo,
 	publishAdminHomeSection,
 	saveAdminHomeSectionDraft,
+	syncAdminVideoStatus,
+	unpublishAdminVideo,
+	updateAdminVideo,
 	updateCurrentUser,
 	uploadAdminAsset,
 } from "./api";
@@ -310,5 +318,254 @@ describe("react api client", () => {
 		});
 		expect(asset.id).toBe("asset-1");
 		expect(asset.mimeType).toBe("image/webp");
+	});
+
+	it("creates admin video upload url", async () => {
+		fetchMock.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					success: true,
+					data: {
+						videoId: "video-1",
+						uploadUrl: "https://upload.example.com",
+						expiresAt: "2026-04-16T00:00:00.000Z",
+					},
+					requestId: "req-video-upload-url",
+				}),
+				{ status: 201, headers: { "content-type": "application/json" } },
+			),
+		);
+
+		const result = await createAdminVideoUploadUrl({
+			title: "Family Story",
+			maxDurationSeconds: 600,
+		});
+
+		expect(fetchMock).toHaveBeenCalledWith("/api/admin/videos/upload-url", {
+			method: "POST",
+			headers: {
+				Accept: "application/json",
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				title: "Family Story",
+				maxDurationSeconds: 600,
+			}),
+		});
+		expect(result.videoId).toBe("video-1");
+	});
+
+	it("lists admin videos from /api/admin/videos", async () => {
+		fetchMock.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					success: true,
+					data: {
+						videos: [
+							{
+								id: "video-1",
+								streamVideoId: "stream-1",
+								processingStatus: "ready",
+								publishStatus: "draft",
+								title: "Video 1",
+								posterUrl: null,
+								durationSeconds: 12,
+								createdByAuthUserId: "auth-1",
+								updatedByAuthUserId: "auth-1",
+								createdAt: "2026-04-16T00:00:00.000Z",
+								updatedAt: "2026-04-16T00:00:00.000Z",
+								publishedAt: null,
+							},
+						],
+					},
+					requestId: "req-admin-videos",
+				}),
+				{ status: 200, headers: { "content-type": "application/json" } },
+			),
+		);
+
+		const videos = await listAdminVideos();
+
+		expect(fetchMock).toHaveBeenCalledWith("/api/admin/videos", {
+			headers: { Accept: "application/json" },
+		});
+		expect(videos[0]?.id).toBe("video-1");
+	});
+
+	it("updates admin video metadata", async () => {
+		fetchMock.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					success: true,
+					data: {
+						video: {
+							id: "video-1",
+							streamVideoId: "stream-1",
+							processingStatus: "ready",
+							publishStatus: "draft",
+							title: "Updated title",
+							posterUrl: "https://example.com/poster.jpg",
+							durationSeconds: 20,
+							createdByAuthUserId: "auth-1",
+							updatedByAuthUserId: "auth-1",
+							createdAt: "2026-04-16T00:00:00.000Z",
+							updatedAt: "2026-04-16T00:00:00.000Z",
+							publishedAt: null,
+						},
+					},
+					requestId: "req-video-update",
+				}),
+				{ status: 200, headers: { "content-type": "application/json" } },
+			),
+		);
+
+		const video = await updateAdminVideo({
+			videoId: "video-1",
+			title: "Updated title",
+			posterUrl: "https://example.com/poster.jpg",
+		});
+
+		expect(fetchMock).toHaveBeenCalledWith("/api/admin/videos/video-1", {
+			method: "PATCH",
+			headers: {
+				Accept: "application/json",
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				title: "Updated title",
+				posterUrl: "https://example.com/poster.jpg",
+			}),
+		});
+		expect(video.title).toBe("Updated title");
+	});
+
+	it("publishes, unpublishes and syncs admin video status", async () => {
+		fetchMock
+			.mockResolvedValueOnce(
+				new Response(
+					JSON.stringify({
+						success: true,
+						data: { changed: true, video: null },
+						requestId: "req-video-publish",
+					}),
+					{ status: 200, headers: { "content-type": "application/json" } },
+				),
+			)
+			.mockResolvedValueOnce(
+				new Response(
+					JSON.stringify({
+						success: true,
+						data: { changed: true, video: null },
+						requestId: "req-video-unpublish",
+					}),
+					{ status: 200, headers: { "content-type": "application/json" } },
+				),
+			)
+			.mockResolvedValueOnce(
+				new Response(
+					JSON.stringify({
+						success: true,
+						data: {
+							video: {
+								id: "video-1",
+								streamVideoId: "stream-1",
+								processingStatus: "ready",
+								publishStatus: "draft",
+								title: "Video 1",
+								posterUrl: null,
+								durationSeconds: 12,
+								createdByAuthUserId: "auth-1",
+								updatedByAuthUserId: "auth-1",
+								createdAt: "2026-04-16T00:00:00.000Z",
+								updatedAt: "2026-04-16T00:00:00.000Z",
+								publishedAt: null,
+							},
+						},
+						requestId: "req-video-sync",
+					}),
+					{ status: 200, headers: { "content-type": "application/json" } },
+				),
+			);
+
+		const publishResult = await publishAdminVideo("video-1");
+		const unpublishResult = await unpublishAdminVideo("video-1");
+		const syncedVideo = await syncAdminVideoStatus("video-1");
+
+		expect(fetchMock).toHaveBeenNthCalledWith(1, "/api/admin/videos/video-1/publish", {
+			method: "POST",
+			headers: { Accept: "application/json" },
+		});
+		expect(fetchMock).toHaveBeenNthCalledWith(2, "/api/admin/videos/video-1/unpublish", {
+			method: "POST",
+			headers: { Accept: "application/json" },
+		});
+		expect(fetchMock).toHaveBeenNthCalledWith(
+			3,
+			"/api/admin/videos/video-1/sync-status",
+			{
+				method: "POST",
+				headers: { Accept: "application/json" },
+			},
+		);
+		expect(publishResult.changed).toBe(true);
+		expect(unpublishResult.changed).toBe(true);
+		expect(syncedVideo.id).toBe("video-1");
+	});
+
+	it("deletes admin draft video", async () => {
+		fetchMock.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					success: true,
+					data: {
+						deleted: true,
+						videoId: "video-1",
+						remoteDeleted: true,
+					},
+					requestId: "req-video-delete",
+				}),
+				{ status: 200, headers: { "content-type": "application/json" } },
+			),
+		);
+
+		const result = await deleteAdminVideoDraft("video-1");
+
+		expect(fetchMock).toHaveBeenCalledWith("/api/admin/videos/video-1", {
+			method: "DELETE",
+			headers: { Accept: "application/json" },
+		});
+		expect(result.deleted).toBe(true);
+		expect(result.remoteDeleted).toBe(true);
+	});
+
+	it("lists public videos from /api/content/videos", async () => {
+		fetchMock.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					success: true,
+					data: {
+						videos: [
+							{
+								id: "video-1",
+								streamVideoId: "stream-1",
+								title: "Video 1",
+								posterUrl: null,
+								durationSeconds: 12,
+								publishedAt: "2026-04-16T00:00:00.000Z",
+							},
+						],
+					},
+					requestId: "req-public-videos",
+				}),
+				{ status: 200, headers: { "content-type": "application/json" } },
+			),
+		);
+
+		const videos = await listPublicVideos();
+
+		expect(fetchMock).toHaveBeenCalledWith("/api/content/videos", {
+			headers: { Accept: "application/json" },
+		});
+		expect(videos[0]?.streamVideoId).toBe("stream-1");
 	});
 });

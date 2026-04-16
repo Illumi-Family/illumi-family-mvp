@@ -8,6 +8,9 @@ export type AppBindings = Env & {
 	RESEND_API_KEY?: string;
 	RESEND_FROM_EMAIL?: string;
 	RESEND_REPLY_TO?: string;
+	STREAM_ACCOUNT_ID?: string;
+	STREAM_API_TOKEN?: string;
+	STREAM_WEBHOOK_SECRET?: string;
 	DB: D1Database;
 	CACHE: KVNamespace;
 	FILES: R2Bucket;
@@ -16,6 +19,7 @@ export type AppBindings = Env & {
 export type ContextVariables = {
 	requestId: string;
 	authUserId?: string;
+	videoId?: string;
 	homeSectionEntryKey?:
 		| "home.philosophy"
 		| "home.daily_notes"

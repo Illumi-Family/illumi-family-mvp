@@ -14,7 +14,7 @@
 
 ## Maintenance rules
 - 当以下内容发生变更时，必须同步更新 skill：
-  - 技术栈版本与依赖
+  - 技术架构、技术栈版本与依赖
   - `wrangler.json` 环境与资源绑定
   - API 路由与响应契约
   - 数据库 schema/migration 流程

@@ -4,6 +4,7 @@ import { authRouter } from "./modules/auth/auth.router";
 import { contentRouter } from "./modules/content/content.router";
 import { healthRouter } from "./modules/health/health.router";
 import { usersRouter } from "./modules/users/users.router";
+import { streamWebhookRouter } from "./modules/video/stream-webhook.router";
 import { handleAppError } from "./shared/http/middleware/error-handler";
 import { requestIdMiddleware } from "./shared/http/middleware/request-id";
 import { jsonFailure, jsonSuccess } from "./shared/http/response";
@@ -20,6 +21,7 @@ export const createApp = () => {
 	app.route("/api/users", usersRouter);
 	app.route("/api/admin", adminRouter);
 	app.route("/api/content", contentRouter);
+	app.route("/api/webhooks", streamWebhookRouter);
 
 	app.all("/api/*", (c) =>
 		jsonFailure(

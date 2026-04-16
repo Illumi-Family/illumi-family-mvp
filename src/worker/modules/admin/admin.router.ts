@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import type { AppContext } from "../../types";
+import { adminVideoRouter } from "../video/admin-video.router";
 import {
 	adminListHomeContentHandlers,
 	adminMeHandlers,
@@ -21,5 +22,6 @@ adminRouter.post(
 	...adminPublishHomeContentHandlers,
 );
 adminRouter.post("/assets/upload", ...adminUploadAssetHandlers);
+adminRouter.route("/videos", adminVideoRouter);
 
 export { adminRouter };

@@ -18,7 +18,8 @@
 		"APP_ENV": "prod",
 		"API_VERSION": "v1",
 		"BETTER_AUTH_BASE_URL": "https://illumi-family.com",
-		"RESEND_FROM_EMAIL": "Illumi Family <no-reply@illumi-family.com>"
+		"RESEND_FROM_EMAIL": "Illumi Family <no-reply@illumi-family.com>",
+		"STREAM_ACCOUNT_ID": "2dcf428a1b330396b492a5065dd94538"
 	},
 	"routes": [
 		{
@@ -69,7 +70,8 @@
 				"APP_ENV": "dev",
 				"API_VERSION": "v1",
 				"BETTER_AUTH_BASE_URL": "https://dev.illumi-family.com",
-				"RESEND_FROM_EMAIL": "Illumi Family <no-reply@illumi-family.com>"
+				"RESEND_FROM_EMAIL": "Illumi Family <no-reply@illumi-family.com>",
+				"STREAM_ACCOUNT_ID": "2dcf428a1b330396b492a5065dd94538"
 			},
 			"d1_databases": [
 				{

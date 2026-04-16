@@ -1,64 +1,126 @@
 {
-  "project": "MyApp",
-  "branchName": "ralph/task-priority",
-  "description": "Task Priority System - Add priority levels to tasks",
+  "project": "illumi-family-mvp",
+  "branchName": "ralph/video-upload-playback-capability",
+  "description": "Convert plan 2026-04-15 video upload/playback capability into iterative Ralph stories.",
   "userStories": [
     {
       "id": "US-001",
-      "title": "Add priority field to database",
-      "description": "As a developer, I need to store task priority so it persists across sessions.",
+      "title": "Video domain schema and runtime bindings",
+      "description": "As a developer, I need video schema and bindings so video lifecycle state is persisted and configurable.",
       "acceptanceCriteria": [
-        "Add priority column to tasks table: 'high' | 'medium' | 'low' (default 'medium')",
-        "Generate and run migration successfully",
+        "Add migration 0004_stream_video_assets with required video columns and indexes (unique stream_video_id, publish_status+processing_status, published_at).",
+        "Export video schema from db index and add STREAM_ACCOUNT_ID, STREAM_API_TOKEN, STREAM_WEBHOOK_SECRET in AppBindings.",
+        "Add schema tests for default statuses and duplicate/invalid constraint behavior.",
         "Typecheck passes"
       ],
       "priority": 1,
       "passes": false,
-      "notes": ""
+      "notes": "From Unit 1; covers R3, R4, R5, R14."
     },
     {
       "id": "US-002",
-      "title": "Display priority indicator on task cards",
-      "description": "As a user, I want to see task priority at a glance.",
+      "title": "Admin direct upload URL API and Stream client",
+      "description": "As an admin, I need a signed direct-upload URL so browser uploads go directly to Cloudflare Stream.",
       "acceptanceCriteria": [
-        "Each task card shows colored priority badge (red=high, yellow=medium, gray=low)",
-        "Priority visible without hovering or clicking",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Implement Stream integration client and POST /api/admin/videos/upload-url with admin auth and request validation.",
+        "Create local draft video record before issuing upload URL and return {videoId, uploadUrl, expiresAt}.",
+        "Handle missing Stream config and Stream API failures with structured errors and no dirty DB writes.",
+        "Add controller/service/integration tests, including unauthenticated access returning 401.",
+        "Typecheck passes"
       ],
       "priority": 2,
       "passes": false,
-      "notes": ""
+      "notes": "From Unit 2; covers R1, R2, R4, R5, R14, R15."
     },
     {
       "id": "US-003",
-      "title": "Add priority selector to task edit",
-      "description": "As a user, I want to change a task's priority when editing it.",
+      "title": "Stream webhook ingestion and status synchronization",
+      "description": "As a system operator, I need webhook-driven status sync so processing state and metadata stay accurate.",
       "acceptanceCriteria": [
-        "Priority dropdown in task edit modal",
-        "Shows current priority as selected",
-        "Saves immediately on selection change",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Implement POST /api/webhooks/stream with secret/signature validation and mapping of Stream events to internal processing statuses.",
+        "Persist ready/failed metadata updates (duration, poster, status) idempotently when webhooks are retried.",
+        "Reject invalid signatures with 401/403 and keep video records unchanged.",
+        "Add webhook and service tests for happy path, replay/idempotency, and invalid signature paths.",
+        "Typecheck passes"
       ],
       "priority": 3,
       "passes": false,
-      "notes": ""
+      "notes": "From Unit 3; covers R3, R4, R16, R17."
     },
     {
       "id": "US-004",
-      "title": "Filter tasks by priority",
-      "description": "As a user, I want to filter the task list to see only high-priority items.",
+      "title": "Admin video lifecycle APIs",
+      "description": "As an admin, I need list/edit/publish/unpublish/sync APIs so videos can be managed safely end-to-end.",
       "acceptanceCriteria": [
-        "Filter dropdown with options: All | High | Medium | Low",
-        "Filter persists in URL params",
-        "Empty state message when no tasks match filter",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Implement admin lifecycle endpoints for list, metadata edit, publish, unpublish, and sync-status.",
+        "Enforce publish gate so only processing_status=ready and publish_status=draft records can be published.",
+        "Set published_at on publish and ensure unpublished videos are no longer publicly eligible.",
+        "Add tests for publish happy path, non-ready rejection, duplicate publish semantics, and sync-status compensation.",
+        "Typecheck passes"
       ],
       "priority": 4,
       "passes": false,
-      "notes": ""
+      "notes": "From Unit 4; covers R6, R7, R8, R9, R14, R16."
+    },
+    {
+      "id": "US-005",
+      "title": "Public video list API and cache invalidation",
+      "description": "As a visitor, I need a public videos API that only returns published and playable videos.",
+      "acceptanceCriteria": [
+        "Expose /api/content/videos with whitelisted fields and return only published+ready records.",
+        "Return [] when no records are available, and filter malformed records while logging warnings.",
+        "Use KV cache-aside strategy for list reads and invalidate cache on publish/unpublish actions.",
+        "Add controller/service/integration tests for visibility filtering and cache consistency.",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "From Unit 5; covers R8, R10, R12, R13, R15."
+    },
+    {
+      "id": "US-006",
+      "title": "Frontend video API client and query contract",
+      "description": "As a frontend developer, I need typed API/query integration so admin/public video flows use stable contracts.",
+      "acceptanceCriteria": [
+        "Extend src/react-app/lib/api.ts with admin video and public list endpoints matching worker response contracts.",
+        "Extend src/react-app/lib/query-options.ts for video query/mutation options and invalidation keys.",
+        "Add api and query-options tests for field mapping, status semantics, and error mapping.",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "Split from Unit 6 for smaller iteration size; covers API contract side of R10, R11, R12, R13."
+    },
+    {
+      "id": "US-007",
+      "title": "Frontend admin videos UI and public playback modal",
+      "description": "As an admin or visitor, I need management and playback pages so the full browser demo path works.",
+      "acceptanceCriteria": [
+        "Create admin-videos-page with upload, status display, metadata edit, publish/unpublish, and sync-status actions.",
+        "Create videos-page with list rendering and modal playback using @cloudflare/stream-react.",
+        "Implement UI states for uploading, processing, empty list, and recoverable player error/close flow.",
+        "Add route wiring and page tests for happy path and key edge/error cases.",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "Split from Unit 6 for UI delivery; covers R10, R11, R12, R13."
+    },
+    {
+      "id": "US-008",
+      "title": "Architecture and runbook sync with rollout guardrails",
+      "description": "As an operator, I need updated docs and playbook guidance so deployment and rollback are safe and repeatable.",
+      "acceptanceCriteria": [
+        "Update docs/core/technical-architecture.md with video module, APIs, status model, and webhook security model.",
+        "Update docs/runbooks/development-deployment-cicd-runbook.md with Stream config, smoke checks, and rollback procedure.",
+        "Update playbook references (current-state/workflows) to keep skill guidance aligned with implementation.",
+        "Document dev->prod rollout checks: upload URL issuance, webhook validation, publish visibility, unpublish invalidation.",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "From Unit 7; covers R14, R15, R16, R17."
     }
   ]
 }
