@@ -10,7 +10,7 @@ Last verified: 2026-03-18
 - `drizzle/migrations/**`
 - `template.config.json`
 - `tools/create-illumi-family-app/**`
-- `docs/technical-architecture.md`
+- `docs/core/technical-architecture.md`
 
 ## 2) Tech Stack Snapshot
 - Frontend: React 19 + Vite 6 + TanStack Router + TanStack Query

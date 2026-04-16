@@ -10,7 +10,7 @@ Update docs + skill references in the same change set whenever you change:
 - deployment and ops commands
 
 ## 2) Mandatory Sync Targets
-- `docs/technical-architecture.md`
+- `docs/core/technical-architecture.md`
 - `.codex/skills/illumi-family-project-playbook/SKILL.md` (if workflow/guardrail changes)
 - `.codex/skills/illumi-family-project-playbook/references/*.md` (facts/runbooks/checklists)
 

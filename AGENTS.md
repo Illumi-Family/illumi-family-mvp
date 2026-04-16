@@ -20,7 +20,7 @@
   - 数据库 schema/migration 流程
   - 部署与运维命令
 - 同步目标：
-  - `docs/technical-architecture.md`
+  - `docs/core/technical-architecture.md`
   - `.codex/skills/illumi-family-project-playbook/SKILL.md`
   - `.codex/skills/illumi-family-project-playbook/references/*.md`
 

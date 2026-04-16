@@ -199,5 +199,17 @@ dist
 !.dev.vars.example
 
 tasks/
-docs/
 
+# Docs policy: ignore docs by default, track only canonical docs.
+docs/**
+!docs/README.md
+!docs/core/
+!docs/core/**
+!docs/runbooks/
+!docs/runbooks/**
+
+# Always ignore transient doc spaces
+docs/plans/**
+docs/research/**
+docs/notes/**
+docs/tmp/**

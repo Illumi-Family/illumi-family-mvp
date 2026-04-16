@@ -36,7 +36,7 @@ Load only the sections needed for the current task.
 - Enforce environment boundaries and resource isolation.
 
 3. Validate assumptions from canonical files.
-- Verify with repository files (`wrangler.json`, `package.json`, `src/worker`, `docs/technical-architecture.md`).
+- Verify with repository files (`wrangler.json`, `package.json`, `src/worker`, `docs/core/technical-architecture.md`).
 - Do not rely on memory for mutable project facts.
 
 4. Execute minimal, reviewable changes.
@@ -73,7 +73,7 @@ When giving advice, always provide:
 
 ## Synchronization Policy
 When stack, architecture, commands, routes, bindings, or runbooks change:
-- Update `docs/technical-architecture.md` in the same change set.
+- Update `docs/core/technical-architecture.md` in the same change set.
 - Update skill references under `references/` in the same change set.
 - Keep guidance and implementation aligned; avoid stale playbook entries.
 
