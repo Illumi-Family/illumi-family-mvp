@@ -4,8 +4,10 @@
     "ariaLabel": "系统导航",
     "home": "首页",
     "profile": "个人资料",
+    "videos": "视频",
     "auth": "登录",
-    "admin": "后台"
+    "admin": "后台",
+    "adminVideos": "视频管理"
   },
   "session": {
     "signedInAs": "已登录：{{email}}",

@@ -12,6 +12,6 @@ describe("videos page", () => {
 			</QueryClientProvider>,
 		);
 
-		expect(html).toContain("Family Videos");
+		expect(html).toContain("视频中心");
 	});
 });

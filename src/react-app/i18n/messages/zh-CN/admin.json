@@ -1,4 +1,7 @@
 {
   "title": "后台管理",
-  "homeContent": "首页内容管理"
+  "homeContent": "首页内容管理",
+  "videosWorkbench": "视频管理工作台",
+  "videosBoard": "状态看板",
+  "videosUpload": "上传任务"
 }

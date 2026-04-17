@@ -4,7 +4,7 @@ import { renderToString } from "react-dom/server";
 import { AdminVideosPage } from "./admin-videos-page";
 
 describe("admin videos page", () => {
-	it("renders page heading", () => {
+	it("renders workbench heading", () => {
 		const queryClient = new QueryClient();
 		const html = renderToString(
 			<QueryClientProvider client={queryClient}>
@@ -12,8 +12,8 @@ describe("admin videos page", () => {
 			</QueryClientProvider>,
 		);
 
-		expect(html).toContain("Admin Videos");
-		expect(html).toContain("Video Inventory");
+		expect(html).toContain("视频管理工作台");
+		expect(html).toContain("状态看板");
 	});
 
 	it("shows delete draft action for draft records", () => {
@@ -40,6 +40,7 @@ describe("admin videos page", () => {
 			</QueryClientProvider>,
 		);
 
-		expect(html).toContain("Delete Draft");
+		expect(html).toContain("删除草稿");
+		expect(html).toContain("上传封面");
 	});
 });

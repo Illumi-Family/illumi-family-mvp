@@ -7,6 +7,7 @@ import { authClient } from "@/lib/auth-client";
 export function RootLayout() {
 	const { t } = useTranslation("common");
 	const { data: session } = authClient.useSession();
+	const isSignedIn = Boolean(session?.user);
 	const pathname = useRouterState({ select: (state) => state.location.pathname });
 	const showUtilityNav = pathname !== "/";
 	const skipTarget = showUtilityNav ? "#app-main-content" : "#main-content";
@@ -28,21 +29,25 @@ export function RootLayout() {
 									{t("utilityNav.home")}
 								</Button>
 							</Link>
-							<Link to="/users">
-								<Button variant="ghost" size="sm">
-									{t("utilityNav.profile")}
-								</Button>
-							</Link>
+							{!isSignedIn ? (
+								<Link to="/users">
+									<Button variant="ghost" size="sm">
+										{t("utilityNav.profile")}
+									</Button>
+								</Link>
+							) : null}
 							<Link to="/videos">
 								<Button variant="ghost" size="sm">
 									{t("utilityNav.videos", { defaultValue: "Videos" })}
 								</Button>
 							</Link>
-							<Link to="/auth">
-								<Button variant="ghost" size="sm">
-									{t("utilityNav.auth")}
-								</Button>
-							</Link>
+							{!isSignedIn ? (
+								<Link to="/auth">
+									<Button variant="ghost" size="sm">
+										{t("utilityNav.auth")}
+									</Button>
+								</Link>
+							) : null}
 							<Link to="/admin">
 								<Button variant="ghost" size="sm">
 									{t("utilityNav.admin")}
