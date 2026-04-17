@@ -69,7 +69,7 @@ describe("video-upload-task", () => {
 		expect(result.videoId).toBe("video-1");
 		expect(progresses.map((item) => item.status)).toContain("issuing_url");
 		expect(progresses.map((item) => item.status)).toContain("uploading");
-		expect(progresses.at(-1)?.status).toBe("processing_wait");
+		expect(progresses[progresses.length - 1]?.status).toBe("processing_wait");
 		expect(progresses.some((item) => item.progressPercent === 100)).toBe(true);
 	});
 
@@ -93,7 +93,7 @@ describe("video-upload-task", () => {
 		).rejects.toThrow("Upload failed with status 500");
 
 		expect(cleanupDraftVideo).toHaveBeenCalledWith("video-err");
-		expect(progresses.at(-1)?.status).toBe("failed");
-		expect(progresses.at(-1)?.errorMessage).toContain("500");
+		expect(progresses[progresses.length - 1]?.status).toBe("failed");
+		expect(progresses[progresses.length - 1]?.errorMessage).toContain("500");
 	});
 });

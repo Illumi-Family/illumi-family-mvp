@@ -4,7 +4,7 @@ import { renderToString } from "react-dom/server";
 import { AdminVideosPage } from "./admin-videos-page";
 
 describe("admin videos page", () => {
-	it("renders workbench heading", () => {
+	it("renders workbench heading and list section", () => {
 		const queryClient = new QueryClient();
 		const html = renderToString(
 			<QueryClientProvider client={queryClient}>
@@ -13,16 +13,16 @@ describe("admin videos page", () => {
 		);
 
 		expect(html).toContain("视频管理工作台");
-		expect(html).toContain("状态看板");
+		expect(html).toContain("视频列表");
 	});
 
-	it("shows delete draft action for draft records", () => {
+	it("shows row actions and more menu trigger for records", () => {
 		const queryClient = new QueryClient();
 		queryClient.setQueryData(["admin-videos"], [
 			{
 				id: "video-1",
 				streamVideoId: "stream-1",
-				processingStatus: "processing",
+				processingStatus: "ready",
 				publishStatus: "draft",
 				title: "Video 1",
 				posterUrl: null,
@@ -40,7 +40,8 @@ describe("admin videos page", () => {
 			</QueryClientProvider>,
 		);
 
-		expect(html).toContain("删除草稿");
-		expect(html).toContain("上传封面");
+		expect(html).toContain("预览");
+		expect(html).toContain("发布");
+		expect(html).toContain("更多");
 	});
 });

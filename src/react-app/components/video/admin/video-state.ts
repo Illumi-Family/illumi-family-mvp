@@ -1,29 +1,5 @@
 import type { AdminVideoRecord } from "@/lib/api";
 
-export type VideoBoardColumnKey = "processing" | "ready" | "failed";
-
-export type VideoBoardColumn = {
-	key: VideoBoardColumnKey;
-	label: string;
-	items: AdminVideoRecord[];
-};
-
-const COLUMN_ORDER: VideoBoardColumnKey[] = ["processing", "ready", "failed"];
-
-const COLUMN_LABELS: Record<VideoBoardColumnKey, string> = {
-	processing: "处理中",
-	ready: "可发布",
-	failed: "失败",
-};
-
-const normalizeColumnKey = (
-	status: AdminVideoRecord["processingStatus"],
-): VideoBoardColumnKey => {
-	if (status === "ready") return "ready";
-	if (status === "failed") return "failed";
-	return "processing";
-};
-
 const readTimestamp = (value: string | null) => {
 	if (!value) return 0;
 	const parsed = Date.parse(value);
@@ -33,29 +9,8 @@ const readTimestamp = (value: string | null) => {
 const compareByUpdatedAtDesc = (a: AdminVideoRecord, b: AdminVideoRecord) =>
 	readTimestamp(b.updatedAt) - readTimestamp(a.updatedAt);
 
-export const buildVideoBoardColumns = (
-	videos: AdminVideoRecord[],
-): VideoBoardColumn[] => {
-	const buckets: Record<VideoBoardColumnKey, AdminVideoRecord[]> = {
-		processing: [],
-		ready: [],
-		failed: [],
-	};
-
-	for (const video of videos) {
-		buckets[normalizeColumnKey(video.processingStatus)].push(video);
-	}
-
-	for (const key of COLUMN_ORDER) {
-		buckets[key].sort(compareByUpdatedAtDesc);
-	}
-
-	return COLUMN_ORDER.map((key) => ({
-		key,
-		label: COLUMN_LABELS[key],
-		items: buckets[key],
-	}));
-};
+export const buildVideoListRows = (videos: AdminVideoRecord[]) =>
+	[...videos].sort(compareByUpdatedAtDesc);
 
 export const getVideoDisplayTitle = (video: Pick<AdminVideoRecord, "title">) => {
 	const trimmed = video.title.trim();
@@ -76,3 +31,25 @@ export const getVideoDateTimeLabel = (value: string | null) => {
 	if (Number.isNaN(parsed)) return "-";
 	return new Date(parsed).toLocaleString();
 };
+
+export const getProcessingStatusLabel = (
+	status: AdminVideoRecord["processingStatus"],
+) => {
+	if (status === "ready") return "可发布";
+	if (status === "failed") return "失败";
+	return "处理中";
+};
+
+export const getPublishStatusLabel = (
+	status: AdminVideoRecord["publishStatus"],
+) => {
+	if (status === "published") return "已发布";
+	return "草稿";
+};
+
+export const getVideoActionState = (video: AdminVideoRecord) => ({
+	canPublish:
+		video.processingStatus === "ready" && video.publishStatus === "draft",
+	canUnpublish: video.publishStatus === "published",
+	canDeleteDraft: video.publishStatus === "draft",
+});

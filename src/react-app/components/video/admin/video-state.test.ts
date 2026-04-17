@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-	buildVideoBoardColumns,
+	buildVideoListRows,
+	getProcessingStatusLabel,
+	getPublishStatusLabel,
+	getVideoActionState,
 	getVideoDateTimeLabel,
 	getVideoDisplayTitle,
 	getVideoDurationLabel,
@@ -10,6 +13,7 @@ const makeVideo = (
 	overrides: Partial<{
 		id: string;
 		processingStatus: "processing" | "ready" | "failed";
+		publishStatus: "draft" | "published";
 		updatedAt: string;
 		title: string;
 		durationSeconds: number | null;
@@ -18,7 +22,7 @@ const makeVideo = (
 	id: overrides.id ?? "v-1",
 	streamVideoId: "stream-1",
 	processingStatus: overrides.processingStatus ?? "processing",
-	publishStatus: "draft" as const,
+	publishStatus: overrides.publishStatus ?? "draft",
 	title: overrides.title ?? "Video",
 	posterUrl: null,
 	durationSeconds: overrides.durationSeconds ?? 15,
@@ -30,41 +34,42 @@ const makeVideo = (
 });
 
 describe("video-state", () => {
-	it("groups records into processing/ready/failed columns", () => {
-		const columns = buildVideoBoardColumns([
-			makeVideo({ id: "p1", processingStatus: "processing" }),
-			makeVideo({ id: "r1", processingStatus: "ready" }),
-			makeVideo({ id: "f1", processingStatus: "failed" }),
+	it("sorts list by updatedAt desc", () => {
+		const rows = buildVideoListRows([
+			makeVideo({ id: "old", updatedAt: "2026-04-16T00:00:00.000Z" }),
+			makeVideo({ id: "new", updatedAt: "2026-04-16T00:00:05.000Z" }),
 		]);
 
-		expect(columns[0]?.key).toBe("processing");
-		expect(columns[0]?.items).toHaveLength(1);
-		expect(columns[1]?.key).toBe("ready");
-		expect(columns[1]?.items).toHaveLength(1);
-		expect(columns[2]?.key).toBe("failed");
-		expect(columns[2]?.items).toHaveLength(1);
+		expect(rows.map((item) => item.id)).toEqual(["new", "old"]);
 	});
 
-	it("sorts each column by updatedAt desc", () => {
-		const columns = buildVideoBoardColumns([
-			makeVideo({
-				id: "old",
-				processingStatus: "processing",
-				updatedAt: "2026-04-16T00:00:00.000Z",
-			}),
-			makeVideo({
-				id: "new",
-				processingStatus: "processing",
-				updatedAt: "2026-04-16T00:00:05.000Z",
-			}),
-		]);
+	it("returns action availability by processing/publish status", () => {
+		expect(
+			getVideoActionState(
+				makeVideo({ processingStatus: "ready", publishStatus: "draft" }),
+			),
+		).toEqual({
+			canPublish: true,
+			canUnpublish: false,
+			canDeleteDraft: true,
+		});
 
-		expect(columns[0]?.items.map((item) => item.id)).toEqual(["new", "old"]);
+		expect(
+			getVideoActionState(
+				makeVideo({ processingStatus: "processing", publishStatus: "published" }),
+			),
+		).toEqual({
+			canPublish: false,
+			canUnpublish: true,
+			canDeleteDraft: false,
+		});
 	});
 
 	it("returns stable fallback labels", () => {
 		expect(getVideoDisplayTitle({ title: "   " })).toBe("未命名视频");
 		expect(getVideoDurationLabel(null)).toBe("时长未知");
 		expect(getVideoDateTimeLabel("bad-date")).toBe("-");
+		expect(getProcessingStatusLabel("ready")).toBe("可发布");
+		expect(getPublishStatusLabel("published")).toBe("已发布");
 	});
 });

@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { VideoPlayerModal } from "@/components/video/video-player-modal";
-import { VideoStatusBoard } from "@/components/video/admin/video-status-board";
+import { VideoEditDrawer } from "@/components/video/admin/video-edit-drawer";
+import { VideoList } from "@/components/video/admin/video-list";
 import { VideoWorkbenchHeader } from "@/components/video/admin/video-workbench-header";
 import { UploadTaskPanel } from "@/components/video/admin/upload-task-panel";
 import {
-	buildVideoBoardColumns,
+	buildVideoListRows,
 	getVideoDateTimeLabel,
 } from "@/components/video/admin/video-state";
 import {
@@ -45,8 +46,6 @@ export function AdminVideosPage() {
 	const queryClient = useQueryClient();
 	const videosQuery = useQuery(adminVideosQueryOptions());
 
-	const [titleDrafts, setTitleDrafts] = useState<Record<string, string>>({});
-	const [posterDrafts, setPosterDrafts] = useState<Record<string, string>>({});
 	const [uploadTitle, setUploadTitle] = useState("");
 	const [uploadFile, setUploadFile] = useState<File | null>(null);
 	const [uploadStatus, setUploadStatus] = useState<UploadTaskStatus>("idle");
@@ -54,8 +53,12 @@ export function AdminVideosPage() {
 	const [statusMessage, setStatusMessage] = useState<string | null>(null);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [autoRefreshUntil, setAutoRefreshUntil] = useState<number | null>(null);
-	const [activeInlinePreviewId, setActiveInlinePreviewId] = useState<string | null>(null);
 	const [selectedVideo, setSelectedVideo] = useState<AdminVideoRecord | null>(null);
+	const [editingVideo, setEditingVideo] = useState<AdminVideoRecord | null>(null);
+	const [editTitle, setEditTitle] = useState("");
+	const [editPoster, setEditPoster] = useState("");
+	const [editBaselineUpdatedAt, setEditBaselineUpdatedAt] =
+		useState<string | null>(null);
 
 	const invalidateVideoQueries = async () => {
 		await queryClient.invalidateQueries({ queryKey: adminVideosQueryKey });
@@ -87,18 +90,13 @@ export function AdminVideosPage() {
 		],
 	);
 
-	const boardColumns = useMemo(
-		() => buildVideoBoardColumns(videosQuery.data ?? []),
+	const videoRows = useMemo(
+		() => buildVideoListRows(videosQuery.data ?? []),
 		[videosQuery.data],
 	);
 
 	useEffect(() => {
 		if (!autoRefreshUntil) return;
-		const now = Date.now();
-		if (now >= autoRefreshUntil) {
-			setAutoRefreshUntil(null);
-			return;
-		}
 
 		const timer = globalThis.setInterval(() => {
 			if (Date.now() >= autoRefreshUntil) {
@@ -111,9 +109,33 @@ export function AdminVideosPage() {
 		return () => globalThis.clearInterval(timer);
 	}, [autoRefreshUntil, videosQuery]);
 
+	const hasRemoteUpdateConflict = useMemo(() => {
+		if (!editingVideo || !editBaselineUpdatedAt) return false;
+		const latest = (videosQuery.data ?? []).find(
+			(video) => video.id === editingVideo.id,
+		);
+		if (!latest) return false;
+		return latest.updatedAt !== editBaselineUpdatedAt;
+	}, [videosQuery.data, editingVideo, editBaselineUpdatedAt]);
+
 	const resetNotice = () => {
 		setStatusMessage(null);
 		setErrorMessage(null);
+	};
+
+	const closeEditDrawer = () => {
+		setEditingVideo(null);
+		setEditTitle("");
+		setEditPoster("");
+		setEditBaselineUpdatedAt(null);
+	};
+
+	const handleOpenEditDrawer = (video: AdminVideoRecord) => {
+		resetNotice();
+		setEditingVideo(video);
+		setEditTitle(video.title);
+		setEditPoster(video.posterUrl ?? "");
+		setEditBaselineUpdatedAt(video.updatedAt);
 	};
 
 	const handleUpload = async () => {
@@ -167,14 +189,10 @@ export function AdminVideosPage() {
 		await handleUpload();
 	};
 
-	const resolveTitle = (video: AdminVideoRecord) =>
-		titleDrafts[video.id] ?? video.title;
-	const resolvePoster = (video: AdminVideoRecord) =>
-		posterDrafts[video.id] ?? (video.posterUrl ?? "");
-
-	const handleSaveMetadata = async (video: AdminVideoRecord) => {
+	const handleSaveMetadata = async () => {
+		if (!editingVideo) return;
 		resetNotice();
-		const title = resolveTitle(video).trim();
+		const title = editTitle.trim();
 		if (!title) {
 			setErrorMessage("标题不能为空");
 			return;
@@ -182,18 +200,20 @@ export function AdminVideosPage() {
 
 		try {
 			await updateMetadataMutation.mutateAsync({
-				videoId: video.id,
+				videoId: editingVideo.id,
 				title,
-				posterUrl: resolvePoster(video).trim() || null,
+				posterUrl: editPoster.trim() || null,
 			});
-			setStatusMessage(`已保存 ${video.id} 的元信息`);
+			setStatusMessage(`已保存 ${editingVideo.id} 的元信息`);
+			closeEditDrawer();
 			await invalidateVideoQueries();
 		} catch (error) {
 			setErrorMessage(readErrorMessage(error));
 		}
 	};
 
-	const handleUploadPosterFile = async (videoId: string, file: File) => {
+	const handleUploadPosterFile = async (file: File) => {
+		if (!editingVideo) return;
 		resetNotice();
 		if (!file.type.startsWith("image/")) {
 			setErrorMessage("封面仅支持图片文件");
@@ -213,9 +233,9 @@ export function AdminVideosPage() {
 			const asset = await uploadPosterMutation.mutateAsync(payload);
 			const assetUrl = `/api/content/assets/${asset.id}`;
 
-			setPosterDrafts((prev) => ({ ...prev, [videoId]: assetUrl }));
+			setEditPoster(assetUrl);
 			setStatusMessage(
-				`封面上传成功，已回填 ${videoId} 的封面地址，点击“保存信息”即可生效`,
+				`封面上传成功，已回填 ${editingVideo.id} 的封面地址，点击“保存信息”即可生效`,
 			);
 		} catch (error) {
 			setErrorMessage(readErrorMessage(error));
@@ -264,6 +284,9 @@ export function AdminVideosPage() {
 
 		try {
 			await deleteDraftMutation.mutateAsync(videoId);
+			if (editingVideo?.id === videoId) {
+				closeEditDrawer();
+			}
 			setStatusMessage(`已删除草稿 ${videoId}`);
 			await invalidateVideoQueries();
 		} catch (error) {
@@ -290,7 +313,10 @@ export function AdminVideosPage() {
 
 			<section className="space-y-3">
 				<div className="flex flex-wrap items-center justify-between gap-3">
-					<h2 className="text-lg font-semibold tracking-tight">状态看板</h2>
+					<div className="space-y-1">
+						<h2 className="text-lg font-semibold tracking-tight">视频列表</h2>
+						<p className="text-xs text-muted-foreground">共 {videoRows.length} 条</p>
+					</div>
 					<div className="flex items-center gap-2">
 						{autoRefreshUntil ? (
 							<p className="text-xs text-muted-foreground">
@@ -332,33 +358,34 @@ export function AdminVideosPage() {
 					</div>
 				) : null}
 
-				{videosQuery.data && videosQuery.data.length > 0 ? (
-					<VideoStatusBoard
-						columns={boardColumns}
-						titleDrafts={titleDrafts}
-						posterDrafts={posterDrafts}
-						activeInlinePreviewId={activeInlinePreviewId}
+				{videoRows.length > 0 ? (
+					<VideoList
+						videos={videoRows}
 						isActionPending={isActionPending}
-						onTitleDraft={(videoId, value) =>
-							setTitleDrafts((prev) => ({ ...prev, [videoId]: value }))
-						}
-						onPosterDraft={(videoId, value) =>
-							setPosterDrafts((prev) => ({ ...prev, [videoId]: value }))
-						}
-						isPosterUploading={uploadPosterMutation.isPending}
-						onUploadPosterFile={(videoId, file) =>
-							void handleUploadPosterFile(videoId, file)
-						}
-						onSaveMetadata={(video) => void handleSaveMetadata(video)}
+						onPreview={(video) => setSelectedVideo(video)}
 						onPublish={(videoId) => void handlePublish(videoId)}
 						onUnpublish={(videoId) => void handleUnpublish(videoId)}
+						onOpenEdit={(video) => handleOpenEditDrawer(video)}
 						onSyncStatus={(videoId) => void handleSyncStatus(videoId)}
 						onDeleteDraft={(videoId) => void handleDeleteDraft(videoId)}
-						onInlinePreview={(videoId) => setActiveInlinePreviewId(videoId)}
-						onOpenModal={(video) => setSelectedVideo(video)}
 					/>
 				) : null}
 			</section>
+
+			<VideoEditDrawer
+				open={Boolean(editingVideo)}
+				video={editingVideo}
+				titleValue={editTitle}
+				posterValue={editPoster}
+				hasRemoteUpdate={hasRemoteUpdateConflict}
+				isSaving={updateMetadataMutation.isPending}
+				isPosterUploading={uploadPosterMutation.isPending}
+				onClose={closeEditDrawer}
+				onTitleChange={setEditTitle}
+				onPosterChange={setEditPoster}
+				onUploadPosterFile={(file) => void handleUploadPosterFile(file)}
+				onSave={() => void handleSaveMetadata()}
+			/>
 
 			<VideoPlayerModal
 				open={Boolean(selectedVideo)}
