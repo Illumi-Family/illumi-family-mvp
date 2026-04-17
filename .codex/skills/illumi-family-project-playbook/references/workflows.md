@@ -108,6 +108,19 @@ pnpm run deploy:prod
 2. Reuse in another environment via `POST /api/admin/videos/import` with existing `streamVideoId` (no new Stream upload object).
 3. Keep upload capability enabled in all environments; enforce cost control through workflow guidance (prefer import when asset already exists).
 
+## 5.2) Admin Home Shared-Section Workflow
+1. Editable shared keys are:
+   - `home.hero_slogan`
+   - `home.main_video`
+   - `home.character_videos`
+2. Save/publish for shared keys is mirrored to both locales (`zh-CN` + `en-US`) even when operator edits from a single locale tab.
+3. Publish gate for shared keys enforces:
+   - slogan title/subtitle required,
+   - main video required,
+   - character videos >= 1,
+   - selected videos must still be `ready + published`.
+4. Cache invalidation for shared-key publish always clears all supported home locales (`cms:home:published:v1:zh-CN` + `cms:home:published:v1:en-US`).
+
 ## 6) Post-Deploy Smoke Checks
 - Health endpoint should match target environment:
 ```bash
@@ -123,8 +136,10 @@ curl -s https://illumi-family-mvp.lguangcong0712.workers.dev/api/health
   - `PATCH /api/users/me` (JSON content-type, e.g. `{ "name": "New Name" }`)
   - `GET /api/content/home?locale=zh-CN`
   - `GET /api/content/home?locale=en-US`
+  - `GET /api/content/home?locale=zh-CN` response should include `heroSlogan` and `featuredVideos`
   - `GET /api/content/videos`
   - `GET /api/admin/me` (unauthenticated should return `401`)
+  - `GET /api/admin/content/home?locale=zh-CN` (unauthenticated should return `401`)
   - `POST /api/admin/assets/upload` (unauthenticated should return `401`)
   - `GET /api/admin/videos` (unauthenticated should return `401`)
   - `POST /api/admin/videos/import` (unauthenticated should return `401`)

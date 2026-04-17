@@ -1,6 +1,11 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { AppDatabase } from "../../shared/db/client";
-import { cmsAssets, cmsEntries, cmsRevisions } from "../../shared/db/schema";
+import {
+	cmsAssets,
+	cmsEntries,
+	cmsRevisions,
+	videoAssets,
+} from "../../shared/db/schema";
 import type { ContentLocale } from "../../shared/i18n/locale";
 import {
 	HOME_SECTION_ENTRY_KEYS,
@@ -8,25 +13,36 @@ import {
 	type HomeSectionEntryKey,
 } from "../content/content.schema";
 
+type DbExecutor = Pick<AppDatabase, "select" | "insert" | "update">;
+type PublishFailureReason = "ENTRY_NOT_FOUND" | "REVISION_NOT_FOUND";
+type RevisionLookupFailureReason =
+	| PublishFailureReason
+	| "REVISION_CONTENT_INVALID";
+
 export class AdminRepository {
 	constructor(private readonly db: AppDatabase) {}
 
-	private async getEntryByKey(entryKey: HomeSectionEntryKey, locale: ContentLocale) {
-		const rows = await this.db
+	private async getEntryByKeyWithDb(
+		db: DbExecutor,
+		entryKey: HomeSectionEntryKey,
+		locale: ContentLocale,
+	) {
+		const rows = await db
 			.select()
 			.from(cmsEntries)
 			.where(
-				and(
-					eq(cmsEntries.entryKey, entryKey),
-					eq(cmsEntries.locale, locale),
-				),
+				and(eq(cmsEntries.entryKey, entryKey), eq(cmsEntries.locale, locale)),
 			)
 			.limit(1);
 		return rows[0] ?? null;
 	}
 
-	private async ensureEntry(entryKey: HomeSectionEntryKey, locale: ContentLocale) {
-		const existing = await this.getEntryByKey(entryKey, locale);
+	private async ensureEntryWithDb(
+		db: DbExecutor,
+		entryKey: HomeSectionEntryKey,
+		locale: ContentLocale,
+	) {
+		const existing = await this.getEntryByKeyWithDb(db, entryKey, locale);
 		if (existing) return existing;
 
 		const now = new Date();
@@ -43,17 +59,148 @@ export class AdminRepository {
 			publishedAt: null,
 		} as const;
 
-		await this.db.insert(cmsEntries).values(record);
+		await db.insert(cmsEntries).values(record);
 		return record;
 	}
 
-	private async getNextRevisionNo(entryId: string) {
-		const rows = await this.db
+	private async getNextRevisionNoWithDb(db: DbExecutor, entryId: string) {
+		const rows = await db
 			.select({ maxRevisionNo: sql<number>`max(${cmsRevisions.revisionNo})` })
 			.from(cmsRevisions)
 			.where(eq(cmsRevisions.entryId, entryId));
 		const current = rows[0]?.maxRevisionNo ?? 0;
 		return current + 1;
+	}
+
+	private async createHomeSectionDraftWithDb(
+		db: DbExecutor,
+		input: {
+			entryKey: HomeSectionEntryKey;
+			locale: ContentLocale;
+			body: AdminUpsertHomeSectionBody;
+			authUserId: string;
+		},
+	) {
+		const entry = await this.ensureEntryWithDb(db, input.entryKey, input.locale);
+		const revisionNo = await this.getNextRevisionNoWithDb(db, entry.id);
+		const now = new Date();
+		const revision = {
+			id: crypto.randomUUID(),
+			entryId: entry.id,
+			revisionNo,
+			title: input.body.title,
+			summaryMd: input.body.summaryMd ?? null,
+			bodyMd: input.body.bodyMd ?? null,
+			contentJson: JSON.stringify(input.body.contentJson),
+			createdByAuthUserId: input.authUserId,
+			createdAt: now,
+		} as const;
+
+		await db.insert(cmsRevisions).values(revision);
+		await db
+			.update(cmsEntries)
+			.set({
+				status: "draft",
+				updatedAt: now,
+			})
+			.where(eq(cmsEntries.id, entry.id));
+
+		return {
+			entryId: entry.id,
+			revisionId: revision.id,
+			revisionNo,
+		};
+	}
+
+	private async resolveRevisionWithDb(
+		db: DbExecutor,
+		input: {
+			entryKey: HomeSectionEntryKey;
+			locale: ContentLocale;
+			revisionId?: string;
+		},
+	): Promise<
+		| {
+				found: true;
+				entry: Awaited<ReturnType<AdminRepository["ensureEntryWithDb"]>>;
+				revisionId: string;
+				contentJson: string;
+		  }
+		| { found: false; reason: PublishFailureReason }
+	> {
+		const entry = await this.getEntryByKeyWithDb(db, input.entryKey, input.locale);
+		if (!entry) {
+			return { found: false, reason: "ENTRY_NOT_FOUND" };
+		}
+
+		let revisionId = input.revisionId;
+		if (!revisionId) {
+			const latest = await db
+				.select()
+				.from(cmsRevisions)
+				.where(eq(cmsRevisions.entryId, entry.id))
+				.orderBy(desc(cmsRevisions.revisionNo))
+				.limit(1);
+			revisionId = latest[0]?.id;
+		}
+		if (!revisionId) {
+			return { found: false, reason: "REVISION_NOT_FOUND" };
+		}
+
+		const revision = await db
+			.select({
+				id: cmsRevisions.id,
+				contentJson: cmsRevisions.contentJson,
+			})
+			.from(cmsRevisions)
+			.where(
+				and(
+					eq(cmsRevisions.id, revisionId),
+					eq(cmsRevisions.entryId, entry.id),
+				),
+			)
+			.limit(1);
+		if (!revision[0]) {
+			return { found: false, reason: "REVISION_NOT_FOUND" };
+		}
+
+		return {
+			found: true,
+			entry,
+			revisionId,
+			contentJson: revision[0].contentJson,
+		};
+	}
+
+	private async publishHomeSectionWithDb(
+		db: DbExecutor,
+		input: {
+			entryKey: HomeSectionEntryKey;
+			locale: ContentLocale;
+			revisionId?: string;
+		},
+	) {
+		const resolved = await this.resolveRevisionWithDb(db, input);
+		if (!resolved.found) {
+			return { changed: false as const, reason: resolved.reason };
+		}
+
+		const now = new Date();
+		await db
+			.update(cmsEntries)
+			.set({
+				status: "published",
+				publishedRevisionId: resolved.revisionId,
+				publishedAt: now,
+				updatedAt: now,
+			})
+			.where(eq(cmsEntries.id, resolved.entry.id));
+
+		return {
+			changed: true as const,
+			entryId: resolved.entry.id,
+			revisionId: resolved.revisionId,
+		};
 	}
 
 	async listHomeSections(locale: ContentLocale) {
@@ -125,35 +272,69 @@ export class AdminRepository {
 		body: AdminUpsertHomeSectionBody;
 		authUserId: string;
 	}) {
-		const entry = await this.ensureEntry(input.entryKey, input.locale);
-		const revisionNo = await this.getNextRevisionNo(entry.id);
-		const now = new Date();
-		const revision = {
-			id: crypto.randomUUID(),
-			entryId: entry.id,
-			revisionNo,
-			title: input.body.title,
-			summaryMd: input.body.summaryMd ?? null,
-			bodyMd: input.body.bodyMd ?? null,
-			contentJson: JSON.stringify(input.body.contentJson),
-			createdByAuthUserId: input.authUserId,
-			createdAt: now,
-		} as const;
+		return this.createHomeSectionDraftWithDb(this.db, input);
+	}
 
-		await this.db.insert(cmsRevisions).values(revision);
-		await this.db
-			.update(cmsEntries)
-			.set({
-				status: "draft",
-				updatedAt: now,
-			})
-			.where(eq(cmsEntries.id, entry.id));
+	async createHomeSectionDrafts(input: {
+		entryKey: HomeSectionEntryKey;
+		locales: ContentLocale[];
+		body: AdminUpsertHomeSectionBody;
+		authUserId: string;
+	}) {
+		const results: Array<{
+			locale: ContentLocale;
+			entryId: string;
+			revisionId: string;
+			revisionNo: number;
+		}> = [];
 
-		return {
-			entryId: entry.id,
-			revisionId: revision.id,
-			revisionNo,
-		};
+		for (const locale of input.locales) {
+			const result = await this.createHomeSectionDraftWithDb(this.db, {
+				entryKey: input.entryKey,
+				locale,
+				body: input.body,
+				authUserId: input.authUserId,
+			});
+			results.push({ locale, ...result });
+		}
+
+		return results;
+	}
+
+	async getHomeSectionRevisionContent(input: {
+		entryKey: HomeSectionEntryKey;
+		locale: ContentLocale;
+		revisionId?: string;
+	}): Promise<
+		| {
+				found: true;
+				entryId: string;
+				revisionId: string;
+				contentJson: unknown;
+		  }
+		| {
+				found: false;
+				reason: RevisionLookupFailureReason;
+		  }
+	> {
+		const resolved = await this.resolveRevisionWithDb(this.db, input);
+		if (!resolved.found) {
+			return resolved;
+		}
+
+		try {
+			return {
+				found: true,
+				entryId: resolved.entry.id,
+				revisionId: resolved.revisionId,
+				contentJson: JSON.parse(resolved.contentJson),
+			};
+		} catch {
+			return {
+				found: false,
+				reason: "REVISION_CONTENT_INVALID",
+			};
+		}
 	}
 
 	async publishHomeSection(input: {
@@ -161,55 +342,61 @@ export class AdminRepository {
 		locale: ContentLocale;
 		revisionId?: string;
 	}) {
-		const entry = await this.getEntryByKey(input.entryKey, input.locale);
-		if (!entry) {
-			return { changed: false as const, reason: "ENTRY_NOT_FOUND" as const };
-		}
+		return this.publishHomeSectionWithDb(this.db, input);
+	}
 
-		let revisionId = input.revisionId;
-		if (!revisionId) {
-			const latest = await this.db
-				.select()
-				.from(cmsRevisions)
-				.where(eq(cmsRevisions.entryId, entry.id))
-				.orderBy(desc(cmsRevisions.revisionNo))
-				.limit(1);
-			revisionId = latest[0]?.id;
+	async publishHomeSections(input: {
+		entries: Array<{
+			entryKey: HomeSectionEntryKey;
+			locale: ContentLocale;
+			revisionId?: string;
+		}>;
+	}) {
+		const results: Array<{
+			locale: ContentLocale;
+			entryId: string;
+			revisionId: string;
+		}> = [];
+		for (const entry of input.entries) {
+			const result = await this.publishHomeSectionWithDb(this.db, entry);
+			if (!result.changed) {
+				return {
+					changed: false as const,
+					reason: result.reason,
+					locale: entry.locale,
+				};
+			}
+			results.push({
+				locale: entry.locale,
+				entryId: result.entryId,
+				revisionId: result.revisionId,
+			});
 		}
-		if (!revisionId) {
-			return { changed: false as const, reason: "REVISION_NOT_FOUND" as const };
-		}
-
-		const revision = await this.db
-			.select({ id: cmsRevisions.id })
-			.from(cmsRevisions)
-			.where(
-				and(
-					eq(cmsRevisions.id, revisionId),
-					eq(cmsRevisions.entryId, entry.id),
-				),
-			)
-			.limit(1);
-		if (!revision[0]) {
-			return { changed: false as const, reason: "REVISION_NOT_FOUND" as const };
-		}
-
-		const now = new Date();
-		await this.db
-			.update(cmsEntries)
-			.set({
-				status: "published",
-				publishedRevisionId: revisionId,
-				publishedAt: now,
-				updatedAt: now,
-			})
-			.where(eq(cmsEntries.id, entry.id));
 
 		return {
 			changed: true as const,
-			entryId: entry.id,
-			revisionId,
+			results,
 		};
+	}
+
+	async listVideoPublishStatesByStreamVideoIds(streamVideoIds: string[]) {
+		const ids = [...new Set(streamVideoIds.map((id) => id.trim()).filter(Boolean))];
+		if (ids.length === 0) {
+			return [] as Array<{
+				streamVideoId: string;
+				processingStatus: string;
+				publishStatus: string;
+			}>;
+		}
+
+		return this.db
+			.select({
+				streamVideoId: videoAssets.streamVideoId,
+				processingStatus: videoAssets.processingStatus,
+				publishStatus: videoAssets.publishStatus,
+			})
+			.from(videoAssets)
+			.where(inArray(videoAssets.streamVideoId, ids));
 	}
 
 	async createAsset(input: {

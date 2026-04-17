@@ -3,16 +3,13 @@ import {
 	aboutContent,
 	colearningMethods,
 	dailyNotes,
+	defaultHomeContent,
 	footerContent,
 	heroContent,
 	philosophyItems,
 	siteNavigation,
 	stories,
 } from "./home-page.data";
-import {
-	HOME_CHARACTER_VIDEO_SLOT_COUNT,
-	HOME_MAIN_VIDEO_STREAM_ID,
-} from "./home/home-featured-videos";
 
 describe("official website home data", () => {
 	it("contains all required anchor sections", () => {
@@ -47,8 +44,10 @@ describe("official website home data", () => {
 		});
 	});
 
-	it("keeps homepage featured video slots fixed at one main plus six characters", () => {
-		expect(HOME_MAIN_VIDEO_STREAM_ID.length).toBeGreaterThan(0);
-		expect(HOME_CHARACTER_VIDEO_SLOT_COUNT).toBe(6);
+	it("keeps slogan fallback and dynamic featured videos defaults", () => {
+		expect(defaultHomeContent.heroSlogan.title).toBe(heroContent.title);
+		expect(defaultHomeContent.heroSlogan.subtitle).toBe(heroContent.subtitle);
+		expect(defaultHomeContent.featuredVideos.main.streamVideoId).toBe("");
+		expect(defaultHomeContent.featuredVideos.characters.items).toEqual([]);
 	});
 });

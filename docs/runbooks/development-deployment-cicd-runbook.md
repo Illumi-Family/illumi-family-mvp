@@ -135,6 +135,23 @@ curl -s 'http://localhost:5173/api/content/videos'
    - `pnpm run build`
 6. 需要新增/修改 Stream 配置时，按 8.2 的 secret 流程处理，不得写入仓库。
 
+### 5.5 首页关键区块配置变更（Slogan + Featured Videos）
+1. 共享配置 entry key：
+   - `home.hero_slogan`
+   - `home.main_video`
+   - `home.character_videos`
+2. 共享配置在 save/publish 时会镜像写入 `zh-CN` + `en-US`，不得假设只影响当前 locale。
+3. 发布门禁必须覆盖：
+   - slogan 主句/副句非空；
+   - 核心视频已选择；
+   - 角色视频列表至少 1 条；
+   - 所选视频均为 `ready + published`。
+4. 发布验证失败时，优先检查 `/admin/videos` 的 processing/publish 状态漂移，不要在前端绕过门禁。
+5. 变更后至少执行：
+   - `pnpm test`
+   - `pnpm run build`
+   - dev smoke：`/api/content/home?locale=zh-CN|en-US` 响应包含 `heroSlogan`、`featuredVideos`
+
 ## 6. 数据库迁移治理细则
 
 ### 6.1 必做检查
@@ -169,8 +186,10 @@ pnpm run check
 pnpm run deploy:dev
 curl -s https://dev.illumi-family.com/api/health | grep -q '\"appEnv\":\"dev\"'
 curl -s https://dev.illumi-family.com/api/health | grep -q '\"apiVersion\":\"v1\"'
-curl -s -i 'https://dev.illumi-family.com/api/content/home?locale=zh-CN'
+curl -s 'https://dev.illumi-family.com/api/content/home?locale=zh-CN' | grep -q '"heroSlogan"'
+curl -s 'https://dev.illumi-family.com/api/content/home?locale=en-US' | grep -q '"featuredVideos"'
 curl -s -i 'https://dev.illumi-family.com/api/content/videos'
+curl -s -i 'https://dev.illumi-family.com/api/admin/content/home?locale=zh-CN' # 未登录应为 401
 curl -s -i 'https://dev.illumi-family.com/api/admin/videos'  # 未登录应为 401
 curl -s -i -X POST 'https://dev.illumi-family.com/api/admin/videos/import' -H 'content-type: application/json' -d '{"streamVideoId":"stream-test"}' # 未登录应为 401
 ```
@@ -182,8 +201,10 @@ pnpm run check:prod
 pnpm run deploy:prod
 curl -s https://illumi-family.com/api/health | grep -q '\"appEnv\":\"prod\"'
 curl -s https://illumi-family.com/api/health | grep -q '\"apiVersion\":\"v1\"'
-curl -s -i 'https://illumi-family.com/api/content/home?locale=zh-CN'
+curl -s 'https://illumi-family.com/api/content/home?locale=zh-CN' | grep -q '"heroSlogan"'
+curl -s 'https://illumi-family.com/api/content/home?locale=en-US' | grep -q '"featuredVideos"'
 curl -s -i 'https://illumi-family.com/api/content/videos'
+curl -s -i 'https://illumi-family.com/api/admin/content/home?locale=zh-CN' # 未登录应为 401
 curl -s -i 'https://illumi-family.com/api/admin/videos'      # 未登录应为 401
 curl -s -i -X POST 'https://illumi-family.com/api/admin/videos/import' -H 'content-type: application/json' -d '{"streamVideoId":"stream-test"}' # 未登录应为 401
 ```
@@ -236,6 +257,7 @@ pnpm exec wrangler secret put STREAM_WEBHOOK_SECRET
 - `/api/content/home?locale=zh-CN`
 - `/api/content/home?locale=en-US`
 - `/api/content/videos`
+- `/api/admin/content/home?locale=zh-CN`（未登录期望 `401`）
 - `/api/admin/videos`（未登录期望 `401`）
 - `/api/admin/videos/import`（未登录期望 `401`）
 - 鉴权基本链路（至少 session 获取）
@@ -251,13 +273,16 @@ pnpm exec wrangler secret put STREAM_WEBHOOK_SECRET
 - 响应含：`locale`、`fallbackFrom`
 
 ### 9.3 缓存失效矩阵（发布动作）
-- 发布 `zh-CN`：失效全部受支持 locale 的 home cache（当前 `zh-CN` + `en-US`）
-- 发布 `en-US`：仅失效 `en-US`
+- 发布共享 entry key（`home.hero_slogan` / `home.main_video` / `home.character_videos`）：失效全部受支持 locale 的 home cache（当前 `zh-CN` + `en-US`）
+- 发布非共享 `zh-CN`：失效全部受支持 locale 的 home cache
+- 发布非共享 `en-US`：仅失效 `en-US`
 
 ### 9.4 Admin 接口 locale 规范
 - list/save/publish 均接受 locale query。
 - 缺省 locale：回落 `zh-CN`。
 - 非法 locale：返回 400。
+- 共享 key（`home.hero_slogan` / `home.main_video` / `home.character_videos`）在 save/publish 时会镜像写入并发布 `zh-CN` + `en-US`。
+- 共享 key 发布门禁会校验“必填完整性 + 视频 ready/published 状态”，失败返回 `details.issues` 字段级错误。
 
 ## 10. AI 代理执行协议（接手规范）
 AI 代理在执行开发/部署任务时，必须按以下顺序：
@@ -276,7 +301,7 @@ AI 代理在执行开发/部署任务时，必须按以下顺序：
 - [ ] `pnpm run check` 或 `pnpm run check:prod` 通过
 - [ ] 部署成功并记录 Version ID
 - [ ] 核心 smoke check 返回 200
-- [ ] 若涉及视频能力，已验证 `/api/content/videos`、`/api/admin/videos`、`/api/admin/videos/import` 未登录返回 401
+- [ ] 若涉及视频能力，已验证 `/api/content/videos`、`/api/admin/content/home`、`/api/admin/videos`、`/api/admin/videos/import` 未登录返回 401
 - [ ] 文档同步（架构 + runbook + playbook references）
 
 发布后 checklist：

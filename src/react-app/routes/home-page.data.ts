@@ -78,9 +78,9 @@ export const heroContent: HeroContent = {
 	title: "三代同堂家风家学传承践行者",
 	subtitle: "每个家庭都能有属于自己的童蒙家塾",
 	descriptionLines: [
-		"以经典润心，以家风养正，以家为塾，以行践学。",
-		"立足三代同堂之根，传承中华家学之美，",
-		"让每一户寻常人家，皆可自成书香童蒙。",
+		"以经典润心，以家风养正，以家为塾，以行践学",
+		"立足三代同堂之根，传承中华家学之美",
+		"让每一户寻常人家，皆可自成书香童蒙",
 	],
 	primaryCta: { label: "阅读理念", href: "#philosophy" },
 	secondaryCta: { label: "认识小罗老师", href: "#about" },
@@ -202,6 +202,18 @@ export const colearningCase = {
 };
 
 export const defaultHomeContent = {
+	heroSlogan: {
+		title: heroContent.title,
+		subtitle: heroContent.subtitle,
+	},
+	featuredVideos: {
+		main: {
+			streamVideoId: "",
+		},
+		characters: {
+			items: [],
+		},
+	},
 	philosophy: {
 		intro: philosophyIntro,
 		items: philosophyItems,
@@ -279,6 +291,18 @@ const heroContentEn: HeroContent = {
 };
 
 const defaultHomeContentEn = {
+	heroSlogan: {
+		title: heroContentEn.title,
+		subtitle: heroContentEn.subtitle,
+	},
+	featuredVideos: {
+		main: {
+			streamVideoId: "",
+		},
+		characters: {
+			items: [],
+		},
+	},
 	philosophy: {
 		intro:
 			"Classics as roots, family as school, calmness as method, integrity as purpose. True education grows in daily family life.",

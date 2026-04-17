@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { getHomePageData } from "@/routes/home-page.data";
@@ -28,6 +28,7 @@ import {
 	resolveHomeFeaturedVideos,
 	type ResolvedHomeFeaturedVideo,
 } from "@/routes/home/home-featured-videos";
+import { scheduleHomeEntryScrollReset } from "./home-page.scroll";
 
 const readErrorMessage = (error: unknown) =>
 	error instanceof Error ? error.message : "Unexpected error";
@@ -39,9 +40,13 @@ export function HomePage() {
 	const homeContentQuery = useQuery(homeContentQueryOptions(locale));
 	const publicVideosQuery = useQuery(publicVideosQueryOptions());
 	const homeContent = homeContentQuery.data ?? homeData.defaultHomeContent;
-	const featuredVideos = useMemo(
-		() => resolveHomeFeaturedVideos(publicVideosQuery.data ?? [], locale),
-		[locale, publicVideosQuery.data],
+	const heroTitle = homeContent.heroSlogan.title.trim() || homeData.heroContent.title;
+	const heroSubtitle =
+		homeContent.heroSlogan.subtitle.trim() || homeData.heroContent.subtitle;
+	const featuredVideos = resolveHomeFeaturedVideos(
+		publicVideosQuery.data ?? [],
+		homeContent.featuredVideos,
+		locale,
 	);
 	const showFallbackHint = homeContentQuery.isError;
 	const [selectedVideo, setSelectedVideo] =
@@ -51,6 +56,20 @@ export function HomePage() {
 
 	useEffect(() => {
 		void scheduleVideoPlayerSdkWarmup();
+	}, []);
+
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const frameId = scheduleHomeEntryScrollReset({
+			hash: window.location.hash,
+			requestAnimationFrame: window.requestAnimationFrame.bind(window),
+			scrollTo: window.scrollTo.bind(window),
+		});
+		return () => {
+			if (frameId !== null) {
+				window.cancelAnimationFrame(frameId);
+			}
+		};
 	}, []);
 
 	const handleCharacterVideoPlayIntent = (item: ResolvedHomeFeaturedVideo) => {
@@ -85,18 +104,18 @@ export function HomePage() {
 			/>
 
 			<header className="sticky top-3 z-40 px-3 md:px-6">
-				<div className="mx-auto mt-2 flex w-full max-w-7xl items-center justify-between gap-3 rounded-2xl border border-[color:rgba(166,124,82,0.24)] bg-[color:rgba(255,252,247,0.85)] px-4 py-3 backdrop-blur-md">
+				<div className="mx-auto mt-2 flex w-full max-w-7xl items-center justify-between gap-3 rounded-2xl border border-[color:rgba(166,124,82,0.24)] bg-[color:rgba(255,252,247,0.85)] px-4 py-2 backdrop-blur-md">
 					<a href="/" className="flex min-w-0 items-center gap-3">
 						<img
-							src="/images/illumi-family-logo.png"
+							src="/images/logo.jpg"
 							alt="童蒙家塾 logo"
-							className="h-9 w-auto rounded-md border border-[color:rgba(166,124,82,0.2)] bg-card p-1"
+							className="h-12 w-auto rounded-md bg-card p-1"
 						/>
-						<div className="min-w-0">
+						{/* <div className="min-w-0">
 							<p className="truncate text-xs text-muted-foreground">
 								{homeData.siteMeta.brandSubtitle}
 							</p>
-						</div>
+						</div> */}
 					</a>
 
 					<nav
@@ -116,12 +135,12 @@ export function HomePage() {
 
 					<div className="flex items-center gap-2">
 						<LanguageSwitcher className="hidden items-center gap-2 md:flex" />
-						<a
+						{/* <a
 							href={homeData.siteMeta.headerCta.href}
 							className="inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors duration-200 hover:bg-[color:rgba(166,124,82,0.92)]"
 						>
 							{homeData.siteMeta.headerCta.label}
-						</a>
+						</a> */}
 					</div>
 				</div>
 
@@ -144,14 +163,18 @@ export function HomePage() {
 
 			<main
 				id="main-content"
-				className="mx-auto w-full max-w-7xl space-y-20 px-4 pb-20 pt-4 md:px-8 md:pt-6"
+				className="mx-auto w-full max-w-7xl space-y-10 px-4 pb-20 pt-4 md:px-8 md:pt-6"
 			>
 				{showFallbackHint ? (
 					<div className="rounded-2xl border border-[color:rgba(166,124,82,0.22)] bg-[color:rgba(255,252,247,0.82)] px-4 py-3 text-sm text-muted-foreground">
 						{t("fallbackNotice")}
 					</div>
 				) : null}
-				<HeroSection content={homeData.heroContent} />
+				<HeroSection
+					title={heroTitle}
+					subtitle={heroSubtitle}
+					descriptionLines={homeData.heroContent.descriptionLines}
+				/>
 				<HomeMainVideoSection
 					video={featuredVideos.main}
 					isLoading={publicVideosQuery.isLoading}

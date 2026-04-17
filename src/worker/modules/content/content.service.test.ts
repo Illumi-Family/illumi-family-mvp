@@ -7,6 +7,28 @@ describe("content service", () => {
 			getPublishedHomeSectionContent: async () =>
 				new Map([
 					[
+						"home.hero_slogan",
+						{
+							title: "三代同堂家风家学传承践行者",
+							subtitle: "每个家庭都能有属于自己的童蒙家塾",
+						},
+					],
+					[
+						"home.main_video",
+						{
+							streamVideoId: "stream-main-1",
+						},
+					],
+					[
+						"home.character_videos",
+						{
+							items: [
+								{ streamVideoId: "stream-char-1" },
+								{ streamVideoId: "stream-char-2" },
+							],
+						},
+					],
+					[
 						"home.philosophy",
 						{ intro: "理念", items: [{ title: "静定", description: "先定" }] },
 					],
@@ -54,6 +76,9 @@ describe("content service", () => {
 		} as never);
 
 		const result = await service.getPublishedHomeContent("zh-CN");
+		expect(result.heroSlogan.title).toContain("三代同堂");
+		expect(result.featuredVideos.main.streamVideoId).toBe("stream-main-1");
+		expect(result.featuredVideos.characters.items).toHaveLength(2);
 		expect(result.philosophy.items[0]?.title).toBe("静定");
 		expect(result.dailyNotes.items.length).toBe(1);
 		expect(result.stories.items[0]?.status).toBe("published");
@@ -68,6 +93,19 @@ describe("content service", () => {
 			.mockImplementation(async (locale: string) => {
 				if (locale === "en-US") {
 					return new Map([
+						[
+							"home.hero_slogan",
+							{
+								title: "A family values practitioner",
+								subtitle: "Every home can be a school",
+							},
+						],
+						[
+							"home.main_video",
+							{
+								streamVideoId: 123,
+							},
+						],
 						[
 							"home.philosophy",
 							{
@@ -92,6 +130,25 @@ describe("content service", () => {
 					]);
 				}
 				return new Map([
+					[
+						"home.hero_slogan",
+						{
+							title: "三代同堂家风家学传承践行者",
+							subtitle: "每个家庭都能有属于自己的童蒙家塾",
+						},
+					],
+					[
+						"home.main_video",
+						{
+							streamVideoId: "stream-main-zh",
+						},
+					],
+					[
+						"home.character_videos",
+						{
+							items: [{ streamVideoId: "stream-char-zh-1" }],
+						},
+					],
 					[
 						"home.philosophy",
 						{
@@ -151,6 +208,11 @@ describe("content service", () => {
 		expect(getPublishedHomeSectionContent).toHaveBeenCalledWith("zh-CN");
 		expect(result.locale).toBe("en-US");
 		expect(result.fallbackFrom).toEqual(["zh-CN"]);
+		expect(result.heroSlogan.title).toBe("A family values practitioner");
+		expect(result.featuredVideos.main.streamVideoId).toBe("stream-main-zh");
+		expect(result.featuredVideos.characters.items[0]?.streamVideoId).toBe(
+			"stream-char-zh-1",
+		);
 		expect(result.dailyNotes.items[0]?.title).toBe("日思");
 		expect(result.stories.items[0]?.title).toBe("故事");
 	});

@@ -1,41 +1,57 @@
-import type { HeroContent } from "@/routes/home-page.data";
-
 interface HeroSectionProps {
-	content: HeroContent;
+	title: string;
+	subtitle: string;
+	descriptionLines: string[];
 }
 
-export function HeroSection({ content }: HeroSectionProps) {
+const normalizeDescriptionLines = (lines: string[]) =>
+	lines.map((line) => line.trim()).filter((line) => line.length > 0);
+
+export function HeroSection({ title, subtitle, descriptionLines }: HeroSectionProps) {
+	const normalizedLines = normalizeDescriptionLines(descriptionLines);
+	const detailLines = normalizedLines.slice(0, 3);
+	const hasDetailLines = detailLines.length > 0;
+
 	return (
 		<section
 			id="hero"
-			aria-label={`${content.title} ${content.subtitle}`}
-			className="relative overflow-hidden rounded-[2rem] border border-[color:rgba(166,124,82,0.24)] bg-[color:rgba(255,252,247,0.78)]"
+			aria-label={`${title} ${subtitle}`}
+			className="relative overflow-hidden rounded-[1.45rem] border border-[color:rgba(166,124,82,0.2)] bg-[linear-gradient(180deg,rgba(255,252,247,0.74),rgba(255,252,247,0.88))]"
 		>
-			<div
-				aria-hidden="true"
-				className="absolute inset-0 bg-[radial-gradient(circle_at_6%_12%,rgba(212,184,133,0.2),transparent_42%),radial-gradient(circle_at_94%_4%,rgba(166,124,82,0.14),transparent_34%)]"
-			/>
-			<div
-				aria-hidden="true"
-				className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,252,247,0.58)_0%,rgba(255,252,247,0.82)_100%)]"
-			/>
 
-			<div className="relative z-10 px-6 py-10 md:px-10 md:py-12 lg:px-12 lg:py-14">
-				<div className="max-w-4xl space-y-6 motion-enter" style={{ animationDelay: "60ms" }}>
-					<div className="space-y-3">
-						<h1 className="font-brand text-4xl leading-tight text-foreground md:text-6xl">
-							{content.title}
-						</h1>
-						<p className="font-brand text-2xl leading-relaxed text-[color:var(--brand-primary)] md:text-3xl">
-							{content.subtitle}
-						</p>
-					</div>
-					<div className="space-y-1 text-base leading-relaxed text-muted-foreground md:text-lg">
-						{content.descriptionLines.map((line) => (
-							<p key={line}>{line}</p>
-						))}
-					</div>
+			<div
+				className={`relative z-10 grid gap-3 px-4 py-3 sm:px-5 md:gap-7 md:px-8 md:py-5 lg:px-9 ${
+					hasDetailLines
+						? "md:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] md:items-start"
+						: "md:grid-cols-1"
+				}`}
+			>
+				<div className="max-w-3xl space-y-2 motion-enter md:space-y-2.5" style={{ animationDelay: "60ms" }}>
+					<h1 className="font-brand text-[clamp(1.7rem,3.8vw,3.2rem)] leading-[1.08] tracking-[-0.018em] text-foreground">
+						{title}
+					</h1>
+					<p className="font-brand text-[clamp(1.26rem,1.95vw,1.95rem)] leading-[1.2] text-[color:var(--brand-primary)]">
+						{subtitle}
+					</p>
 				</div>
+
+				{hasDetailLines ? (
+					<aside
+						className="motion-enter md:w-full md:max-w-[31rem] md:justify-self-end text-right"
+						style={{ animationDelay: "120ms" }}
+					>
+						<ol className="space-y-2.5">
+							{detailLines.map((line, index) => (
+								<li
+									key={`${line}-${index}`}
+									className="text-sm leading-[1.58] text-[color:rgba(66,58,49,0.86)] md:text-[15px]"
+								>
+									{line}
+								</li>
+							))}
+						</ol>
+					</aside>
+				) : null}
 			</div>
 		</section>
 	);

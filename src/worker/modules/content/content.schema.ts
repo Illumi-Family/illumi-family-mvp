@@ -1,6 +1,9 @@
 import { z } from "zod";
 
 export const HOME_SECTION_ENTRY_KEYS = [
+	"home.hero_slogan",
+	"home.main_video",
+	"home.character_videos",
 	"home.philosophy",
 	"home.daily_notes",
 	"home.stories",
@@ -21,6 +24,23 @@ export const homeSectionPayloadSchema = z.object({
 			}),
 		)
 		.default([]),
+});
+
+export const heroSloganSectionContentSchema = z.object({
+	title: z.string().max(200),
+	subtitle: z.string().max(200),
+});
+
+export const mainVideoSectionContentSchema = z.object({
+	streamVideoId: z.string().max(255),
+});
+
+export const characterVideoItemSchema = z.object({
+	streamVideoId: z.string().max(255),
+});
+
+export const characterVideosSectionContentSchema = z.object({
+	items: z.array(characterVideoItemSchema).max(12),
 });
 
 export const philosophySectionContentSchema = z.object({
@@ -77,6 +97,9 @@ export const colearningSectionContentSchema = z.object({
 });
 
 export const homeSectionContentSchemaByKey = {
+	"home.hero_slogan": heroSloganSectionContentSchema,
+	"home.main_video": mainVideoSectionContentSchema,
+	"home.character_videos": characterVideosSectionContentSchema,
 	"home.philosophy": philosophySectionContentSchema,
 	"home.daily_notes": dailyNotesSectionContentSchema,
 	"home.stories": storiesSectionContentSchema,
@@ -115,6 +138,16 @@ export type AdminPublishHomeSectionBody = z.infer<
 	typeof adminPublishHomeSectionBodySchema
 >;
 
+export type HeroSloganSectionContent = z.infer<
+	typeof heroSloganSectionContentSchema
+>;
+export type MainVideoSectionContent = z.infer<
+	typeof mainVideoSectionContentSchema
+>;
+export type CharacterVideoItem = z.infer<typeof characterVideoItemSchema>;
+export type CharacterVideosSectionContent = z.infer<
+	typeof characterVideosSectionContentSchema
+>;
 export type PhilosophySectionContent = z.infer<
 	typeof philosophySectionContentSchema
 >;

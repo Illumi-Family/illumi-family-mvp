@@ -150,6 +150,18 @@ describe("react api client", () => {
 				JSON.stringify({
 					success: true,
 					data: {
+						heroSlogan: {
+							title: "三代同堂家风家学传承践行者",
+							subtitle: "每个家庭都能有属于自己的童蒙家塾",
+						},
+						featuredVideos: {
+							main: {
+								streamVideoId: "stream-main-1",
+							},
+							characters: {
+								items: [{ streamVideoId: "stream-char-1" }],
+							},
+						},
 						philosophy: { intro: "理念", items: [] },
 						dailyNotes: { items: [] },
 						stories: { items: [] },
@@ -178,6 +190,8 @@ describe("react api client", () => {
 			headers: { Accept: "application/json" },
 		});
 		expect(result.philosophy.intro).toBe("理念");
+		expect(result.heroSlogan.title).toContain("三代同堂");
+		expect(result.featuredVideos.main.streamVideoId).toBe("stream-main-1");
 		expect(result.locale).toBe("en-US");
 		expect(result.fallbackFrom).toEqual(["zh-CN"]);
 	});

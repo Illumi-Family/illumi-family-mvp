@@ -113,9 +113,21 @@ Last verified: 2026-04-17
 - Admin access is enforced by hard-coded whitelist + verified-email check (`src/worker/shared/auth/admin-access.ts` + `requireAdminSession`).
 - Public home content is served by `GET /api/content/home?locale=...` backed by D1 published revisions with KV cache key `cms:home:published:v1:{locale}`.
 - Home content fallback rule: missing/invalid target-locale section falls back to `zh-CN` and returns `fallbackFrom`.
+- Public home payload includes editable hero/video blocks: `heroSlogan` + `featuredVideos` (main + dynamic character list).
+- Admin home shared-section keys:
+  - `home.hero_slogan`
+  - `home.main_video`
+  - `home.character_videos`
+- Shared-section save/publish is mirrored to both locales (`zh-CN` + `en-US`) to preserve global consistency.
+- Shared-section publish gate validates:
+  - slogan title/subtitle required,
+  - main video required,
+  - character video list requires at least 1 item,
+  - selected videos must remain `ready + published` in `video_assets`.
 - Admin publish cache invalidation matrix:
-  - publish `zh-CN` => invalidate all supported locale home caches (currently `zh-CN`, `en-US`)
-  - publish `en-US` => invalidate `en-US` home cache only
+  - publish shared keys (`home.hero_slogan` / `home.main_video` / `home.character_videos`) => invalidate all supported locale home caches (currently `zh-CN`, `en-US`)
+  - publish non-shared `zh-CN` key => invalidate all supported locale home caches
+  - publish non-shared `en-US` key => invalidate `en-US` home cache only
 - Public video list cache key: `videos:public:v1` (publish/unpublish + ready-state drift triggers invalidation)
 - Stream webhook validation uses HMAC SHA-256 + header `Webhook-Signature` (`time` + `sig1`) with `STREAM_WEBHOOK_SECRET`.
 - Admin video actions emit structured log fields for observability (`actionType`, `streamVideoId`, `operator`, `env`) to distinguish upload-create vs import-reuse.

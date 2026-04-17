@@ -25,9 +25,47 @@ vi.mock("@/components/video/video-player-modal", () => ({
 		}),
 }));
 
+import { scheduleHomeEntryScrollReset } from "./home-page.scroll";
 import { HomePage } from "./home-page";
 
 describe("home page", () => {
+	it("resets to top on initial entry when url has no hash", () => {
+		const scrollTo = vi.fn();
+		const requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+			callback(0);
+			return 11;
+		});
+
+		const frameId = scheduleHomeEntryScrollReset({
+			hash: "",
+			requestAnimationFrame: requestAnimationFrame as (
+				callback: FrameRequestCallback,
+			) => number,
+			scrollTo: scrollTo as (options: ScrollToOptions) => void,
+		});
+
+		expect(frameId).toBe(11);
+		expect(requestAnimationFrame).toHaveBeenCalledOnce();
+		expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });
+	});
+
+	it("keeps explicit hash anchor behavior on initial entry", () => {
+		const scrollTo = vi.fn();
+		const requestAnimationFrame = vi.fn();
+
+		const frameId = scheduleHomeEntryScrollReset({
+			hash: "#contact",
+			requestAnimationFrame: requestAnimationFrame as (
+				callback: FrameRequestCallback,
+			) => number,
+			scrollTo: scrollTo as (options: ScrollToOptions) => void,
+		});
+
+		expect(frameId).toBeNull();
+		expect(requestAnimationFrame).not.toHaveBeenCalled();
+		expect(scrollTo).not.toHaveBeenCalled();
+	});
+
 	it("renders home shell and keeps unified video modal entry closed by default", () => {
 		const queryClient = new QueryClient();
 		const html = renderToString(

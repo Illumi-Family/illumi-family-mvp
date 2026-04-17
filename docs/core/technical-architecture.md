@@ -2,10 +2,10 @@
 
 ## 0. 文档信息
 - 项目：`illumi-family-mvp`
-- 文档版本：`v1.3.0`
+- 文档版本：`v1.4.0`
 - 最近更新：`2026-04-17`
 - 运行规范入口：`docs/runbooks/development-deployment-cicd-runbook.md`
-- 当前阶段：模板初始化后已完成 UI 基础设施 + 前端路由/数据缓存（TanStack Router + Query）+ 后端基础能力（dev/prod + D1/KV/R2 + Drizzle + Hono API 分层）+ Better Auth + Resend 鉴权主链路（邮箱密码 + Google）+ Admin CMS 基础能力（白名单鉴权 + admin 子域 + D1 内容版本化 + R2 资产 + 内容发布 API）+ i18n Phase 1/2（前端双语、CMS locale、内容 fallback、locale 缓存分片）+ Cloudflare Stream 视频能力层（后台直传签发 + 导入复用、webhook 状态回写、发布门禁、公网播放）+ 本地模板脚手架（template:new/sync/doctor）
+- 当前阶段：模板初始化后已完成 UI 基础设施 + 前端路由/数据缓存（TanStack Router + Query）+ 后端基础能力（dev/prod + D1/KV/R2 + Drizzle + Hono API 分层）+ Better Auth + Resend 鉴权主链路（邮箱密码 + Google）+ Admin CMS 基础能力（白名单鉴权 + admin 子域 + D1 内容版本化 + R2 资产 + 内容发布 API）+ i18n Phase 1/2（前端双语、CMS locale、内容 fallback、locale 缓存分片）+ Cloudflare Stream 视频能力层（后台直传签发 + 导入复用、webhook 状态回写、发布门禁、公网播放）+ 首页关键区块后台可编辑化（Slogan + 核心视频 + 动态角色视频、shared 双 locale 镜像发布）+ 本地模板脚手架（template:new/sync/doctor）
 
 ## 1. 架构目标与边界
 本项目采用 **React + Vite + Hono + Cloudflare Workers** 的一体化架构，目标是在 Cloudflare 边缘网络上实现：
@@ -53,7 +53,7 @@ flowchart LR
 ### 3.1 运行时职责划分
 - React 应用负责页面渲染与交互；
 - Worker 作为统一入口：
-  - 提供 API 路由（`/api/health`、`/api/users`、`/api/auth/*`、`/api/admin/videos/*`、`/api/content/videos`、`/api/webhooks/stream`、`/api/`）；
+  - 提供 API 路由（`/api/health`、`/api/users`、`/api/auth/*`、`/api/admin/content/home*`、`/api/admin/videos/*`、`/api/content/home`、`/api/content/videos`、`/api/webhooks/stream`、`/api/`）；
   - 通过 Router/Controller/Service/Repository 分层处理请求；
   - 接入 D1（关系型）、KV（缓存/轻配置）、R2（对象存储）；
   - 通过 Stream 集成层对接 Cloudflare Stream（直传 URL 签发 + 状态同步）；
@@ -81,7 +81,7 @@ flowchart LR
 │   ├── react-app/          # 前端 SPA
 │   │   ├── main.tsx        # React 启动入口
 │   │   ├── router.tsx      # TanStack Router 路由树与 QueryClient
-│   │   ├── routes/         # 页面路由组件（home/users/auth/admin/videos）
+│   │   ├── routes/         # 页面路由组件（home/users/auth/admin/admin-videos）
 │   │   ├── components/ui/  # shadcn 组件目录
 │   │   ├── components/video/ # 视频播放弹窗组件
 │   │   ├── lib/            # 前端工具方法与 API/Query/Auth client 配置
@@ -274,7 +274,12 @@ flowchart LR
 - CMS 数据层（`cms_entries` / `cms_revisions` / `cms_assets` / `cms_entry_assets`）；
 - 公网内容发布接口（`/api/content/home`）与 admin 内容管理接口（`/api/admin/content/home`）；
 - i18n Phase 1/2 能力：前端 `zh-CN/en-US` 切换、`/api/content/home?locale=` 契约、`cms_entries(entry_key, locale)` 维度、内容 fallback 与 `fallbackFrom`；
-- locale 缓存分片与发布失效矩阵：`cms:home:published:v1:{locale}`，中文发布联动失效英文缓存；
+- locale 缓存分片与发布失效矩阵：`cms:home:published:v1:{locale}`，共享首页 key 发布时联动失效全部受支持 locale；
+- 首页关键区块后台可编辑能力：
+  - shared entry keys：`home.hero_slogan`、`home.main_video`、`home.character_videos`；
+  - shared key save/publish 镜像写入 `zh-CN/en-US`；
+  - 发布门禁覆盖 Slogan 必填、核心视频必填、角色视频至少 1 条、视频 `ready + published` 二次校验；
+  - 首页首段/视频入口改为消费发布配置（`heroSlogan` + `featuredVideos`），移除固定 6 槽位常量依赖；
 - R2 资产上传与读取链路（`/api/admin/assets/upload`、`/api/content/assets/:assetId`）；
 - Cloudflare Stream 视频能力层：
   - admin 直传 URL 签发（`POST /api/admin/videos/upload-url`）；
@@ -334,3 +339,4 @@ flowchart LR
 | 2026-03-18 | v1.1.0 | i18n Phase 1/2 已落地（前端双语 + API/CMS locale + 缓存分片），并新增开发部署运行规范（`docs/runbooks/development-deployment-cicd-runbook.md`） |
 | 2026-04-16 | v1.2.0 | 新增 Cloudflare Stream 视频能力层：后台直传签发、webhook 状态回写、发布门禁、公网视频列表与弹窗播放，并同步更新文档与 runbook |
 | 2026-04-17 | v1.3.0 | 新增 Stream 视频导入复用链路：`POST /api/admin/videos/import`、环境内幂等落库与上传/导入行为日志字段 |
+| 2026-04-17 | v1.4.0 | 首页关键区块后台可编辑化：新增 `home.hero_slogan` / `home.main_video` / `home.character_videos` shared 配置、发布门禁、首页配置驱动渲染 |

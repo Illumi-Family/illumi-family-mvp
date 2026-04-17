@@ -56,6 +56,20 @@ export type UpdateCurrentUserInput = {
 };
 
 export type HomeContentPayload = {
+	heroSlogan: {
+		title: string;
+		subtitle: string;
+	};
+	featuredVideos: {
+		main: {
+			streamVideoId: string;
+		};
+		characters: {
+			items: Array<{
+				streamVideoId: string;
+			}>;
+		};
+	};
 	philosophy: {
 		intro: string;
 		items: Array<{ title: string; description: string }>;
@@ -100,6 +114,9 @@ export type AdminMePayload = {
 };
 
 export type HomeSectionEntryKey =
+	| "home.hero_slogan"
+	| "home.main_video"
+	| "home.character_videos"
 	| "home.philosophy"
 	| "home.daily_notes"
 	| "home.stories"

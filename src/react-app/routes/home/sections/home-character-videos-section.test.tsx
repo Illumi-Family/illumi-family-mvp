@@ -51,7 +51,7 @@ describe("home-character-videos-section", () => {
 		expect(html).toContain("homeVideo.charactersTitle");
 	});
 
-	it("renders playable and unavailable cards with different affordances", () => {
+	it("renders cards with /videos-aligned style and keeps unavailable card disabled", () => {
 		const html = renderToStaticMarkup(
 			createElement(HomeCharacterVideosSection, {
 				items: [
@@ -76,10 +76,12 @@ describe("home-character-videos-section", () => {
 			}),
 		);
 
-		expect(html).toContain("homeVideo.cardPlay");
-		expect(html).toContain("homeVideo.cardUnavailable");
 		expect(html).toContain("角色视频一");
 		expect(html).toContain("角色视频二");
+		expect(html).toContain("播放视频：角色视频一");
+		expect(html).toContain("角色视频待配置：角色视频二");
+		expect(html).toContain("disabled");
+		expect(html).toContain("rounded-2xl");
 	});
 
 	it("renders error panel with retry when query fails", () => {

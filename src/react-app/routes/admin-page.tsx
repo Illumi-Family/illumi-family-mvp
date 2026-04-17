@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { AppLocale } from "@/i18n/types";
 import {
+	ApiClientError,
 	type HomeSectionEntryKey,
 	type UploadAdminAssetInput,
 	publishAdminHomeSection,
@@ -25,10 +26,14 @@ import {
 import {
 	adminHomeSectionsQueryKey,
 	adminHomeSectionsQueryOptions,
+	adminVideosQueryOptions,
 	homeContentQueryKeyPrefix,
 } from "@/lib/query-options";
 
 const ENTRY_KEY_OPTIONS: Array<{ value: HomeSectionEntryKey; label: string }> = [
+	{ value: "home.hero_slogan", label: "首屏 Slogan" },
+	{ value: "home.main_video", label: "首页核心视频" },
+	{ value: "home.character_videos", label: "角色视频列表" },
 	{ value: "home.philosophy", label: "家风家学·理念" },
 	{ value: "home.daily_notes", label: "践行感悟·日思" },
 	{ value: "home.stories", label: "三代同堂·故事" },
@@ -39,6 +44,27 @@ const LOCALE_OPTIONS: Array<{ value: AppLocale; label: string }> = [
 	{ value: "zh-CN", label: "ZH" },
 	{ value: "en-US", label: "EN" },
 ];
+
+const SHARED_HOME_SECTION_ENTRY_KEYS: ReadonlySet<HomeSectionEntryKey> = new Set([
+	"home.hero_slogan",
+	"home.main_video",
+	"home.character_videos",
+]);
+
+const MAX_CHARACTER_VIDEOS = 12;
+
+type HeroSloganContent = {
+	title: string;
+	subtitle: string;
+};
+
+type MainVideoContent = {
+	streamVideoId: string;
+};
+
+type CharacterVideosContent = {
+	items: Array<{ streamVideoId: string }>;
+};
 
 type PhilosophyContent = {
 	intro: string;
@@ -72,6 +98,9 @@ type ColearningContent = {
 };
 
 type SectionContentByEntry = {
+	"home.hero_slogan": HeroSloganContent;
+	"home.main_video": MainVideoContent;
+	"home.character_videos": CharacterVideosContent;
 	"home.philosophy": PhilosophyContent;
 	"home.daily_notes": DailyNotesContent;
 	"home.stories": StoriesContent;
@@ -79,6 +108,16 @@ type SectionContentByEntry = {
 };
 
 const DEFAULT_CONTENT_BY_ENTRY: SectionContentByEntry = {
+	"home.hero_slogan": {
+		title: "三代同堂家风家学传承践行者",
+		subtitle: "每个家庭都能有属于自己的童蒙家塾",
+	},
+	"home.main_video": {
+		streamVideoId: "",
+	},
+	"home.character_videos": {
+		items: [],
+	},
 	"home.philosophy": {
 		intro: "请在这里描述本节导语。",
 		items: [{ title: "示例条目", description: "请编辑结构化字段内容。" }],
@@ -121,6 +160,18 @@ const SECTION_EDITOR_META: Record<
 	HomeSectionEntryKey,
 	{ moduleName: string; titlePlaceholder: string }
 > = {
+	"home.hero_slogan": {
+		moduleName: "Slogan 模块",
+		titlePlaceholder: "例如：首页 Slogan 配置",
+	},
+	"home.main_video": {
+		moduleName: "核心视频模块",
+		titlePlaceholder: "例如：首页核心视频配置",
+	},
+	"home.character_videos": {
+		moduleName: "角色视频模块",
+		titlePlaceholder: "例如：角色视频排序配置",
+	},
 	"home.philosophy": {
 		moduleName: "理念模块",
 		titlePlaceholder: "例如：家的秩序与温度",
@@ -141,6 +192,40 @@ const SECTION_EDITOR_META: Record<
 
 const readErrorMessage = (error: unknown) =>
 	error instanceof Error ? error.message : "Unexpected error";
+
+type ValidationIssue = {
+	field: string;
+	message: string;
+};
+
+const parseValidationIssues = (error: unknown): ValidationIssue[] => {
+	if (!(error instanceof ApiClientError)) return [];
+	if (!error.details || typeof error.details !== "object") return [];
+
+	const rawIssues = (error.details as { issues?: unknown }).issues;
+	if (!Array.isArray(rawIssues)) return [];
+
+	return rawIssues
+		.map((item) => {
+			if (!item || typeof item !== "object") return null;
+			const row = item as { field?: unknown; message?: unknown };
+			if (typeof row.field !== "string" || typeof row.message !== "string") {
+				return null;
+			}
+			return {
+				field: row.field,
+				message: row.message,
+			};
+		})
+		.filter((item): item is ValidationIssue => Boolean(item));
+};
+
+const readValidationSummary = (error: unknown) => {
+	if (!(error instanceof ApiClientError)) return null;
+	if (!error.details || typeof error.details !== "object") return null;
+	const summary = (error.details as { summary?: unknown }).summary;
+	return typeof summary === "string" ? summary : null;
+};
 
 const toBase64 = (arrayBuffer: ArrayBuffer) => {
 	const bytes = new Uint8Array(arrayBuffer);
@@ -164,6 +249,38 @@ const normalizeContentForEntry = <K extends HomeSectionEntryKey>(
 		return DEFAULT_CONTENT_BY_ENTRY[entryKey];
 	}
 	const raw = value as Record<string, unknown>;
+
+	if (entryKey === "home.hero_slogan") {
+		return {
+			title: ensureString(raw.title, DEFAULT_CONTENT_BY_ENTRY["home.hero_slogan"].title),
+			subtitle: ensureString(
+				raw.subtitle,
+				DEFAULT_CONTENT_BY_ENTRY["home.hero_slogan"].subtitle,
+			),
+		} as SectionContentByEntry[K];
+	}
+
+	if (entryKey === "home.main_video") {
+		return {
+			streamVideoId: ensureString(raw.streamVideoId, ""),
+		} as SectionContentByEntry[K];
+	}
+
+	if (entryKey === "home.character_videos") {
+		const items = Array.isArray(raw.items)
+			? raw.items
+					.map((item) => {
+						const row = (item ?? {}) as Record<string, unknown>;
+						return {
+							streamVideoId: ensureString(row.streamVideoId, ""),
+						};
+					})
+					.filter((item) => item.streamVideoId.length > 0)
+			: [];
+		return {
+			items,
+		} as SectionContentByEntry[K];
+	}
 
 	if (entryKey === "home.philosophy") {
 		const items = Array.isArray(raw.items)
@@ -277,20 +394,24 @@ type DraftFormState = {
 const buildDraftKey = (locale: AppLocale, entryKey: HomeSectionEntryKey) =>
 	`${locale}:${entryKey}`;
 
-export function AdminPage() {
+type AdminPageProps = {
+	initialEntryKey?: HomeSectionEntryKey;
+};
+
+export function AdminPage({
+	initialEntryKey = "home.hero_slogan",
+}: AdminPageProps = {}) {
 	const queryClient = useQueryClient();
 	const [locale, setLocale] = useState<AppLocale>("zh-CN");
 	const sectionsQuery = useQuery(adminHomeSectionsQueryOptions(locale));
-	const [entryKey, setEntryKey] = useState<HomeSectionEntryKey>("home.philosophy");
+	const videosQuery = useQuery(adminVideosQueryOptions());
+	const [entryKey, setEntryKey] = useState<HomeSectionEntryKey>(initialEntryKey);
 	const [draftByEntry, setDraftByEntry] = useState<Record<string, DraftFormState>>({});
 	const [statusMessage, setStatusMessage] = useState<string | null>(null);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	const [validationIssues, setValidationIssues] = useState<ValidationIssue[]>([]);
 
-	const activeEntryKey = useMemo(() => {
-		const hasSelected = sectionsQuery.data?.some((item) => item.entryKey === entryKey);
-		if (hasSelected || !sectionsQuery.data?.length) return entryKey;
-		return sectionsQuery.data[0]?.entryKey ?? entryKey;
-	}, [sectionsQuery.data, entryKey]);
+	const activeEntryKey = entryKey;
 
 	const sectionMap = useMemo(
 		() => new Map((sectionsQuery.data ?? []).map((section) => [section.entryKey, section])),
@@ -304,7 +425,7 @@ export function AdminPage() {
 
 	const baselineFormState = useMemo<DraftFormState>(
 		() => ({
-			title: selectedSection?.latestTitle ?? "",
+			title: selectedSection?.latestTitle ?? SECTION_EDITOR_META[activeEntryKey].moduleName,
 			summaryMd: selectedSection?.latestSummaryMd ?? "",
 			bodyMd: selectedSection?.latestBodyMd ?? "",
 			content: normalizeContentForEntry(activeEntryKey, selectedSection?.latestContentJson),
@@ -339,6 +460,48 @@ export function AdminPage() {
 	const resetMessage = () => {
 		setStatusMessage(null);
 		setErrorMessage(null);
+		setValidationIssues([]);
+	};
+
+	const invalidateAdminSectionQueries = async (
+		targetEntryKey: HomeSectionEntryKey,
+		targetLocale: AppLocale,
+	) => {
+		const locales = SHARED_HOME_SECTION_ENTRY_KEYS.has(targetEntryKey)
+			? LOCALE_OPTIONS.map((item) => item.value)
+			: [targetLocale];
+		for (const locale of locales) {
+			await queryClient.invalidateQueries({
+				queryKey: adminHomeSectionsQueryKey(locale),
+			});
+		}
+	};
+
+	const readyPublishedVideos = useMemo(
+		() =>
+			(videosQuery.data ?? []).filter(
+				(video) =>
+					video.processingStatus === "ready" &&
+					video.publishStatus === "published",
+			),
+		[videosQuery.data],
+	);
+
+	const videoLabelByStreamId = useMemo(
+		() =>
+			new Map(
+				readyPublishedVideos.map((video) => [video.streamVideoId, video.title || video.streamVideoId]),
+			),
+		[readyPublishedVideos],
+	);
+
+	const readFieldIssue = (field: string) => {
+		const direct = validationIssues.find((issue) => issue.field === field);
+		if (direct) return direct.message;
+		const prefixed = validationIssues.find((issue) =>
+			issue.field.startsWith(`${field}.`),
+		);
+		return prefixed?.message ?? null;
 	};
 
 	const saveDraftMutation = useMutation({
@@ -346,13 +509,13 @@ export function AdminPage() {
 		onSuccess: async (_data, variables) => {
 			setStatusMessage("草稿已保存");
 			setErrorMessage(null);
-			await queryClient.invalidateQueries({
-				queryKey: adminHomeSectionsQueryKey(variables.locale),
-			});
+			setValidationIssues([]);
+			await invalidateAdminSectionQueries(variables.entryKey, variables.locale);
 		},
 		onError: (error) => {
 			setStatusMessage(null);
-			setErrorMessage(readErrorMessage(error));
+			setValidationIssues(parseValidationIssues(error));
+			setErrorMessage(readValidationSummary(error) ?? readErrorMessage(error));
 		},
 	});
 
@@ -361,14 +524,14 @@ export function AdminPage() {
 		onSuccess: async (_data, variables) => {
 			setStatusMessage("发布成功");
 			setErrorMessage(null);
-			await queryClient.invalidateQueries({
-				queryKey: adminHomeSectionsQueryKey(variables.locale),
-			});
+			setValidationIssues([]);
+			await invalidateAdminSectionQueries(variables.entryKey, variables.locale);
 			await queryClient.invalidateQueries({ queryKey: homeContentQueryKeyPrefix });
 		},
 		onError: (error) => {
 			setStatusMessage(null);
-			setErrorMessage(readErrorMessage(error));
+			setValidationIssues(parseValidationIssues(error));
+			setErrorMessage(readValidationSummary(error) ?? readErrorMessage(error));
 		},
 	});
 
@@ -394,7 +557,8 @@ export function AdminPage() {
 			};
 		} catch (error) {
 			setStatusMessage(null);
-			setErrorMessage(readErrorMessage(error));
+			setValidationIssues(parseValidationIssues(error));
+			setErrorMessage(readValidationSummary(error) ?? readErrorMessage(error));
 			throw error;
 		}
 	};
@@ -439,6 +603,267 @@ export function AdminPage() {
 	};
 
 	const renderSectionEditor = () => {
+		if (activeEntryKey === "home.hero_slogan") {
+			const content = resolvedFormState.content as HeroSloganContent;
+			return (
+				<div className="space-y-4 border-t border-border/70 pt-4">
+					<div className="space-y-2">
+						<Label htmlFor="hero-slogan-title">主句</Label>
+						<Input
+							id="hero-slogan-title"
+							value={content.title}
+							onChange={(event) =>
+								setFormState({
+									content: {
+										...content,
+										title: event.target.value,
+									},
+								})
+							}
+							placeholder="例如：三代同堂家风家学传承践行者"
+						/>
+						{readFieldIssue("contentJson.title") ? (
+							<p className="text-xs text-destructive">
+								{readFieldIssue("contentJson.title")}
+							</p>
+						) : null}
+					</div>
+					<div className="space-y-2">
+						<Label htmlFor="hero-slogan-subtitle">副句</Label>
+						<Input
+							id="hero-slogan-subtitle"
+							value={content.subtitle}
+							onChange={(event) =>
+								setFormState({
+									content: {
+										...content,
+										subtitle: event.target.value,
+									},
+								})
+							}
+							placeholder="例如：每个家庭都能有属于自己的童蒙家塾"
+						/>
+						{readFieldIssue("contentJson.subtitle") ? (
+							<p className="text-xs text-destructive">
+								{readFieldIssue("contentJson.subtitle")}
+							</p>
+						) : null}
+					</div>
+				</div>
+			);
+		}
+
+		if (activeEntryKey === "home.main_video") {
+			const content = resolvedFormState.content as MainVideoContent;
+			return (
+				<div className="space-y-4 border-t border-border/70 pt-4">
+					<div className="space-y-2">
+						<Label htmlFor="main-video-select">核心视频（仅 ready + published）</Label>
+						<select
+							id="main-video-select"
+							value={content.streamVideoId}
+							onChange={(event) =>
+								setFormState({
+									content: {
+										...content,
+										streamVideoId: event.target.value,
+									},
+								})
+							}
+							className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+						>
+							<option value="">请选择视频</option>
+							{readyPublishedVideos.map((video) => (
+								<option key={video.id} value={video.streamVideoId}>
+									{video.title || video.streamVideoId}
+								</option>
+							))}
+						</select>
+						<p className="text-xs text-muted-foreground">
+							候选数量：{readyPublishedVideos.length}（来源：/admin/videos）
+						</p>
+						{readFieldIssue("contentJson.streamVideoId") ? (
+							<p className="text-xs text-destructive">
+								{readFieldIssue("contentJson.streamVideoId")}
+							</p>
+						) : null}
+					</div>
+					{readyPublishedVideos.length === 0 ? (
+						<p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+							当前没有可选视频，请先在 /admin/videos 将视频处理为 ready 且发布。
+						</p>
+					) : null}
+				</div>
+			);
+		}
+
+		if (activeEntryKey === "home.character_videos") {
+			const content = resolvedFormState.content as CharacterVideosContent;
+			return (
+				<div className="space-y-3 border-t border-border/70 pt-4">
+					<div className="flex items-center justify-between">
+						<p className="text-sm font-medium text-foreground">
+							角色视频列表（最多 {MAX_CHARACTER_VIDEOS} 条）
+						</p>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => {
+								if (content.items.length >= MAX_CHARACTER_VIDEOS) return;
+								setFormState({
+									content: {
+										...content,
+										items: [
+											...content.items,
+											{
+												streamVideoId:
+													readyPublishedVideos[0]?.streamVideoId ?? "",
+											},
+										],
+									},
+								});
+							}}
+							disabled={content.items.length >= MAX_CHARACTER_VIDEOS}
+						>
+							<Plus className="mr-1 size-4" />
+							新增视频
+						</Button>
+					</div>
+					<p className="text-xs text-muted-foreground">
+						候选数量：{readyPublishedVideos.length}（仅显示 ready + published）
+					</p>
+					{readFieldIssue("contentJson.items") ? (
+						<p className="text-xs text-destructive">
+							{readFieldIssue("contentJson.items")}
+						</p>
+					) : null}
+					{content.items.length === 0 ? (
+						<p className="rounded-lg border border-dashed border-border/70 bg-background/70 px-3 py-2 text-xs text-muted-foreground">
+							暂无角色视频。你可以添加并手动排序，首页会按此顺序展示。
+						</p>
+					) : null}
+					{content.items.map((item, index) => (
+						<div
+							key={`character-video-${index}`}
+							className="space-y-3 rounded-xl border border-border/70 p-3"
+						>
+							<div className="flex flex-wrap items-center justify-between gap-2">
+								<p className="text-sm font-medium text-foreground">
+									角色视频 {index + 1}
+								</p>
+								<div className="flex items-center gap-1">
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										onClick={() => {
+											if (index === 0) return;
+											const nextItems = [...content.items];
+											[nextItems[index - 1], nextItems[index]] = [
+												nextItems[index],
+												nextItems[index - 1],
+											];
+											setFormState({
+												content: {
+													...content,
+													items: nextItems,
+												},
+											});
+										}}
+										disabled={index === 0}
+									>
+										上移
+									</Button>
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										onClick={() => {
+											if (index >= content.items.length - 1) return;
+											const nextItems = [...content.items];
+											[nextItems[index], nextItems[index + 1]] = [
+												nextItems[index + 1],
+												nextItems[index],
+											];
+											setFormState({
+												content: {
+													...content,
+													items: nextItems,
+												},
+											});
+										}}
+										disabled={index >= content.items.length - 1}
+									>
+										下移
+									</Button>
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										onClick={() =>
+											setFormState({
+												content: {
+													...content,
+													items: content.items.filter((_, i) => i !== index),
+												},
+											})
+										}
+									>
+										<Trash2 className="size-4" />
+									</Button>
+								</div>
+							</div>
+							<div className="space-y-2">
+								<Label htmlFor={`character-video-select-${index}`}>
+									视频选择
+								</Label>
+								<select
+									id={`character-video-select-${index}`}
+									value={item.streamVideoId}
+									onChange={(event) => {
+										const nextItems = [...content.items];
+										nextItems[index] = {
+											...item,
+											streamVideoId: event.target.value,
+										};
+										setFormState({
+											content: {
+												...content,
+												items: nextItems,
+											},
+										});
+									}}
+									className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+								>
+									<option value="">请选择视频</option>
+									{readyPublishedVideos.map((video) => (
+										<option key={video.id} value={video.streamVideoId}>
+											{video.title || video.streamVideoId}
+										</option>
+									))}
+								</select>
+								<p className="text-xs text-muted-foreground">
+									{item.streamVideoId
+										? `当前：${
+												videoLabelByStreamId.get(item.streamVideoId) ??
+												item.streamVideoId
+											}`
+										: "未选择视频"}
+								</p>
+								{readFieldIssue(
+									`contentJson.items[${index}].streamVideoId`,
+								) ? (
+									<p className="text-xs text-destructive">
+										{readFieldIssue(`contentJson.items[${index}].streamVideoId`)}
+									</p>
+								) : null}
+							</div>
+						</div>
+					))}
+				</div>
+			);
+		}
+
 		if (activeEntryKey === "home.philosophy") {
 			const content = resolvedFormState.content as PhilosophyContent;
 			return (
@@ -1099,6 +1524,15 @@ export function AdminPage() {
 								<AlertTriangle className="size-4" aria-hidden="true" />
 								{errorMessage}
 							</p>
+						) : null}
+						{validationIssues.length > 0 ? (
+							<ul className="mb-3 space-y-1 rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+								{validationIssues.map((issue, index) => (
+									<li key={`${issue.field}-${index}`}>
+										{issue.field}：{issue.message}
+									</li>
+								))}
+							</ul>
 						) : null}
 
 						<div className="space-y-2">

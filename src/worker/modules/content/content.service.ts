@@ -7,8 +7,11 @@ import type { ContentRepository } from "./content.repository";
 import {
 	parseTypedHomeSectionContent,
 	type HomeSectionEntryKey,
+	type CharacterVideosSectionContent,
 	type ColearningSectionContent,
 	type DailyNotesSectionContent,
+	type HeroSloganSectionContent,
+	type MainVideoSectionContent,
 	type PhilosophySectionContent,
 	type StoriesSectionContent,
 } from "./content.schema";
@@ -17,6 +20,11 @@ const HOME_CONTENT_CACHE_KEY_PREFIX = "cms:home:published:v1";
 const HOME_CONTENT_CACHE_TTL_SECONDS = 120;
 
 export type HomeContentPayload = {
+	heroSlogan: HeroSloganSectionContent;
+	featuredVideos: {
+		main: MainVideoSectionContent;
+		characters: CharacterVideosSectionContent;
+	};
 	philosophy: PhilosophySectionContent;
 	dailyNotes: DailyNotesSectionContent;
 	stories: StoriesSectionContent;
@@ -27,6 +35,18 @@ export type HomeContentPayload = {
 };
 
 const EMPTY_HOME_CONTENT = {
+	heroSlogan: {
+		title: "",
+		subtitle: "",
+	},
+	featuredVideos: {
+		main: {
+			streamVideoId: "",
+		},
+		characters: {
+			items: [],
+		},
+	},
 	philosophy: {
 		intro: "",
 		items: [],
@@ -65,19 +85,16 @@ export class ContentService {
 					);
 		let usedFallback = false;
 
-		const resolveSection = <K extends HomeSectionEntryKey>(
+		const resolveSection = <K extends HomeSectionEntryKey, TValue>(
 			entryKey: K,
-			emptyValue: HomeContentPayload[keyof Pick<
-				HomeContentPayload,
-				"philosophy" | "dailyNotes" | "stories" | "colearning"
-			>],
-		): HomeContentPayload[keyof Pick<
-			HomeContentPayload,
-			"philosophy" | "dailyNotes" | "stories" | "colearning"
-		>] => {
+			emptyValue: TValue,
+		): TValue => {
 			if (targetMap.has(entryKey)) {
 				try {
-					return parseTypedHomeSectionContent(entryKey, targetMap.get(entryKey));
+					return parseTypedHomeSectionContent(
+						entryKey,
+						targetMap.get(entryKey),
+					) as TValue;
 				} catch {
 					// fallback to zh-CN
 				}
@@ -88,7 +105,7 @@ export class ContentService {
 					const fallbackValue = parseTypedHomeSectionContent(
 						entryKey,
 						fallbackMap.get(entryKey),
-					);
+					) as TValue;
 					usedFallback = true;
 					return fallbackValue;
 				} catch {
@@ -99,24 +116,41 @@ export class ContentService {
 			return emptyValue;
 		};
 
+		const heroSlogan = resolveSection(
+			"home.hero_slogan",
+			EMPTY_HOME_CONTENT.heroSlogan,
+		);
+		const featuredMain = resolveSection(
+			"home.main_video",
+			EMPTY_HOME_CONTENT.featuredVideos.main,
+		);
+		const featuredCharacters = resolveSection(
+			"home.character_videos",
+			EMPTY_HOME_CONTENT.featuredVideos.characters,
+		);
 		const philosophy = resolveSection(
 			"home.philosophy",
 			EMPTY_HOME_CONTENT.philosophy,
-		) as PhilosophySectionContent;
+		);
 		const dailyNotes = resolveSection(
 			"home.daily_notes",
 			EMPTY_HOME_CONTENT.dailyNotes,
-		) as DailyNotesSectionContent;
+		);
 		const stories = resolveSection(
 			"home.stories",
 			EMPTY_HOME_CONTENT.stories,
-		) as StoriesSectionContent;
+		);
 		const colearning = resolveSection(
 			"home.colearning",
 			EMPTY_HOME_CONTENT.colearning,
-		) as ColearningSectionContent;
+		);
 
 		return {
+			heroSlogan,
+			featuredVideos: {
+				main: featuredMain,
+				characters: featuredCharacters,
+			},
 			philosophy,
 			dailyNotes,
 			stories,

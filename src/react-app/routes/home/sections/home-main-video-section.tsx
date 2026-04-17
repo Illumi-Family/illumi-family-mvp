@@ -82,26 +82,29 @@ function MainVideoPlayer(props: MainVideoPlayerProps) {
 	return (
 		<div
 			ref={viewportRef}
-			className="relative min-h-[52dvh] overflow-hidden rounded-[2rem] border border-[color:rgba(166,124,82,0.24)] bg-[#181412] md:min-h-[65dvh]"
+			className="relative aspect-video w-full overflow-hidden rounded-[20px]"
 		>
-			<Stream
-				src={streamVideoId}
-				streamRef={streamRef}
-				autoplay
-				muted
-				loop
-				controls
-				preload="metadata"
-				responsive={false}
-				width="100%"
-				height="100%"
-				className="h-full w-full"
-				poster={posterUrl ?? undefined}
-				onLoadStart={() => setStartupPhase("loading")}
-				onLoadedData={() => setStartupPhase("ready")}
-				onPlaying={() => setStartupPhase("ready")}
-				onError={() => setStartupPhase("error")}
-			/>
+			<div className="absolute inset-0 h-full w-full">
+				<Stream
+					src={streamVideoId}
+					streamRef={streamRef}
+					autoplay={false}
+					muted={false}
+					loop={false}
+					controls
+					letterboxColor="transparent"
+					preload="metadata"
+					responsive={false}
+					width="100%"
+					height="100%"
+					className="h-full w-full"
+					poster={posterUrl ?? undefined}
+					onLoadStart={() => setStartupPhase("loading")}
+					onLoadedData={() => setStartupPhase("ready")}
+					onPlaying={() => setStartupPhase("ready")}
+					onError={() => setStartupPhase("error")}
+				/>
+			</div>
 
 			{showLoadingOverlay ? (
 				<div className="absolute inset-0 flex flex-col justify-end bg-[linear-gradient(180deg,rgba(24,20,18,0.06)_0%,rgba(24,20,18,0.62)_100%)] px-5 py-4 text-white">
@@ -132,7 +135,7 @@ export function HomeMainVideoSection(props: HomeMainVideoSectionProps) {
 				<p className="text-xs uppercase tracking-[0.14em] text-[color:var(--brand-primary)]">
 					{t("homeVideo.heroLabel")}
 				</p>
-				<div className="relative min-h-[52dvh] overflow-hidden rounded-[2rem] border border-[color:rgba(166,124,82,0.24)] bg-[color:rgba(243,236,227,0.72)] md:min-h-[65dvh]">
+				<div className="relative aspect-video w-full overflow-hidden rounded-[2rem] border border-[color:rgba(166,124,82,0.24)] bg-[color:rgba(243,236,227,0.72)]">
 					<div className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,rgba(166,124,82,0.14),rgba(255,252,247,0.68),rgba(166,124,82,0.14))]" />
 					<div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
 						{t("homeVideo.heroLoading")}
@@ -181,7 +184,7 @@ export function HomeMainVideoSection(props: HomeMainVideoSectionProps) {
 
 	return (
 		<section id="home-main-video" className="space-y-4 py-2" aria-live="polite">
-			<div className="flex flex-wrap items-end justify-between gap-3">
+			{/* <div className="flex flex-wrap items-end justify-between gap-3">
 				<div className="space-y-1">
 					<p className="text-xs uppercase tracking-[0.14em] text-[color:var(--brand-primary)]">
 						{t("homeVideo.heroLabel")}
@@ -189,7 +192,7 @@ export function HomeMainVideoSection(props: HomeMainVideoSectionProps) {
 					<p className="text-sm text-muted-foreground">{video.roleLabel}</p>
 				</div>
 				<p className="text-xs text-muted-foreground">{t("homeVideo.heroDescription")}</p>
-			</div>
+			</div> */}
 			<MainVideoPlayer
 				key={video.video.streamVideoId}
 				streamVideoId={video.video.streamVideoId}

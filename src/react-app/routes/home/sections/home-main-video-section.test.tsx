@@ -18,7 +18,10 @@ vi.mock("@cloudflare/stream-react", () => ({
 		muted?: boolean;
 		loop?: boolean;
 		controls?: boolean;
+		letterboxColor?: string;
 		poster?: string;
+		width?: string;
+		height?: string;
 	}) =>
 		createElement("div", {
 			"data-testid": "stream-player",
@@ -27,7 +30,10 @@ vi.mock("@cloudflare/stream-react", () => ({
 			"data-muted": String(Boolean(props.muted)),
 			"data-loop": String(Boolean(props.loop)),
 			"data-controls": String(Boolean(props.controls)),
+			"data-letterbox-color": props.letterboxColor ?? "",
 			"data-poster": props.poster ?? "",
+			"data-width": props.width ?? "",
+			"data-height": props.height ?? "",
 		}),
 }));
 
@@ -67,6 +73,7 @@ describe("home-main-video-section", () => {
 
 		expect(html).toContain("homeVideo.heroLoading");
 		expect(html).toContain("homeVideo.heroLabel");
+		expect(html).toContain("aspect-video");
 	});
 
 	it("renders missing fallback state when main video is not configured", () => {
@@ -88,7 +95,7 @@ describe("home-main-video-section", () => {
 		expect(html).toContain("homeVideo.heroMissing");
 	});
 
-	it("passes autoplay, muted and loop flags to stream player", () => {
+	it("passes playback flags and full-size dimensions to stream player", () => {
 		const html = renderToStaticMarkup(
 			createElement(HomeMainVideoSection, {
 				video: createFeaturedVideo(),
@@ -103,6 +110,10 @@ describe("home-main-video-section", () => {
 		expect(html).toContain('data-autoplay="true"');
 		expect(html).toContain('data-muted="true"');
 		expect(html).toContain('data-loop="true"');
+		expect(html).toContain('data-letterbox-color="transparent"');
+		expect(html).toContain('data-width="100%"');
+		expect(html).toContain('data-height="100%"');
+		expect(html).toContain("aspect-video");
 	});
 
 	it("renders retry affordance on query error", () => {
