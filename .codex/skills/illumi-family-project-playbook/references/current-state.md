@@ -1,6 +1,6 @@
 # Illumi Family MVP Current State
 
-Last verified: 2026-04-16
+Last verified: 2026-04-17
 
 ## 1) Canonical Fact Sources
 - `wrangler.json`
@@ -73,6 +73,7 @@ Last verified: 2026-04-16
 - `POST /api/admin/assets/upload` (whitelist + verified email required)
 - `GET /api/admin/videos` (whitelist + verified email required)
 - `POST /api/admin/videos/upload-url` (whitelist + verified email required)
+- `POST /api/admin/videos/import` (whitelist + verified email required; validates Stream ID first, idempotent by env-local `stream_video_id`)
 - `PATCH /api/admin/videos/:videoId` (whitelist + verified email required)
 - `POST /api/admin/videos/:videoId/publish` (whitelist + verified email required)
 - `POST /api/admin/videos/:videoId/unpublish` (whitelist + verified email required)
@@ -117,6 +118,7 @@ Last verified: 2026-04-16
   - publish `en-US` => invalidate `en-US` home cache only
 - Public video list cache key: `videos:public:v1` (publish/unpublish + ready-state drift triggers invalidation)
 - Stream webhook validation uses HMAC SHA-256 + header `Webhook-Signature` (`time` + `sig1`) with `STREAM_WEBHOOK_SECRET`.
+- Admin video actions emit structured log fields for observability (`actionType`, `streamVideoId`, `operator`, `env`) to distinguish upload-create vs import-reuse.
 
 ## 9) Template Tooling (Local Scaffold)
 - Commands:

@@ -15,6 +15,7 @@ import {
 } from "../../shared/integrations/stream/stream-webhook";
 import type { AppBindings } from "../../types";
 import {
+	type AdminVideoImportBody,
 	resolveVideoProcessingStatus,
 	type AdminVideoUpdateBody,
 	type AdminVideoUploadUrlBody,
@@ -24,6 +25,7 @@ import type { VideoRepository } from "./video.repository";
 
 const PUBLIC_VIDEO_CACHE_KEY = "videos:public:v1";
 const PUBLIC_VIDEO_CACHE_TTL_SECONDS = 120;
+type VideoActionType = "upload_create" | "import_reuse";
 
 export type AdminVideoRecord = {
 	id: string;
@@ -83,6 +85,24 @@ const toPublicRecord = (
 export class VideoService {
 	constructor(private readonly repository: VideoRepository) {}
 
+	private logVideoAction(input: {
+		env: AppBindings;
+		actionType: VideoActionType;
+		streamVideoId: string;
+		operator: string;
+		videoId?: string | null;
+		reused?: boolean;
+	}) {
+		console.info("video_action", {
+			actionType: input.actionType,
+			streamVideoId: input.streamVideoId,
+			operator: input.operator,
+			env: input.env.APP_ENV ?? "unknown",
+			videoId: input.videoId ?? null,
+			reused: input.reused ?? false,
+		});
+	}
+
 	private isStreamNotFound(error: unknown) {
 		if (!(error instanceof AppError)) return false;
 		if (error.code !== "STREAM_API_ERROR") return false;
@@ -112,11 +132,59 @@ export class VideoService {
 			title: input.body.title,
 			authUserId: input.authUserId,
 		});
+		this.logVideoAction({
+			env,
+			actionType: "upload_create",
+			streamVideoId: upload.streamVideoId,
+			operator: input.authUserId,
+			videoId: video.id,
+		});
 
 		return {
 			videoId: video.id,
 			uploadUrl: upload.uploadUrl,
 			expiresAt: upload.expiresAt,
+		};
+	}
+
+	async importExistingVideo(env: AppBindings, input: {
+		authUserId: string;
+		body: AdminVideoImportBody;
+	}) {
+		const streamVideoIdInput = input.body.streamVideoId.trim();
+		const streamVideo = await getStreamVideoById(env, streamVideoIdInput);
+		const streamVideoId = streamVideo.uid?.trim() || streamVideoIdInput;
+		const processingStatus = resolveVideoProcessingStatus({
+			status: streamVideo.status,
+			readyToStream: streamVideo.readyToStream,
+		});
+		const imported = await this.repository.findOrCreateImportedDraft({
+			streamVideoId,
+			title: input.body.title,
+			posterUrl:
+				input.body.posterUrl ??
+				streamVideo.thumbnail ??
+				streamVideo.preview ??
+				null,
+			durationSeconds:
+				typeof streamVideo.duration === "number"
+					? Math.max(0, Math.round(streamVideo.duration))
+					: null,
+			processingStatus,
+			authUserId: input.authUserId,
+		});
+		this.logVideoAction({
+			env,
+			actionType: "import_reuse",
+			streamVideoId,
+			operator: input.authUserId,
+			videoId: imported.video.id,
+			reused: imported.reused,
+		});
+
+		return {
+			reused: imported.reused,
+			video: toAdminRecord(imported.video),
 		};
 	}
 

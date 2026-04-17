@@ -19,6 +19,12 @@ export const adminVideoUploadUrlBodySchema = z.object({
 	maxDurationSeconds: z.number().int().positive().max(14_400).optional(),
 });
 
+export const adminVideoImportBodySchema = z.object({
+	streamVideoId: z.string().trim().min(1).max(255),
+	title: z.string().trim().min(1).max(200).optional(),
+	posterUrl: z.string().trim().min(1).max(2_000).optional(),
+});
+
 export const adminVideoUpdateBodySchema = z
 	.object({
 		title: z.string().trim().min(1).max(200).optional(),
@@ -85,5 +91,6 @@ export const extractStreamVideoId = (
 export type VideoProcessingStatus = z.infer<typeof videoProcessingStatusSchema>;
 export type VideoPublishStatus = z.infer<typeof videoPublishStatusSchema>;
 export type AdminVideoUploadUrlBody = z.infer<typeof adminVideoUploadUrlBodySchema>;
+export type AdminVideoImportBody = z.infer<typeof adminVideoImportBodySchema>;
 export type AdminVideoUpdateBody = z.infer<typeof adminVideoUpdateBodySchema>;
 export type StreamWebhookBody = z.infer<typeof streamWebhookBodySchema>;

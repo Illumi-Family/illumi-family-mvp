@@ -193,6 +193,17 @@ export type CreateAdminVideoUploadUrlResult = {
 	expiresAt: string | null;
 };
 
+export type ImportAdminVideoInput = {
+	streamVideoId: string;
+	title?: string;
+	posterUrl?: string;
+};
+
+export type ImportAdminVideoResult = {
+	reused: boolean;
+	video: AdminVideoRecord;
+};
+
 export type UpdateAdminVideoInput = {
 	videoId: string;
 	title?: string;
@@ -353,6 +364,22 @@ export const createAdminVideoUploadUrl = async (
 	return request<CreateAdminVideoUploadUrlResult>("/api/admin/videos/upload-url", {
 		method: "POST",
 		body: JSON.stringify(input),
+		headers: {
+			"Content-Type": "application/json",
+		},
+	});
+};
+
+export const importAdminVideo = async (
+	input: ImportAdminVideoInput,
+): Promise<ImportAdminVideoResult> => {
+	return request<ImportAdminVideoResult>("/api/admin/videos/import", {
+		method: "POST",
+		body: JSON.stringify({
+			streamVideoId: input.streamVideoId,
+			title: input.title,
+			posterUrl: input.posterUrl,
+		}),
 		headers: {
 			"Content-Type": "application/json",
 		},

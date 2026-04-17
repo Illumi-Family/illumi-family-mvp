@@ -4,6 +4,7 @@ import type { AppContext } from "../../types";
 import { handleAppError } from "../../shared/http/middleware/error-handler";
 
 const issueUploadUrl = vi.fn();
+const importExistingVideo = vi.fn();
 const listAdminVideos = vi.fn();
 const updateVideoMetadata = vi.fn();
 const publishVideo = vi.fn();
@@ -33,6 +34,7 @@ vi.mock("./video.service", () => ({
 	VideoService: vi.fn().mockImplementation(function VideoServiceMock() {
 		return {
 			issueUploadUrl,
+			importExistingVideo,
 			listAdminVideos,
 			updateVideoMetadata,
 			publishVideo,
@@ -95,6 +97,58 @@ describe("admin video controller", () => {
 
 		expect(response.status).toBe(415);
 		expect(issueUploadUrl).not.toHaveBeenCalled();
+	});
+
+	it("imports existing stream video via service", async () => {
+		importExistingVideo.mockResolvedValue({
+			reused: false,
+			video: {
+				id: "video-1",
+				streamVideoId: "stream-1",
+			},
+		});
+		const app = createTestApp();
+
+		const response = await app.request(
+			"/api/admin/videos/import",
+			{
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({
+					streamVideoId: "stream-1",
+					title: "Imported title",
+				}),
+			},
+			{} as never,
+		);
+
+		expect(response.status).toBe(201);
+		expect(importExistingVideo).toHaveBeenCalledWith(
+			{},
+			{
+				authUserId: "auth-test",
+				body: {
+					streamVideoId: "stream-1",
+					title: "Imported title",
+				},
+			},
+		);
+	});
+
+	it("validates import request body", async () => {
+		const app = createTestApp();
+		const response = await app.request(
+			"/api/admin/videos/import",
+			{
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ streamVideoId: "" }),
+			},
+			{} as never,
+		);
+
+		expect(response.status).toBe(400);
+		expect(importExistingVideo).not.toHaveBeenCalled();
 	});
 
 	it("lists admin videos", async () => {

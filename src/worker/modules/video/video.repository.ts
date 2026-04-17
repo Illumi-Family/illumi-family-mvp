@@ -1,6 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { AppDatabase } from "../../shared/db/client";
 import { videoAssets, type VideoAssetRow } from "../../shared/db/schema";
+import type { VideoProcessingStatus } from "./video.schema";
 
 type VideoUpdatePatch = Partial<
 	Pick<
@@ -19,6 +20,17 @@ type VideoUpdatePatch = Partial<
 
 export class VideoRepository {
 	constructor(private readonly db: AppDatabase) {}
+
+	private isStreamVideoIdUniqueConflict(error: unknown) {
+		const message =
+			error instanceof Error
+				? error.message
+				: typeof error === "object" && error !== null && "message" in error
+					? String((error as { message?: unknown }).message ?? "")
+					: "";
+		const normalized = message.toLowerCase();
+		return normalized.includes("unique") && normalized.includes("stream_video_id");
+	}
 
 	async createDraft(input: {
 		streamVideoId: string;
@@ -42,6 +54,60 @@ export class VideoRepository {
 		} as const;
 		await this.db.insert(videoAssets).values(record);
 		return record;
+	}
+
+	async findOrCreateImportedDraft(input: {
+		streamVideoId: string;
+		title?: string;
+		posterUrl?: string | null;
+		durationSeconds?: number | null;
+		processingStatus: VideoProcessingStatus;
+		authUserId: string;
+	}) {
+		const existing = await this.getByStreamVideoId(input.streamVideoId);
+		if (existing) {
+			return {
+				video: existing,
+				reused: true as const,
+			};
+		}
+
+		const now = new Date();
+		const record = {
+			id: crypto.randomUUID(),
+			streamVideoId: input.streamVideoId,
+			processingStatus: input.processingStatus,
+			publishStatus: "draft",
+			title: input.title?.trim() || "",
+			posterUrl: input.posterUrl ?? null,
+			durationSeconds: input.durationSeconds ?? null,
+			createdByAuthUserId: input.authUserId,
+			updatedByAuthUserId: input.authUserId,
+			createdAt: now,
+			updatedAt: now,
+			publishedAt: null,
+		} as const;
+
+		try {
+			await this.db.insert(videoAssets).values(record);
+		} catch (error) {
+			if (!this.isStreamVideoIdUniqueConflict(error)) {
+				throw error;
+			}
+			const duplicated = await this.getByStreamVideoId(input.streamVideoId);
+			if (duplicated) {
+				return {
+					video: duplicated,
+					reused: true as const,
+				};
+			}
+			throw error;
+		}
+
+		return {
+			video: record,
+			reused: false as const,
+		};
 	}
 
 	async listAdminVideos() {

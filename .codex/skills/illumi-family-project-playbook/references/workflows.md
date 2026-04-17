@@ -103,6 +103,11 @@ pnpm run deploy:prod
 ```
 `deploy:prod` uses `wrangler deploy --config wrangler.json --env=""` to explicitly target top-level prod config.
 
+## 5.1) Stream Video Reuse Workflow (Across local/dev/prod)
+1. First upload can happen in any environment via `POST /api/admin/videos/upload-url`.
+2. Reuse in another environment via `POST /api/admin/videos/import` with existing `streamVideoId` (no new Stream upload object).
+3. Keep upload capability enabled in all environments; enforce cost control through workflow guidance (prefer import when asset already exists).
+
 ## 6) Post-Deploy Smoke Checks
 - Health endpoint should match target environment:
 ```bash
@@ -122,6 +127,7 @@ curl -s https://illumi-family-mvp.lguangcong0712.workers.dev/api/health
   - `GET /api/admin/me` (unauthenticated should return `401`)
   - `POST /api/admin/assets/upload` (unauthenticated should return `401`)
   - `GET /api/admin/videos` (unauthenticated should return `401`)
+  - `POST /api/admin/videos/import` (unauthenticated should return `401`)
   - `HEAD /admin` on admin domains returns `200` HTML
 
 ## 6.1) Auth Secrets Setup (Before Auth Deploy)

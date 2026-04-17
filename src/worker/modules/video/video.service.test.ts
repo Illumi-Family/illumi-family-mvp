@@ -27,6 +27,7 @@ describe("video service", () => {
 	});
 
 	it("issues upload url and creates local draft", async () => {
+		const logSpy = vi.spyOn(console, "info").mockImplementation(() => {});
 		const createDirectUploadSpy = vi
 			.spyOn(streamClient, "createStreamDirectUpload")
 			.mockResolvedValue({
@@ -43,8 +44,9 @@ describe("video service", () => {
 			),
 		};
 		const service = new VideoService(repository as never);
+		const env = { APP_ENV: "dev" } as never;
 
-		const result = await service.issueUploadUrl({} as never, {
+		const result = await service.issueUploadUrl(env, {
 			authUserId: "auth-123",
 			body: {
 				title: "My video",
@@ -52,7 +54,7 @@ describe("video service", () => {
 			},
 		});
 
-		expect(createDirectUploadSpy).toHaveBeenCalledWith({}, {
+		expect(createDirectUploadSpy).toHaveBeenCalledWith(env, {
 			maxDurationSeconds: 600,
 		});
 		expect(repository.createDraft).toHaveBeenCalledWith({
@@ -60,8 +62,127 @@ describe("video service", () => {
 			title: "My video",
 			authUserId: "auth-123",
 		});
+		expect(logSpy).toHaveBeenCalledWith(
+			"video_action",
+			expect.objectContaining({
+				actionType: "upload_create",
+				streamVideoId: "stream-123",
+				operator: "auth-123",
+				env: "dev",
+			}),
+		);
 		expect(result.videoId).toBe("video-123");
 		expect(result.uploadUrl).toBe("https://upload.example.com");
+	});
+
+	it("imports stream video and creates local draft when first imported", async () => {
+		const logSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+		const getVideoSpy = vi.spyOn(streamClient, "getStreamVideoById").mockResolvedValue({
+			uid: "stream-456",
+			readyToStream: true,
+			duration: 21.8,
+			thumbnail: "https://example.com/thumb.jpg",
+		} as never);
+		const repository = {
+			findOrCreateImportedDraft: vi.fn().mockResolvedValue({
+				reused: false,
+				video: buildVideoRow({
+					id: "video-imported",
+					streamVideoId: "stream-456",
+					processingStatus: "ready",
+					durationSeconds: 22,
+					posterUrl: "https://example.com/thumb.jpg",
+				}),
+			}),
+		};
+		const service = new VideoService(repository as never);
+
+		const result = await service.importExistingVideo(
+			{ APP_ENV: "dev" } as never,
+			{
+				authUserId: "auth-123",
+				body: {
+					streamVideoId: "stream-456",
+					title: "Imported video",
+				},
+			},
+		);
+
+		expect(getVideoSpy).toHaveBeenCalledWith(
+			{ APP_ENV: "dev" },
+			"stream-456",
+		);
+		expect(repository.findOrCreateImportedDraft).toHaveBeenCalledWith({
+			streamVideoId: "stream-456",
+			title: "Imported video",
+			posterUrl: "https://example.com/thumb.jpg",
+			durationSeconds: 22,
+			processingStatus: "ready",
+			authUserId: "auth-123",
+		});
+		expect(logSpy).toHaveBeenCalledWith(
+			"video_action",
+			expect.objectContaining({
+				actionType: "import_reuse",
+				streamVideoId: "stream-456",
+				operator: "auth-123",
+				env: "dev",
+				reused: false,
+			}),
+		);
+		expect(result.reused).toBe(false);
+		expect(result.video.id).toBe("video-imported");
+	});
+
+	it("returns existing record when importing duplicate stream video id", async () => {
+		vi.spyOn(console, "info").mockImplementation(() => {});
+		vi.spyOn(streamClient, "getStreamVideoById").mockResolvedValue({
+			uid: "stream-dup",
+			readyToStream: false,
+			status: "processing",
+		} as never);
+		const repository = {
+			findOrCreateImportedDraft: vi.fn().mockResolvedValue({
+				reused: true,
+				video: buildVideoRow({
+					id: "video-existing",
+					streamVideoId: "stream-dup",
+					processingStatus: "processing",
+				}),
+			}),
+		};
+		const service = new VideoService(repository as never);
+
+		const result = await service.importExistingVideo({ APP_ENV: "dev" } as never, {
+			authUserId: "auth-123",
+			body: {
+				streamVideoId: "stream-dup",
+				title: "Ignored title on duplicate",
+			},
+		});
+
+		expect(result.reused).toBe(true);
+		expect(result.video.id).toBe("video-existing");
+	});
+
+	it("does not persist import record when stream id is invalid", async () => {
+		vi.spyOn(streamClient, "getStreamVideoById").mockRejectedValue(
+			new AppError("STREAM_API_ERROR", "Stream API request failed", 502),
+		);
+		const repository = {
+			findOrCreateImportedDraft: vi.fn(),
+		};
+		const service = new VideoService(repository as never);
+
+		await expect(
+			service.importExistingVideo({ APP_ENV: "dev" } as never, {
+				authUserId: "auth-123",
+				body: {
+					streamVideoId: "stream-not-found",
+				},
+			}),
+		).rejects.toThrow("Stream API request failed");
+		expect(repository.findOrCreateImportedDraft).not.toHaveBeenCalled();
 	});
 
 	it("rejects publish when video is not ready", async () => {

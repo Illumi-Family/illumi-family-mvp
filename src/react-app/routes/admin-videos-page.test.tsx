@@ -13,6 +13,8 @@ describe("admin videos page", () => {
 		);
 
 		expect(html).toContain("视频管理工作台");
+		expect(html).toContain("导入已有 Stream 视频");
+		expect(html).toContain("新上传会创建新的 Stream 计费对象");
 		expect(html).toContain("视频列表");
 	});
 

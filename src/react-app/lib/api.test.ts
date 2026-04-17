@@ -5,6 +5,7 @@ import {
 	getCurrentUser,
 	getHealth,
 	getHomeContent,
+	importAdminVideo,
 	listAdminVideos,
 	listAdminHomeSections,
 	listPublicVideos,
@@ -353,6 +354,55 @@ describe("react api client", () => {
 			}),
 		});
 		expect(result.videoId).toBe("video-1");
+	});
+
+	it("imports existing stream video for admin", async () => {
+		fetchMock.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					success: true,
+					data: {
+						reused: false,
+						video: {
+							id: "video-imported",
+							streamVideoId: "stream-1",
+							processingStatus: "ready",
+							publishStatus: "draft",
+							title: "Imported",
+							posterUrl: null,
+							durationSeconds: 12,
+							createdByAuthUserId: "auth-1",
+							updatedByAuthUserId: "auth-1",
+							createdAt: "2026-04-16T00:00:00.000Z",
+							updatedAt: "2026-04-16T00:00:00.000Z",
+							publishedAt: null,
+						},
+					},
+					requestId: "req-video-import",
+				}),
+				{ status: 201, headers: { "content-type": "application/json" } },
+			),
+		);
+
+		const result = await importAdminVideo({
+			streamVideoId: "stream-1",
+			title: "Imported",
+		});
+
+		expect(fetchMock).toHaveBeenCalledWith("/api/admin/videos/import", {
+			method: "POST",
+			headers: {
+				Accept: "application/json",
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				streamVideoId: "stream-1",
+				title: "Imported",
+				posterUrl: undefined,
+			}),
+		});
+		expect(result.reused).toBe(false);
+		expect(result.video.id).toBe("video-imported");
 	});
 
 	it("lists admin videos from /api/admin/videos", async () => {

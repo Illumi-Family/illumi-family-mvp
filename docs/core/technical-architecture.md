@@ -2,10 +2,10 @@
 
 ## 0. 文档信息
 - 项目：`illumi-family-mvp`
-- 文档版本：`v1.2.0`
-- 最近更新：`2026-04-16`
+- 文档版本：`v1.3.0`
+- 最近更新：`2026-04-17`
 - 运行规范入口：`docs/runbooks/development-deployment-cicd-runbook.md`
-- 当前阶段：模板初始化后已完成 UI 基础设施 + 前端路由/数据缓存（TanStack Router + Query）+ 后端基础能力（dev/prod + D1/KV/R2 + Drizzle + Hono API 分层）+ Better Auth + Resend 鉴权主链路（邮箱密码 + Google）+ Admin CMS 基础能力（白名单鉴权 + admin 子域 + D1 内容版本化 + R2 资产 + 内容发布 API）+ i18n Phase 1/2（前端双语、CMS locale、内容 fallback、locale 缓存分片）+ Cloudflare Stream 视频能力层（后台直传签发、webhook 状态回写、发布门禁、公网播放）+ 本地模板脚手架（template:new/sync/doctor）
+- 当前阶段：模板初始化后已完成 UI 基础设施 + 前端路由/数据缓存（TanStack Router + Query）+ 后端基础能力（dev/prod + D1/KV/R2 + Drizzle + Hono API 分层）+ Better Auth + Resend 鉴权主链路（邮箱密码 + Google）+ Admin CMS 基础能力（白名单鉴权 + admin 子域 + D1 内容版本化 + R2 资产 + 内容发布 API）+ i18n Phase 1/2（前端双语、CMS locale、内容 fallback、locale 缓存分片）+ Cloudflare Stream 视频能力层（后台直传签发 + 导入复用、webhook 状态回写、发布门禁、公网播放）+ 本地模板脚手架（template:new/sync/doctor）
 
 ## 1. 架构目标与边界
 本项目采用 **React + Vite + Hono + Cloudflare Workers** 的一体化架构，目标是在 Cloudflare 边缘网络上实现：
@@ -278,8 +278,10 @@ flowchart LR
 - R2 资产上传与读取链路（`/api/admin/assets/upload`、`/api/content/assets/:assetId`）；
 - Cloudflare Stream 视频能力层：
   - admin 直传 URL 签发（`POST /api/admin/videos/upload-url`）；
+  - admin 复用导入（`POST /api/admin/videos/import`，仅落当前环境 D1）；
   - webhook 状态回写（`POST /api/webhooks/stream`）；
   - 视频生命周期管理（list/edit/publish/unpublish/sync）；
+  - 行为日志字段（`actionType`、`streamVideoId`、`operator`、`env`）用于区分“新上传”与“导入复用”；
   - 公网视频列表与播放（`GET /api/content/videos` + `/videos` 弹窗播放器）；
 - 业务用户身份映射与审计模型（`app_users`、`user_identities`、`user_security_events`）；
 - `dev/prod` 双环境与独立自定义域名（`illumi-family.com` / `dev.illumi-family.com` / `admin.illumi-family.com` / `admin-dev.illumi-family.com`）+ workers.dev 回退域名；
@@ -331,3 +333,4 @@ flowchart LR
 | 2026-03-17 | v1.0.1 | 新增中英双语国际化规划入口：在“待引入能力”补充 i18n 目标与详细方案文档链接（`docs/plans/2026-03-17-i18n-architecture-plan.md`） |
 | 2026-03-18 | v1.1.0 | i18n Phase 1/2 已落地（前端双语 + API/CMS locale + 缓存分片），并新增开发部署运行规范（`docs/runbooks/development-deployment-cicd-runbook.md`） |
 | 2026-04-16 | v1.2.0 | 新增 Cloudflare Stream 视频能力层：后台直传签发、webhook 状态回写、发布门禁、公网视频列表与弹窗播放，并同步更新文档与 runbook |
+| 2026-04-17 | v1.3.0 | 新增 Stream 视频导入复用链路：`POST /api/admin/videos/import`、环境内幂等落库与上传/导入行为日志字段 |

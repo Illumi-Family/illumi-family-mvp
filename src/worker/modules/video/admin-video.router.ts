@@ -3,6 +3,7 @@ import type { AppContext } from "../../types";
 import {
 	cleanupAdminVideoDraftHandlers,
 	createAdminVideoUploadUrlHandlers,
+	importAdminVideoHandlers,
 	listAdminVideosHandlers,
 	publishAdminVideoHandlers,
 	syncAdminVideoStatusHandlers,
@@ -14,6 +15,7 @@ const adminVideoRouter = new Hono<AppContext>();
 
 adminVideoRouter.get("/", ...listAdminVideosHandlers);
 adminVideoRouter.post("/upload-url", ...createAdminVideoUploadUrlHandlers);
+adminVideoRouter.post("/import", ...importAdminVideoHandlers);
 adminVideoRouter.patch("/:videoId", ...updateAdminVideoHandlers);
 adminVideoRouter.post("/:videoId/publish", ...publishAdminVideoHandlers);
 adminVideoRouter.post("/:videoId/unpublish", ...unpublishAdminVideoHandlers);

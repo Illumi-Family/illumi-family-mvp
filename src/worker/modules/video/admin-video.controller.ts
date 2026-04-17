@@ -7,6 +7,7 @@ import { jsonSuccess } from "../../shared/http/response";
 import type { AppBindings } from "../../types";
 import { VideoRepository } from "./video.repository";
 import {
+	adminVideoImportBodySchema,
 	adminVideoIdParamSchema,
 	adminVideoUpdateBodySchema,
 	adminVideoUploadUrlBodySchema,
@@ -66,6 +67,24 @@ export const createAdminVideoUploadUrlHandlers = factory.createHandlers(
 			body: c.req.valid("json"),
 		});
 		return jsonSuccess(c, result, 201);
+	},
+);
+
+export const importAdminVideoHandlers = factory.createHandlers(
+	requireAdminSession,
+	requireJsonBody,
+	zValidator("json", adminVideoImportBodySchema),
+	async (c) => {
+		const authUserId = c.get("authUserId");
+		if (!authUserId) {
+			throw new AppError("UNAUTHORIZED", "Authentication required", 401);
+		}
+		const service = buildVideoService(c.env);
+		const result = await service.importExistingVideo(c.env, {
+			authUserId,
+			body: c.req.valid("json"),
+		});
+		return jsonSuccess(c, result, result.reused ? 200 : 201);
 	},
 );
 

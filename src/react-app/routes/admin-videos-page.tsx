@@ -12,6 +12,7 @@ import {
 import {
 	createAdminVideoUploadUrl,
 	deleteAdminVideoDraft,
+	importAdminVideo,
 	publishAdminVideo,
 	syncAdminVideoStatus,
 	unpublishAdminVideo,
@@ -37,6 +38,8 @@ import {
 	summarizeProcessingVideoSync,
 } from "@/lib/video-sync";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const readErrorMessage = (error: unknown) =>
 	error instanceof Error ? error.message : "Unexpected error";
@@ -65,6 +68,9 @@ export function AdminVideosPage() {
 	const [uploadFile, setUploadFile] = useState<File | null>(null);
 	const [uploadStatus, setUploadStatus] = useState<UploadTaskStatus>("idle");
 	const [uploadProgressPercent, setUploadProgressPercent] = useState(0);
+	const [importStreamVideoId, setImportStreamVideoId] = useState("");
+	const [importTitle, setImportTitle] = useState("");
+	const [importPosterUrl, setImportPosterUrl] = useState("");
 	const [statusMessage, setStatusMessage] = useState<string | null>(null);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [isRefreshing, setIsRefreshing] = useState(false);
@@ -88,6 +94,7 @@ export function AdminVideosPage() {
 	const uploadPosterMutation = useMutation({
 		mutationFn: (payload: UploadAdminAssetInput) => uploadAdminAsset(payload),
 	});
+	const importMutation = useMutation({ mutationFn: importAdminVideo });
 	const publishMutation = useMutation({ mutationFn: publishAdminVideo });
 	const unpublishMutation = useMutation({ mutationFn: unpublishAdminVideo });
 	const syncMutation = useMutation({ mutationFn: syncAdminVideoStatus });
@@ -96,12 +103,14 @@ export function AdminVideosPage() {
 	const isActionPending = useMemo(
 		() =>
 			updateMetadataMutation.isPending ||
+			importMutation.isPending ||
 			publishMutation.isPending ||
 			unpublishMutation.isPending ||
 			syncMutation.isPending ||
 			deleteDraftMutation.isPending,
 		[
 			updateMetadataMutation.isPending,
+			importMutation.isPending,
 			publishMutation.isPending,
 			unpublishMutation.isPending,
 			syncMutation.isPending,
@@ -254,6 +263,34 @@ export function AdminVideosPage() {
 		}
 	};
 
+	const handleImportVideo = async () => {
+		resetNotice();
+		const streamVideoId = importStreamVideoId.trim();
+		if (!streamVideoId) {
+			setErrorMessage("请先输入 Stream Video ID");
+			return;
+		}
+
+		try {
+			const result = await importMutation.mutateAsync({
+				streamVideoId,
+				title: importTitle.trim() || undefined,
+				posterUrl: importPosterUrl.trim() || undefined,
+			});
+			setImportStreamVideoId("");
+			setImportTitle("");
+			setImportPosterUrl("");
+			setStatusMessage(
+				result.reused
+					? `已复用现有记录：${result.video.id}`
+					: `导入成功：${result.video.id}`,
+			);
+			await invalidateVideoQueries();
+		} catch (error) {
+			setErrorMessage(readErrorMessage(error));
+		}
+	};
+
 	const handleRetryUpload = async () => {
 		if (!uploadFile) {
 			setErrorMessage("没有可重试的文件，请重新选择视频");
@@ -382,6 +419,66 @@ export function AdminVideosPage() {
 	return (
 		<div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 py-8">
 			<VideoWorkbenchHeader />
+
+			<section className="space-y-4 rounded-2xl border border-border bg-card p-4">
+				<div className="space-y-1">
+					<h2 className="text-base font-semibold tracking-tight">
+						导入已有 Stream 视频
+					</h2>
+					<p className="text-xs text-muted-foreground">
+						优先复用已上传素材。导入仅写入当前环境 D1 记录，不会新增 Stream 计费对象。
+					</p>
+				</div>
+				<div className="grid gap-3 md:grid-cols-3">
+					<div className="space-y-2">
+						<Label htmlFor="import-stream-video-id">Stream Video ID</Label>
+						<Input
+							id="import-stream-video-id"
+							value={importStreamVideoId}
+							onChange={(event) => setImportStreamVideoId(event.target.value)}
+							placeholder="例如：c8f4f2d8f7a24e0f9f7d..."
+							disabled={importMutation.isPending}
+						/>
+					</div>
+					<div className="space-y-2">
+						<Label htmlFor="import-video-title">标题（可选）</Label>
+						<Input
+							id="import-video-title"
+							value={importTitle}
+							onChange={(event) => setImportTitle(event.target.value)}
+							placeholder="例如：周末家庭记录"
+							disabled={importMutation.isPending}
+						/>
+					</div>
+					<div className="space-y-2">
+						<Label htmlFor="import-video-poster">封面 URL（可选）</Label>
+						<Input
+							id="import-video-poster"
+							value={importPosterUrl}
+							onChange={(event) => setImportPosterUrl(event.target.value)}
+							placeholder="https://..."
+							disabled={importMutation.isPending}
+						/>
+					</div>
+				</div>
+				<div className="flex flex-wrap items-center gap-3">
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => void handleImportVideo()}
+						disabled={importMutation.isPending}
+					>
+						{importMutation.isPending ? "导入中..." : "导入已有视频"}
+					</Button>
+					<p className="text-xs text-muted-foreground">
+						同一环境重复导入同一 Stream Video ID 时会直接复用已有记录。
+					</p>
+				</div>
+			</section>
+
+			<div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+				新上传会创建新的 Stream 计费对象。若素材已在任一环境上传，优先使用“导入已有 Stream 视频”。
+			</div>
 
 			<UploadTaskPanel
 				title={uploadTitle}
