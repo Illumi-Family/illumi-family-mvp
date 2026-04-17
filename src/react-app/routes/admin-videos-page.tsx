@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { VideoPlayerModal } from "@/components/video/video-player-modal";
 import { VideoEditDrawer } from "@/components/video/admin/video-edit-drawer";
@@ -21,15 +21,28 @@ import {
 	type UploadAdminAssetInput,
 } from "@/lib/api";
 import { runVideoUploadTask, type UploadTaskStatus } from "@/lib/video-upload-task";
+import type { VideoPlaybackStartupKind } from "@/lib/video-playback-metrics";
+import {
+	hasVideoPlaybackWarmupHit,
+	scheduleVideoPlayerSdkWarmup,
+	warmupVideoPlaybackIntent,
+} from "@/lib/video-player-warmup";
 import {
 	adminVideosQueryKey,
 	adminVideosQueryOptions,
 	publicVideosQueryKey,
 } from "@/lib/query-options";
+import {
+	pickProcessingVideoIds,
+	summarizeProcessingVideoSync,
+} from "@/lib/video-sync";
 import { Button } from "@/components/ui/button";
 
 const readErrorMessage = (error: unknown) =>
 	error instanceof Error ? error.message : "Unexpected error";
+
+const MAX_PROCESSING_VIDEO_SYNC_PER_REFRESH = 12;
+const EMPTY_ADMIN_VIDEOS: AdminVideoRecord[] = [];
 
 const toBase64 = (arrayBuffer: ArrayBuffer) => {
 	const bytes = new Uint8Array(arrayBuffer);
@@ -45,6 +58,8 @@ const toBase64 = (arrayBuffer: ArrayBuffer) => {
 export function AdminVideosPage() {
 	const queryClient = useQueryClient();
 	const videosQuery = useQuery(adminVideosQueryOptions());
+	const adminVideos = videosQuery.data ?? EMPTY_ADMIN_VIDEOS;
+	const refetchAdminVideos = videosQuery.refetch;
 
 	const [uploadTitle, setUploadTitle] = useState("");
 	const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -52,13 +67,17 @@ export function AdminVideosPage() {
 	const [uploadProgressPercent, setUploadProgressPercent] = useState(0);
 	const [statusMessage, setStatusMessage] = useState<string | null>(null);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	const [isRefreshing, setIsRefreshing] = useState(false);
 	const [autoRefreshUntil, setAutoRefreshUntil] = useState<number | null>(null);
 	const [selectedVideo, setSelectedVideo] = useState<AdminVideoRecord | null>(null);
+	const [selectedStartupKind, setSelectedStartupKind] =
+		useState<VideoPlaybackStartupKind>("cold");
 	const [editingVideo, setEditingVideo] = useState<AdminVideoRecord | null>(null);
 	const [editTitle, setEditTitle] = useState("");
 	const [editPoster, setEditPoster] = useState("");
 	const [editBaselineUpdatedAt, setEditBaselineUpdatedAt] =
 		useState<string | null>(null);
+	const refreshInFlightRef = useRef(false);
 
 	const invalidateVideoQueries = async () => {
 		await queryClient.invalidateQueries({ queryKey: adminVideosQueryKey });
@@ -91,8 +110,76 @@ export function AdminVideosPage() {
 	);
 
 	const videoRows = useMemo(
-		() => buildVideoListRows(videosQuery.data ?? []),
-		[videosQuery.data],
+		() => buildVideoListRows(adminVideos),
+		[adminVideos],
+	);
+
+	useEffect(() => {
+		void scheduleVideoPlayerSdkWarmup();
+	}, []);
+
+	const hasRemoteUpdateConflict = useMemo(() => {
+		if (!editingVideo || !editBaselineUpdatedAt) return false;
+		const latest = adminVideos.find((video) => video.id === editingVideo.id);
+		if (!latest) return false;
+		return latest.updatedAt !== editBaselineUpdatedAt;
+	}, [adminVideos, editingVideo, editBaselineUpdatedAt]);
+
+	const resetNotice = () => {
+		setStatusMessage(null);
+		setErrorMessage(null);
+	};
+
+	const handleRefreshVideos = useCallback(
+		async (mode: "manual" | "auto") => {
+			if (refreshInFlightRef.current) return;
+			if (mode === "manual") {
+				setStatusMessage(null);
+				setErrorMessage(null);
+			}
+
+			refreshInFlightRef.current = true;
+			setIsRefreshing(true);
+
+			try {
+				const processingVideoIds = pickProcessingVideoIds(
+					adminVideos,
+					MAX_PROCESSING_VIDEO_SYNC_PER_REFRESH,
+				);
+				const syncSummary =
+					processingVideoIds.length === 0
+						? { total: 0, synced: 0, failed: 0 }
+						: summarizeProcessingVideoSync(
+								await Promise.allSettled(
+									processingVideoIds.map((videoId) =>
+										syncAdminVideoStatus(videoId),
+									),
+								),
+							);
+
+				await refetchAdminVideos();
+
+				if (mode === "manual") {
+					if (syncSummary.total === 0) {
+						setStatusMessage("已刷新列表（无处理中视频）");
+					} else if (syncSummary.failed === 0) {
+						setStatusMessage(
+							`已同步 ${syncSummary.synced} 条处理中视频并刷新列表`,
+						);
+					} else {
+						setStatusMessage(
+							`已同步 ${syncSummary.synced}/${syncSummary.total} 条处理中视频并刷新列表，${syncSummary.failed} 条同步失败`,
+						);
+					}
+				}
+			} catch (error) {
+				setErrorMessage(readErrorMessage(error));
+			} finally {
+				refreshInFlightRef.current = false;
+				setIsRefreshing(false);
+			}
+		},
+		[adminVideos, refetchAdminVideos],
 	);
 
 	useEffect(() => {
@@ -103,25 +190,11 @@ export function AdminVideosPage() {
 				setAutoRefreshUntil(null);
 				return;
 			}
-			void videosQuery.refetch();
+			void handleRefreshVideos("auto");
 		}, 3000);
 
 		return () => globalThis.clearInterval(timer);
-	}, [autoRefreshUntil, videosQuery]);
-
-	const hasRemoteUpdateConflict = useMemo(() => {
-		if (!editingVideo || !editBaselineUpdatedAt) return false;
-		const latest = (videosQuery.data ?? []).find(
-			(video) => video.id === editingVideo.id,
-		);
-		if (!latest) return false;
-		return latest.updatedAt !== editBaselineUpdatedAt;
-	}, [videosQuery.data, editingVideo, editBaselineUpdatedAt]);
-
-	const resetNotice = () => {
-		setStatusMessage(null);
-		setErrorMessage(null);
-	};
+	}, [autoRefreshUntil, handleRefreshVideos]);
 
 	const closeEditDrawer = () => {
 		setEditingVideo(null);
@@ -294,6 +367,18 @@ export function AdminVideosPage() {
 		}
 	};
 
+	const handlePreviewVideo = (video: AdminVideoRecord) => {
+		setSelectedStartupKind(
+			hasVideoPlaybackWarmupHit(video.streamVideoId) ? "warm" : "cold",
+		);
+		setSelectedVideo(video);
+	};
+
+	const handleClosePreview = () => {
+		setSelectedVideo(null);
+		setSelectedStartupKind("cold");
+	};
+
 	return (
 		<div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 py-8">
 			<VideoWorkbenchHeader />
@@ -326,10 +411,10 @@ export function AdminVideosPage() {
 						<Button
 							type="button"
 							variant="outline"
-							onClick={() => videosQuery.refetch()}
-							disabled={videosQuery.isFetching}
+							onClick={() => void handleRefreshVideos("manual")}
+							disabled={videosQuery.isFetching || isRefreshing}
 						>
-							{videosQuery.isFetching ? "刷新中..." : "手动刷新"}
+							{videosQuery.isFetching || isRefreshing ? "刷新中..." : "手动刷新"}
 						</Button>
 					</div>
 				</div>
@@ -362,7 +447,10 @@ export function AdminVideosPage() {
 					<VideoList
 						videos={videoRows}
 						isActionPending={isActionPending}
-						onPreview={(video) => setSelectedVideo(video)}
+						onPreview={handlePreviewVideo}
+						onPreviewIntent={(video) =>
+							void warmupVideoPlaybackIntent(video.streamVideoId)
+						}
 						onPublish={(videoId) => void handlePublish(videoId)}
 						onUnpublish={(videoId) => void handleUnpublish(videoId)}
 						onOpenEdit={(video) => handleOpenEditDrawer(video)}
@@ -389,8 +477,11 @@ export function AdminVideosPage() {
 
 			<VideoPlayerModal
 				open={Boolean(selectedVideo)}
-				onClose={() => setSelectedVideo(null)}
+				onClose={handleClosePreview}
 				streamVideoId={selectedVideo?.streamVideoId ?? null}
+				posterUrl={selectedVideo?.posterUrl ?? null}
+				videoTitle={selectedVideo?.title ?? null}
+				startupKind={selectedStartupKind}
 			/>
 		</div>
 	);
