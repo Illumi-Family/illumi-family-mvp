@@ -14,6 +14,7 @@
 3. 先 dev 后 prod：任何数据库迁移和接口契约变化必须先在 `dev` 验证。
 4. 文档与代码同源：当 API/迁移/命令/绑定变化，必须同步更新文档。
 5. 回滚优先“前滚修复”：避免高风险回滚数据库结构，优先通过代码前滚止血。
+6. 每次发布都做 schema parity gate：先迁移、再确认无 pending migration、最后部署。
 
 ## 2. 环境与资源映射（事实基线）
 
@@ -45,6 +46,17 @@ pnpm run check         # dev dry-run gate
 pnpm run check:prod    # prod dry-run gate
 ```
 
+- Schema parity gate（每次部署前，按目标环境执行）
+```bash
+# dev
+pnpm run db:migrate:dev
+pnpm exec wrangler d1 migrations list DB --env dev --remote
+
+# prod
+pnpm run db:migrate:prod
+pnpm exec wrangler d1 migrations list DB --remote
+```
+
 - CD（人工部署）
 ```bash
 pnpm run deploy:dev
@@ -56,15 +68,15 @@ pnpm run deploy:prod
 | --- | --- | --- |
 | Commit 前（本地） | `pnpm test` | 最低门禁 |
 | Merge 前（准备合并） | `pnpm test` + `pnpm run check` | 默认以 dev 目标验证 |
-| Dev 部署前 | `pnpm test` + `pnpm run check` | 缺一不可 |
-| Prod 部署前 | `pnpm test` + `pnpm run check:prod` | 缺一不可 |
-| DB 迁移发布前 | `pnpm run db:migrate:local` + `pnpm run db:migrate:dev` + dev smoke | 再考虑 prod |
+| Dev 部署前 | `pnpm test` + `pnpm run check` + `pnpm run db:migrate:dev` + `pnpm exec wrangler d1 migrations list DB --env dev --remote` | 输出必须含 `No migrations to apply` |
+| Prod 部署前 | `pnpm test` + `pnpm run check:prod` + `pnpm run db:migrate:prod` + `pnpm exec wrangler d1 migrations list DB --remote` | 发布前需确认 dev 已完成同批 migration + smoke |
+| Schema 变更开发阶段 | `pnpm run db:migrate:local` + `pnpm run db:migrate:dev` + dev smoke | 再考虑 prod |
 
 ### 3.2 建议的自动化 CI/CD（后续可落地）
 建议将 3.1 固化为流水线阶段：
 1. `PR CI`：`pnpm install` -> `pnpm test` -> `pnpm run check`
-2. `Merge to dev`：自动部署 `dev` + smoke check
-3. `Release to prod`：人工审批后执行 `check:prod` + `deploy:prod` + smoke check
+2. `Merge to dev`：`db:migrate:dev` -> `deploy:dev` -> smoke check
+3. `Release to prod`：人工审批后执行 `check:prod` + `db:migrate:prod` + `deploy:prod` + smoke check
 
 > 说明：这是建议蓝图，不代表仓库当前已启用自动化平台。
 
@@ -103,15 +115,17 @@ curl -s 'http://localhost:5173/api/content/videos'
 1. 修改前端代码。
 2. 运行：`pnpm test`。
 3. 运行：`pnpm run check`。
-4. 部署：`pnpm run deploy:dev`。
-5. 验证后按流程部署 prod。
+4. 执行 schema parity gate：`pnpm run db:migrate:dev`，并确认 `pnpm exec wrangler d1 migrations list DB --env dev --remote` 输出 `No migrations to apply`。
+5. 部署：`pnpm run deploy:dev`。
+6. 验证后按流程部署 prod。
 
 ### 5.2 API 契约变更（无 DB 变更）
 1. 更新 controller/service/schema 与前端 API 类型。
 2. 更新测试（worker + frontend client）。
 3. 更新文档（契约与运行手册）。
 4. 执行 `check` / `check:prod`。
-5. 先 dev 后 prod。
+5. 对目标环境执行 schema parity gate（`db:migrate:*` + `migrations list` 无 pending）。
+6. 先 dev 后 prod。
 
 ### 5.3 数据库 Schema 变更（高风险）
 必须执行“Local -> Dev -> Prod”三级推进：
@@ -177,12 +191,20 @@ pnpm exec wrangler d1 migrations list DB --remote
   - 原因：代码已升级但当前环境未迁移。
   - 处理：对对应环境执行 migration（local/dev/prod）。
 
+### 6.5 发布前 Schema Parity Gate（每次部署强制）
+- 无论本次是否修改 schema，目标环境部署前都必须执行 `pnpm run db:migrate:<env>`。
+- `db:migrate:*` 为幂等步骤：无 pending migration 时会 no-op。
+- 迁移执行后必须再跑对应 `wrangler d1 migrations list`，输出必须包含 `No migrations to apply`；否则禁止部署。
+- Prod 发布额外约束：同批 migration 必须已在 dev 成功应用并通过 smoke。
+
 ## 7. 部署流程（Dev / Prod）
 
 ### 7.1 Dev 发布（标准）
 ```bash
 pnpm test
 pnpm run check
+pnpm run db:migrate:dev
+pnpm exec wrangler d1 migrations list DB --env dev --remote | grep -q 'No migrations to apply'
 pnpm run deploy:dev
 curl -s https://dev.illumi-family.com/api/health | grep -q '\"appEnv\":\"dev\"'
 curl -s https://dev.illumi-family.com/api/health | grep -q '\"apiVersion\":\"v1\"'
@@ -198,6 +220,9 @@ curl -s -i -X POST 'https://dev.illumi-family.com/api/admin/videos/import' -H 'c
 ```bash
 pnpm test
 pnpm run check:prod
+pnpm exec wrangler d1 migrations list DB --env dev --remote | grep -q 'No migrations to apply'
+pnpm run db:migrate:prod
+pnpm exec wrangler d1 migrations list DB --remote | grep -q 'No migrations to apply'
 pnpm run deploy:prod
 curl -s https://illumi-family.com/api/health | grep -q '\"appEnv\":\"prod\"'
 curl -s https://illumi-family.com/api/health | grep -q '\"apiVersion\":\"v1\"'
@@ -290,13 +315,15 @@ AI 代理在执行开发/部署任务时，必须按以下顺序：
 2. 明确目标环境（local/dev/prod）。
 3. 执行最小必要改动并补测试。
 4. 先跑 `pnpm test`，再跑对应 `check` 命令。
-5. 涉及 DB 变更必须先检查 migration 状态再部署。
-6. 输出可复现命令、结果与回滚点。
+5. 每次部署先执行 schema parity gate（`db:migrate:*` + `migrations list` 必须为 `No migrations to apply`）。
+6. 若目标为 prod，先确认 dev 环境同批迁移已完成并通过 smoke。
+7. 输出可复现命令、结果与回滚点。
 
 ## 11. 交接清单（人类/AI 通用）
 发布前 checklist：
 - [ ] 目标环境确认（dev/prod）
-- [ ] 迁移状态确认（若有 DB 变更）
+- [ ] 目标环境 schema parity gate 完成（`db:migrate:*` 已执行，且 `migrations list` 为 `No migrations to apply`）
+- [ ] 若目标为 prod，已确认 dev 无 pending migration 且 dev smoke 已通过
 - [ ] `pnpm test` 通过
 - [ ] `pnpm run check` 或 `pnpm run check:prod` 通过
 - [ ] 部署成功并记录 Version ID

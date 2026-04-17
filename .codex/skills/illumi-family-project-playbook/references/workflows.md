@@ -26,8 +26,9 @@ pnpm run build
 
 Gate matrix (must follow):
 - commit: `pnpm test`
-- dev deploy: `pnpm test && pnpm run check`
-- prod deploy: `pnpm test && pnpm run check:prod`
+- dev deploy: `pnpm test && pnpm run check && pnpm run db:migrate:dev && pnpm exec wrangler d1 migrations list DB --env dev --remote`
+- prod deploy: `pnpm test && pnpm run check:prod && pnpm run db:migrate:prod && pnpm exec wrangler d1 migrations list DB --remote`
+- deployment allow condition: migration list output must include `No migrations to apply`
 
 ## 2.1) Commit Message Rule
 - `git commit` messages must be English-only (no Chinese).
@@ -91,6 +92,8 @@ pnpm exec wrangler d1 execute DB --env dev --remote --command "SELECT entry_key,
 ```bash
 pnpm test
 pnpm run check
+pnpm run db:migrate:dev
+pnpm exec wrangler d1 migrations list DB --env dev --remote | grep -q 'No migrations to apply'
 pnpm run deploy
 ```
 Current routing baseline: `assets.run_worker_first = ["/api/*"]` (SPA routes handled by assets, Worker handles API).
@@ -99,6 +102,9 @@ Current routing baseline: `assets.run_worker_first = ["/api/*"]` (SPA routes han
 ```bash
 pnpm test
 pnpm run check:prod
+pnpm exec wrangler d1 migrations list DB --env dev --remote | grep -q 'No migrations to apply'
+pnpm run db:migrate:prod
+pnpm exec wrangler d1 migrations list DB --remote | grep -q 'No migrations to apply'
 pnpm run deploy:prod
 ```
 `deploy:prod` uses `wrangler deploy --config wrangler.json --env=""` to explicitly target top-level prod config.

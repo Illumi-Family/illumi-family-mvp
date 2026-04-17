@@ -179,12 +179,17 @@ flowchart LR
 - dev（兼容）: `pnpm run check:dev`
 - prod（显式）: `pnpm run check:prod`
 
-3. 部署
+3. Schema Parity Gate（每次部署强制）
+- dev 目标：`pnpm run db:migrate:dev` + `pnpm exec wrangler d1 migrations list DB --env dev --remote`
+- prod 目标：`pnpm run db:migrate:prod` + `pnpm exec wrangler d1 migrations list DB --remote`
+- 放行条件：`migrations list` 输出包含 `No migrations to apply`
+
+4. 部署
 - dev（默认）: `pnpm run deploy`
 - dev（显式）: `pnpm run deploy:dev`
 - prod（显式）: `pnpm run deploy:prod`
 
-4. 数据迁移
+5. 数据迁移（Schema 变更开发阶段）
 - dev（默认）: `pnpm run db:migrate`
 - dev（显式）: `pnpm run db:migrate:dev`
 - local（本地 dev）: `pnpm run db:migrate:local`
@@ -222,9 +227,18 @@ flowchart LR
 - 执行 `tsc -b && vite build`，产出前端静态资源（供 Worker 资产托管）。
 
 ### 6.3 部署
-- dev（默认）: `pnpm run deploy`
-- prod（显式）: `pnpm run deploy:prod`
-- 通过 Wrangler 将 Worker 代码与静态资产发布到目标环境。
+- `deploy*` 脚本仅发布 Worker 与静态资产，不包含 D1 migration。
+- dev 标准顺序（强制）：
+  1. `pnpm run check`
+  2. `pnpm run db:migrate:dev`
+  3. `pnpm exec wrangler d1 migrations list DB --env dev --remote`（必须 `No migrations to apply`）
+  4. `pnpm run deploy` 或 `pnpm run deploy:dev`
+- prod 标准顺序（强制）：
+  1. `pnpm run check:prod`
+  2. 确认 dev 已完成同批 migration 与 smoke
+  3. `pnpm run db:migrate:prod`
+  4. `pnpm exec wrangler d1 migrations list DB --remote`（必须 `No migrations to apply`）
+  5. `pnpm run deploy:prod`
 - `deploy:prod` 对应 `wrangler deploy --config wrangler.json --env=""`，显式指向顶层 prod 配置，避免多环境提示歧义。
 
 ### 6.4 集成检查
@@ -241,6 +255,7 @@ flowchart LR
 - `pnpm run db:migrate:dev`：显式对 `env.dev` 执行 migration
 - `pnpm run db:migrate:local`：对本地 `dev` D1 应用 migration（`wrangler --local`），用于本地 `pnpm dev` 缺表修复
 - `pnpm db:migrate:prod`：将 migration 应用到 prod 远程 D1（后执行）
+- 发布门禁：每次部署必须执行目标环境 `db:migrate:*`，并通过 `migrations list` 确认无 pending migration。
 - `pnpm test`：运行 Worker API + 前端 API client 测试（Vitest）
 
 ### 6.6 本地模板脚手架链路
@@ -340,3 +355,4 @@ flowchart LR
 | 2026-04-16 | v1.2.0 | 新增 Cloudflare Stream 视频能力层：后台直传签发、webhook 状态回写、发布门禁、公网视频列表与弹窗播放，并同步更新文档与 runbook |
 | 2026-04-17 | v1.3.0 | 新增 Stream 视频导入复用链路：`POST /api/admin/videos/import`、环境内幂等落库与上传/导入行为日志字段 |
 | 2026-04-17 | v1.4.0 | 首页关键区块后台可编辑化：新增 `home.hero_slogan` / `home.main_video` / `home.character_videos` shared 配置、发布门禁、首页配置驱动渲染 |
+| 2026-04-17 | v1.4.1 | 收敛部署规范：明确 `deploy*` 不含 migration，新增“每次发布强制 schema parity gate（db:migrate + migrations list=No pending）”并统一 dev/prod 发布顺序 |

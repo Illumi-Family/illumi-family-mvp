@@ -67,7 +67,9 @@ When giving advice, always provide:
 5. Required doc/skill sync updates.
 
 ## Operational Baseline
-- Treat `pnpm run check` and `pnpm run check:dev` as deployment gates.
+- Treat deployment gates as:
+  - quality gate: `pnpm run check` / `pnpm run check:prod`
+  - schema parity gate: `pnpm run db:migrate:<env>` + `wrangler d1 migrations list ...` with `No migrations to apply`
 - Use smoke checks for `/api/health` after deployments.
 - Record environment-specific commands explicitly to prevent accidental prod operations.
 
