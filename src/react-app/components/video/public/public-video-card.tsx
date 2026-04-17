@@ -4,6 +4,7 @@ import type { PublicVideoRecord } from "@/lib/api";
 type PublicVideoCardProps = {
 	video: PublicVideoRecord;
 	onPlay: () => void;
+	onPlayIntent?: () => void;
 };
 
 const formatDuration = (seconds: number | null) => {
@@ -19,7 +20,7 @@ const formatDuration = (seconds: number | null) => {
 };
 
 export function PublicVideoCard(props: PublicVideoCardProps) {
-	const { video, onPlay } = props;
+	const { video, onPlay, onPlayIntent } = props;
 	const displayTitle = video.title.trim() || "未命名视频";
 
 	return (
@@ -29,6 +30,9 @@ export function PublicVideoCard(props: PublicVideoCardProps) {
 				aria-label={`播放视频：${displayTitle}`}
 				className="w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-px"
 				onClick={onPlay}
+				onMouseEnter={onPlayIntent}
+				onFocus={onPlayIntent}
+				onTouchStart={onPlayIntent}
 			>
 				<div className="relative aspect-video overflow-hidden bg-black">
 					{video.posterUrl ? (

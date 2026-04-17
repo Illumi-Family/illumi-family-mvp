@@ -15,6 +15,7 @@ type VideoListRowProps = {
 	video: AdminVideoRecord;
 	isActionPending: boolean;
 	onPreview: () => void;
+	onPreviewIntent: () => void;
 	onPublish: () => void;
 	onUnpublish: () => void;
 	onOpenEdit: () => void;
@@ -38,6 +39,7 @@ export function VideoListRow(props: VideoListRowProps) {
 		video,
 		isActionPending,
 		onPreview,
+		onPreviewIntent,
 		onPublish,
 		onUnpublish,
 		onOpenEdit,
@@ -78,7 +80,15 @@ export function VideoListRow(props: VideoListRowProps) {
 				</div>
 
 				<div className="flex flex-wrap items-center gap-2">
-					<Button type="button" variant="outline" size="sm" onClick={onPreview}>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={onPreview}
+						onMouseEnter={onPreviewIntent}
+						onFocus={onPreviewIntent}
+						onTouchStart={onPreviewIntent}
+					>
 						预览
 					</Button>
 					<Button

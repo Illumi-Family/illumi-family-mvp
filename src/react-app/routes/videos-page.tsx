@@ -1,10 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { VideoPlayerModal } from "@/components/video/video-player-modal";
 import { publicVideosQueryOptions } from "@/lib/query-options";
 import type { PublicVideoRecord } from "@/lib/api";
 import { PublicVideoGrid } from "@/components/video/public/public-video-grid";
 import { Button } from "@/components/ui/button";
+import type { VideoPlaybackStartupKind } from "@/lib/video-playback-metrics";
+import {
+	hasVideoPlaybackWarmupHit,
+	scheduleVideoPlayerSdkWarmup,
+	warmupVideoPlaybackIntent,
+} from "@/lib/video-player-warmup";
 
 const readErrorMessage = (error: unknown) =>
 	error instanceof Error ? error.message : "Unexpected error";
@@ -12,6 +18,28 @@ const readErrorMessage = (error: unknown) =>
 export function VideosPage() {
 	const videosQuery = useQuery(publicVideosQueryOptions());
 	const [selectedVideo, setSelectedVideo] = useState<PublicVideoRecord | null>(null);
+	const [selectedStartupKind, setSelectedStartupKind] =
+		useState<VideoPlaybackStartupKind>("cold");
+
+	useEffect(() => {
+		void scheduleVideoPlayerSdkWarmup();
+	}, []);
+
+	const handlePlayIntent = (video: PublicVideoRecord) => {
+		void warmupVideoPlaybackIntent(video.streamVideoId);
+	};
+
+	const handleOpenVideo = (video: PublicVideoRecord) => {
+		setSelectedStartupKind(
+			hasVideoPlaybackWarmupHit(video.streamVideoId) ? "warm" : "cold",
+		);
+		setSelectedVideo(video);
+	};
+
+	const handleCloseModal = () => {
+		setSelectedVideo(null);
+		setSelectedStartupKind("cold");
+	};
 
 	return (
 		<div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 py-8">
@@ -44,13 +72,20 @@ export function VideosPage() {
 			) : null}
 
 			{videosQuery.data && videosQuery.data.length > 0 ? (
-				<PublicVideoGrid videos={videosQuery.data} onPlay={setSelectedVideo} />
+				<PublicVideoGrid
+					videos={videosQuery.data}
+					onPlay={handleOpenVideo}
+					onPlayIntent={handlePlayIntent}
+				/>
 			) : null}
 
 			<VideoPlayerModal
 				open={Boolean(selectedVideo)}
-				onClose={() => setSelectedVideo(null)}
+				onClose={handleCloseModal}
 				streamVideoId={selectedVideo?.streamVideoId ?? null}
+				posterUrl={selectedVideo?.posterUrl ?? null}
+				videoTitle={selectedVideo?.title ?? null}
+				startupKind={selectedStartupKind}
 			/>
 		</div>
 	);

@@ -5,6 +5,7 @@ type VideoListProps = {
 	videos: AdminVideoRecord[];
 	isActionPending: boolean;
 	onPreview: (video: AdminVideoRecord) => void;
+	onPreviewIntent: (video: AdminVideoRecord) => void;
 	onPublish: (videoId: string) => void;
 	onUnpublish: (videoId: string) => void;
 	onOpenEdit: (video: AdminVideoRecord) => void;
@@ -17,6 +18,7 @@ export function VideoList(props: VideoListProps) {
 		videos,
 		isActionPending,
 		onPreview,
+		onPreviewIntent,
 		onPublish,
 		onUnpublish,
 		onOpenEdit,
@@ -32,6 +34,7 @@ export function VideoList(props: VideoListProps) {
 					video={video}
 					isActionPending={isActionPending}
 					onPreview={() => onPreview(video)}
+					onPreviewIntent={() => onPreviewIntent(video)}
 					onPublish={() => onPublish(video.id)}
 					onUnpublish={() => onUnpublish(video.id)}
 					onOpenEdit={() => onOpenEdit(video)}
