@@ -2,6 +2,26 @@
   "hero": {
     "badge": "Neo-Chinese · Family Learning · Three Generations"
   },
+  "homeVideo": {
+    "heroLabel": "Main Film",
+    "heroDescription": "Autoplay in mute loop and pause when out of view.",
+    "heroLoading": "Preparing the family video...",
+    "heroMissing": "The main family video is not configured yet.",
+    "heroError": "Failed to load main family video: {{message}}",
+    "loadingHint": "Loading main video",
+    "errorTitle": "Main video is temporarily unavailable",
+    "errorHint": "Please retry later, or explore the character videos below.",
+    "retry": "Retry",
+    "errorUnknown": "Unknown error",
+    "charactersLabel": "Character Stories",
+    "charactersTitle": "One family through six character perspectives",
+    "charactersDescription": "Tap any card to open immersive playback.",
+    "charactersError": "Failed to load character videos: {{message}}",
+    "cardPlay": "Immersive playback",
+    "cardUnavailable": "In preparation",
+    "durationPrefix": "Duration",
+    "streamIdMissing": "Pending configuration"
+  },
   "navigation": {
     "mainAriaLabel": "Main navigation",
     "mobileAriaLabel": "Mobile quick navigation"

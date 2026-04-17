@@ -138,6 +138,92 @@
 	}
 }
 
+@keyframes video-aura-breathe {
+	0%,
+	100% {
+		opacity: 0.24;
+		transform: scale3d(1, 1, 1);
+	}
+
+	50% {
+		opacity: 0.44;
+		transform: scale3d(1.045, 1.045, 1);
+	}
+}
+
+@keyframes video-aura-drift {
+	0% {
+		opacity: 0.34;
+		transform: translate3d(-1.5%, 0, 0) scale3d(1.03, 1.03, 1);
+	}
+
+	50% {
+		opacity: 0.52;
+		transform: translate3d(1.6%, 1.2%, 0) scale3d(1.08, 1.08, 1);
+	}
+
+	100% {
+		opacity: 0.34;
+		transform: translate3d(-1.5%, 0, 0) scale3d(1.03, 1.03, 1);
+	}
+}
+
+@keyframes video-loading-pulse {
+	0%,
+	100% {
+		opacity: 0.4;
+		transform: scale3d(0.72, 0.72, 1);
+	}
+
+	50% {
+		opacity: 1;
+		transform: scale3d(1.2, 1.2, 1);
+	}
+}
+
+@keyframes video-loading-orbit {
+	0% {
+		opacity: 0.22;
+		transform: scale3d(0.72, 0.72, 1) rotate(0deg);
+	}
+
+	50% {
+		opacity: 0.7;
+		transform: scale3d(1.25, 1.25, 1) rotate(180deg);
+	}
+
+	100% {
+		opacity: 0.22;
+		transform: scale3d(0.72, 0.72, 1) rotate(360deg);
+	}
+}
+
+.video-aura-breathe {
+	animation: video-aura-breathe 6.2s ease-in-out infinite;
+	will-change: transform, opacity;
+}
+
+.video-aura-drift {
+	animation: video-aura-drift 8.8s cubic-bezier(0.46, 0.05, 0.54, 0.95) infinite;
+	will-change: transform, opacity;
+}
+
+.video-loading-core {
+	animation: video-loading-pulse 1.45s ease-in-out infinite;
+	will-change: transform, opacity;
+}
+
+.video-loading-halo {
+	animation: video-loading-orbit 2.3s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+	will-change: transform, opacity;
+}
+
+.video-loading-halo-secondary {
+	animation: video-loading-orbit 2.3s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+	animation-delay: 1.15s;
+	will-change: transform, opacity;
+}
+
 .motion-enter {
 	opacity: 0;
 	animation: fade-up 280ms ease-out forwards;
@@ -155,6 +241,15 @@
 		animation-iteration-count: 1 !important;
 		transition-duration: 0.01ms !important;
 		scroll-behavior: auto !important;
+	}
+
+	.video-aura-breathe,
+	.video-aura-drift,
+	.video-loading-core,
+	.video-loading-halo,
+	.video-loading-halo-secondary {
+		animation: none !important;
+		transform: none !important;
 	}
 
 	.motion-enter {

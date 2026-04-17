@@ -211,6 +211,13 @@ MVP 阶段建议采用清晰扁平结构：
 - 当前相关工具生态：n8n / Dify / Seedance / CapCut（主要用于内容产线，可与官网数据结构衔接）。
 - 【待补充：官网前后端技术栈最终拍板（如 Next.js + CMS / 其他）】。
 
+### 12.1 当前环境口径（协作必读）
+- 项目运行环境按 `local / dev / prod` 区分，判断依据是 Wrangler 环境参数，不是 Git 分支。
+- `dev` 与 `prod` 在 Worker、D1、KV、R2 上为独立绑定，属于明确隔离。
+- `local`（`pnpm dev`）默认是本地运行模式：D1/KV/R2 使用本地持久化，不直接写远端 `dev/prod` 资源。
+- 视频能力（Cloudflare Stream）在 `local` 也会调用真实 Cloudflare Stream API（非本地模拟）；当前 `dev/prod` 的 `STREAM_ACCOUNT_ID` 为同一账户。
+- 详细映射与命令口径见：`docs/core/technical-architecture.md` 第 5.5 节与 `docs/runbooks/development-deployment-cicd-runbook.md`。
+
 ## 13. MVP里程碑（官网侧）
 - 第1周：
   - 上线官网基础框架。

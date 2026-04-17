@@ -195,6 +195,22 @@ flowchart LR
 - 分支与环境可以建立团队约定（例如 `main -> prod`, `develop -> dev`），但不是平台强制关系。
 - 即使在同一分支，也可以通过不同部署命令把同一份代码发到不同环境。
 
+### 5.5 local / dev / prod 资源隔离明细（D1 / KV / R2 / Stream）
+> 结论先行：`dev` 与 `prod` 为远端独立绑定；`local` 运行时默认本地模式（非 `--remote`），因此 D1/KV/R2 不会直接写入远端环境。
+
+| 资源维度 | local（`pnpm dev`） | dev（远端） | prod（远端） | 隔离/共用结论 |
+| --- | --- | --- | --- | --- |
+| Worker 运行目标 | `CLOUDFLARE_ENV=dev vite`，本地开发 runtime | `wrangler deploy --env dev` | `wrangler deploy --env=""` | 三者运行位点不同；local 不等于远端 dev |
+| D1 | 本地 D1（`db:migrate:local` = `--env dev --local`） | `illumi-family-db-dev` | `illumi-family-db` | 三者隔离 |
+| KV | 本地 KV（Wrangler 本地持久化，默认 `.wrangler/state`） | `ILLUMI_CACHE_DEV` | `ILLUMI_CACHE` | 三者隔离 |
+| R2 | 本地 R2（Wrangler 本地持久化，默认 `.wrangler/state`） | `illumi-family-files-dev` | `illumi-family-files` | 三者隔离 |
+| Stream API（上传签发/状态同步/删除） | 通过 `fetch` 直连 Cloudflare Stream API（依赖本地变量） | Cloudflare Stream API（dev secret/vars） | Cloudflare Stream API（prod secret/vars） | 非本地模拟；会访问真实 Stream 服务 |
+| Stream Account | 取 `.dev.vars(.dev)` 中 `STREAM_ACCOUNT_ID` | `wrangler.json -> env.dev.vars.STREAM_ACCOUNT_ID` | `wrangler.json -> vars.STREAM_ACCOUNT_ID` | 当前配置下 dev/prod 为同一 account id（共享账户级资源池） |
+
+补充说明：
+- 本仓库脚本未使用 `wrangler dev --remote`；因此 `pnpm dev` 默认不直接连接远端 D1/KV/R2。
+- `STREAM_WEBHOOK_SECRET` 为各环境 secret：local 从 `.dev.vars(.dev)` 注入，dev/prod 通过 `wrangler secret put ...` 管理。
+
 ## 6. 构建、开发与部署链路
 ### 6.1 本地开发
 - `pnpm dev`

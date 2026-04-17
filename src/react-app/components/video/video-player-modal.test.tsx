@@ -18,10 +18,14 @@ import {
 } from "./video-player-modal-state";
 
 describe("video-player-modal", () => {
-	it("transitions to playing when loadeddata arrives", () => {
-		const phase = reduceVideoPlayerStartupPhase("loading", "loadeddata");
-		expect(phase).toBe("playing");
-		expect(getVideoPlayerOverlayMode(phase)).toBe("hidden");
+	it("keeps loading on loadeddata and hides overlay only after playing", () => {
+		const loaded = reduceVideoPlayerStartupPhase("loading", "loadeddata");
+		expect(loaded).toBe("loading");
+		expect(getVideoPlayerOverlayMode(loaded)).toBe("loading");
+
+		const playing = reduceVideoPlayerStartupPhase(loaded, "playing");
+		expect(playing).toBe("playing");
+		expect(getVideoPlayerOverlayMode(playing)).toBe("hidden");
 	});
 
 	it("returns to loading when retrying from error state", () => {
@@ -32,7 +36,27 @@ describe("video-player-modal", () => {
 		expect(getVideoPlayerOverlayMode(retried)).toBe("loading");
 	});
 
-	it("renders non-black fallback when poster is missing", () => {
+	it("renders poster aura loading without text when poster is available", () => {
+		const html = renderToStaticMarkup(
+			createElement(VideoPlayerModal, {
+				open: true,
+				onClose: () => {},
+				streamVideoId: "stream-1",
+				videoTitle: "家庭课程",
+				posterUrl: "https://example.com/poster.jpg",
+			}),
+		);
+
+		expect(html).toContain('data-testid="video-loading-aura"');
+		expect(html).toContain('data-testid="video-loading-poster"');
+		expect(html).toContain('data-testid="video-loading-signal"');
+		expect(html).not.toContain("正在加载视频");
+		expect(html).not.toContain("请稍候");
+		expect(html).not.toContain("封面准备中");
+		expect(html).toContain('data-testid="stream-player"');
+	});
+
+	it("renders non-black aura ambience fallback without text when poster is missing", () => {
 		const html = renderToStaticMarkup(
 			createElement(VideoPlayerModal, {
 				open: true,
@@ -43,8 +67,12 @@ describe("video-player-modal", () => {
 			}),
 		);
 
-		expect(html).toContain("正在加载视频");
-		expect(html).toContain("封面准备中");
+		expect(html).toContain('data-testid="video-loading-aura"');
+		expect(html).toContain('data-testid="video-loading-ambience"');
+		expect(html).toContain('data-testid="video-loading-signal"');
+		expect(html).not.toContain("正在加载视频");
+		expect(html).not.toContain("请稍候");
+		expect(html).not.toContain("封面准备中");
 		expect(html).toContain('data-testid="stream-player"');
 	});
 

@@ -9,6 +9,10 @@ import {
 	siteNavigation,
 	stories,
 } from "./home-page.data";
+import {
+	HOME_CHARACTER_VIDEO_SLOT_COUNT,
+	HOME_MAIN_VIDEO_STREAM_ID,
+} from "./home/home-featured-videos";
 
 describe("official website home data", () => {
 	it("contains all required anchor sections", () => {
@@ -41,5 +45,10 @@ describe("official website home data", () => {
 				expect(story.link?.length).toBeGreaterThan(0);
 			}
 		});
+	});
+
+	it("keeps homepage featured video slots fixed at one main plus six characters", () => {
+		expect(HOME_MAIN_VIDEO_STREAM_ID.length).toBeGreaterThan(0);
+		expect(HOME_CHARACTER_VIDEO_SLOT_COUNT).toBe(6);
 	});
 });

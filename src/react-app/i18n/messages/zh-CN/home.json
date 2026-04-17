@@ -2,6 +2,26 @@
   "hero": {
     "badge": "新中式 · 书香家风 · 三代同堂"
   },
+  "homeVideo": {
+    "heroLabel": "首页主片",
+    "heroDescription": "自动静音循环播放，离开可视区域自动暂停。",
+    "heroLoading": "正在准备全家福视频...",
+    "heroMissing": "全家福主视频尚未配置，稍后更新。",
+    "heroError": "全家福主视频加载失败：{{message}}",
+    "loadingHint": "主视频加载中",
+    "errorTitle": "主视频暂时不可用",
+    "errorHint": "请稍后重试，或先浏览下方角色视频。",
+    "retry": "重试加载",
+    "errorUnknown": "未知错误",
+    "charactersLabel": "角色介绍",
+    "charactersTitle": "从六个角色视角看见一个家庭",
+    "charactersDescription": "点击任意角色视频，进入沉浸播放。",
+    "charactersError": "角色视频列表加载失败：{{message}}",
+    "cardPlay": "沉浸播放",
+    "cardUnavailable": "筹备中",
+    "durationPrefix": "时长",
+    "streamIdMissing": "待配置"
+  },
   "navigation": {
     "mainAriaLabel": "主导航",
     "mobileAriaLabel": "移动端快捷导航"

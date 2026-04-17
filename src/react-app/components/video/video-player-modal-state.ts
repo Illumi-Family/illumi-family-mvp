@@ -11,10 +11,15 @@ export const reduceVideoPlayerStartupPhase = (
 	phase: VideoPlayerStartupPhase,
 	event: VideoPlayerStartupEvent,
 ): VideoPlayerStartupPhase => {
-	if (event === "open" || event === "loadstart" || event === "retry") {
+	if (
+		event === "open" ||
+		event === "loadstart" ||
+		event === "retry" ||
+		event === "loadeddata"
+	) {
 		return "loading";
 	}
-	if (event === "loadeddata" || event === "playing") {
+	if (event === "playing") {
 		return "playing";
 	}
 	if (event === "error") {

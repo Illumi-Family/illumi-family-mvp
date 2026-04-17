@@ -1,27 +1,80 @@
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { getHomePageData } from "@/routes/home-page.data";
 import { LanguageSwitcher } from "@/i18n/language-switcher";
 import { useAppI18n } from "@/i18n/context";
-import { homeContentQueryOptions } from "@/lib/query-options";
+import {
+	homeContentQueryOptions,
+	publicVideosQueryOptions,
+} from "@/lib/query-options";
+import { VideoPlayerModal } from "@/components/video/video-player-modal";
+import type { VideoPlaybackStartupKind } from "@/lib/video-playback-metrics";
+import {
+	hasVideoPlaybackWarmupHit,
+	scheduleVideoPlayerSdkWarmup,
+	warmupVideoPlaybackIntent,
+} from "@/lib/video-player-warmup";
 import { AboutSection } from "@/routes/home/sections/about-section";
 import { ColearningSection } from "@/routes/home/sections/colearning-section";
 import { DailyNotesSection } from "@/routes/home/sections/daily-notes-section";
 import { FooterSection } from "@/routes/home/sections/footer-section";
 import { HeroSection } from "@/routes/home/sections/hero-section";
+import { HomeCharacterVideosSection } from "@/routes/home/sections/home-character-videos-section";
+import { HomeMainVideoSection } from "@/routes/home/sections/home-main-video-section";
 import { PhilosophySection } from "@/routes/home/sections/philosophy-section";
 import { StoriesSection } from "@/routes/home/sections/stories-section";
+import {
+	resolveHomeFeaturedVideos,
+	type ResolvedHomeFeaturedVideo,
+} from "@/routes/home/home-featured-videos";
+
+const readErrorMessage = (error: unknown) =>
+	error instanceof Error ? error.message : "Unexpected error";
 
 export function HomePage() {
 	const { t } = useTranslation("home");
 	const { locale } = useAppI18n();
 	const homeData = getHomePageData(locale);
 	const homeContentQuery = useQuery(homeContentQueryOptions(locale));
+	const publicVideosQuery = useQuery(publicVideosQueryOptions());
 	const homeContent = homeContentQuery.data ?? homeData.defaultHomeContent;
+	const featuredVideos = useMemo(
+		() => resolveHomeFeaturedVideos(publicVideosQuery.data ?? [], locale),
+		[locale, publicVideosQuery.data],
+	);
 	const showFallbackHint = homeContentQuery.isError;
+	const [selectedVideo, setSelectedVideo] =
+		useState<ResolvedHomeFeaturedVideo | null>(null);
+	const [selectedStartupKind, setSelectedStartupKind] =
+		useState<VideoPlaybackStartupKind>("cold");
+
+	useEffect(() => {
+		void scheduleVideoPlayerSdkWarmup();
+	}, []);
+
+	const handleCharacterVideoPlayIntent = (item: ResolvedHomeFeaturedVideo) => {
+		if (!item.video) return;
+		void warmupVideoPlaybackIntent(item.video.streamVideoId);
+	};
+
+	const handleCharacterVideoPlay = (item: ResolvedHomeFeaturedVideo) => {
+		if (!item.video) return;
+		setSelectedStartupKind(
+			hasVideoPlaybackWarmupHit(item.video.streamVideoId) ? "warm" : "cold",
+		);
+		setSelectedVideo(item);
+	};
+
+	const handleCloseModal = () => {
+		setSelectedVideo(null);
+		setSelectedStartupKind("cold");
+	};
+
+	const publicVideoErrorMessage = readErrorMessage(publicVideosQuery.error);
 
 	return (
-		<div className="relative isolate min-h-screen overflow-x-clip">
+		<div className="relative isolate min-h-[100dvh] overflow-x-clip">
 			<div
 				aria-hidden="true"
 				className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_15%_20%,rgba(212,184,133,0.16),transparent_45%),radial-gradient(circle_at_90%_8%,rgba(166,124,82,0.12),transparent_38%)]"
@@ -99,6 +152,22 @@ export function HomePage() {
 					</div>
 				) : null}
 				<HeroSection content={homeData.heroContent} />
+				<HomeMainVideoSection
+					video={featuredVideos.main}
+					isLoading={publicVideosQuery.isLoading}
+					isError={publicVideosQuery.isError}
+					errorMessage={publicVideoErrorMessage}
+					onRetry={() => void publicVideosQuery.refetch()}
+				/>
+				<HomeCharacterVideosSection
+					items={featuredVideos.characters}
+					isLoading={publicVideosQuery.isLoading}
+					isError={publicVideosQuery.isError}
+					errorMessage={publicVideoErrorMessage}
+					onRetry={() => void publicVideosQuery.refetch()}
+					onPlay={handleCharacterVideoPlay}
+					onPlayIntent={handleCharacterVideoPlayIntent}
+				/>
 				<PhilosophySection
 					intro={homeContent.philosophy.intro}
 					items={homeContent.philosophy.items}
@@ -114,6 +183,14 @@ export function HomePage() {
 				<AboutSection content={homeData.aboutContent} />
 			</main>
 
+			<VideoPlayerModal
+				open={Boolean(selectedVideo)}
+				onClose={handleCloseModal}
+				streamVideoId={selectedVideo?.video?.streamVideoId ?? null}
+				posterUrl={selectedVideo?.video?.posterUrl ?? null}
+				videoTitle={selectedVideo?.title ?? null}
+				startupKind={selectedStartupKind}
+			/>
 			<FooterSection content={homeData.footerContent} />
 		</div>
 	);
