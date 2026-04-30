@@ -13,16 +13,22 @@ export function HomeBusinessContactSection({ content }: HomeBusinessContactSecti
 				title={content.title}
 				description={content.description}
 			/>
-			<div className="grid gap-4 md:grid-cols-2">
+			<div className="grid gap-4 md:grid-cols-3">
 				<article className="space-y-2 rounded-2xl border border-[color:rgba(166,124,82,0.2)] bg-[color:rgba(255,252,247,0.82)] px-5 py-5">
 					<p className="text-xs uppercase tracking-[0.12em] text-[color:var(--brand-primary)]">
-						Phone
+						手机 
 					</p>
 					<p className="text-xl font-semibold text-foreground">{content.phone}</p>
 				</article>
 				<article className="space-y-2 rounded-2xl border border-[color:rgba(166,124,82,0.2)] bg-[color:rgba(255,252,247,0.82)] px-5 py-5">
 					<p className="text-xs uppercase tracking-[0.12em] text-[color:var(--brand-primary)]">
-						Email
+						微信
+					</p>
+					<p className="text-xl font-semibold text-foreground">{content.wechat}</p>
+				</article>
+				<article className="space-y-2 rounded-2xl border border-[color:rgba(166,124,82,0.2)] bg-[color:rgba(255,252,247,0.82)] px-5 py-5">
+					<p className="text-xs uppercase tracking-[0.12em] text-[color:var(--brand-primary)]">
+						邮箱
 					</p>
 					<a
 						href={`mailto:${content.email}`}

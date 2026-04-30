@@ -27,6 +27,7 @@ describe("official website home data", () => {
 	it("defines matrix and business contact blocks", () => {
 		expect(homeContentMatrixContent.items).toHaveLength(4);
 		expect(homeBusinessContactContent.phone).toBe("13570380204");
+		expect(homeBusinessContactContent.wechat).toBe("13570380204");
 		expect(homeBusinessContactContent.email).toBe("contact@illumi-family.com");
 	});
 

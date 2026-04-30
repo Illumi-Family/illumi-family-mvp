@@ -105,6 +105,7 @@ export interface HomeBusinessContactContent {
 	title: string;
 	description: string;
 	phone: string;
+	wechat: string;
 	email: string;
 }
 
@@ -373,6 +374,7 @@ export const homeBusinessContactContent: HomeBusinessContactContent = {
 	title: "商务合作与联络方式",
 	description: "欢迎品牌合作、内容合作与活动邀约。",
 	phone: "13570380204",
+	wechat: "13570380204",
 	email: "contact@illumi-family.com",
 };
 
@@ -625,6 +627,7 @@ const homeBusinessContactContentEn: HomeBusinessContactContent = {
 	title: "Business Contact",
 	description: "For brand collaboration, content partnership, and event invitations.",
 	phone: "13570380204",
+	wechat: "13570380204",
 	email: "contact@illumi-family.com",
 };
 
