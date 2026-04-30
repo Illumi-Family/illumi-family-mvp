@@ -25,7 +25,10 @@
   },
   "navigation": {
     "mainAriaLabel": "主导航",
-    "mobileAriaLabel": "移动端快捷导航"
+    "mobileAriaLabel": "移动端快捷导航",
+    "mobileMenuOpenAriaLabel": "打开移动端导航菜单",
+    "mobileMenuCloseAriaLabel": "关闭移动端导航菜单",
+    "mobileDrawerAriaLabel": "移动端导航抽屉"
   },
   "fallbackNotice": "内容服务暂时不可用，当前展示本地兜底内容。",
   "home": {

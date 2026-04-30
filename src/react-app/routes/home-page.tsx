@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Menu, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getHomePageData } from "@/routes/home-page.data";
 import { LanguageSwitcher } from "@/i18n/language-switcher";
@@ -27,7 +28,10 @@ import {
 	resolveHomeFeaturedVideos,
 	type ResolvedHomeFeaturedVideo,
 } from "@/routes/home/home-featured-videos";
-import { scheduleHomeEntryScrollReset } from "./home-page.scroll";
+import {
+	handleMobileNavSelection,
+	scheduleHomeEntryScrollReset,
+} from "./home-page.scroll";
 
 const readErrorMessage = (error: unknown) =>
 	error instanceof Error ? error.message : "Unexpected error";
@@ -62,6 +66,7 @@ export function HomePage() {
 		useState<ResolvedHomeFeaturedVideo | null>(null);
 	const [selectedStartupKind, setSelectedStartupKind] =
 		useState<VideoPlaybackStartupKind>("cold");
+	const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
 	useEffect(() => {
 		void scheduleVideoPlayerSdkWarmup();
@@ -79,6 +84,28 @@ export function HomePage() {
 			}
 		};
 	}, []);
+
+	useEffect(() => {
+		if (!mobileNavOpen) return;
+		const previousOverflow = document.body.style.overflow;
+		document.body.style.overflow = "hidden";
+		return () => {
+			document.body.style.overflow = previousOverflow;
+		};
+	}, [mobileNavOpen]);
+
+	useEffect(() => {
+		if (!mobileNavOpen) return;
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.key !== "Escape") return;
+			event.preventDefault();
+			setMobileNavOpen(false);
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [mobileNavOpen]);
 
 	const handleCharacterVideoPlayIntent = (item: ResolvedHomeFeaturedVideo) => {
 		if (!item.video) return;
@@ -103,6 +130,21 @@ export function HomePage() {
 		if (typeof document === "undefined") return;
 		const section = document.getElementById(sectionId);
 		section?.scrollIntoView({ behavior: "smooth", block: "start" });
+	};
+
+	const closeMobileNav = () => {
+		setMobileNavOpen(false);
+	};
+
+	const handleMobileNavSelect = (sectionId: string) => {
+		handleMobileNavSelection(sectionId, {
+			closeDrawer: closeMobileNav,
+			onScrollToSection: scrollToSection,
+			requestAnimationFrame:
+				typeof window !== "undefined"
+					? window.requestAnimationFrame.bind(window)
+					: undefined,
+		});
 	};
 
 	return (
@@ -148,7 +190,25 @@ export function HomePage() {
 					</nav>
 
 					<div className="flex items-center gap-2">
-						<LanguageSwitcher className="hidden items-center gap-2 md:flex" />
+						<LanguageSwitcher className="hidden items-center gap-2 lg:flex" />
+						<button
+							type="button"
+							className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:rgba(166,124,82,0.3)] bg-[color:rgba(255,252,247,0.95)] text-muted-foreground transition-colors duration-200 hover:bg-[color:rgba(243,236,227,0.92)] hover:text-foreground lg:hidden"
+							aria-controls="home-mobile-nav-drawer"
+							aria-expanded={mobileNavOpen}
+							aria-label={t(
+								mobileNavOpen
+									? "navigation.mobileMenuCloseAriaLabel"
+									: "navigation.mobileMenuOpenAriaLabel",
+							)}
+							onClick={() => setMobileNavOpen((prev) => !prev)}
+						>
+							{mobileNavOpen ? (
+								<X aria-hidden="true" className="h-4 w-4" />
+							) : (
+								<Menu aria-hidden="true" className="h-4 w-4" />
+							)}
+						</button>
 						{/* <a
 							href={homeData.siteMeta.headerCta.href}
 							className="inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors duration-200 hover:bg-[color:rgba(166,124,82,0.92)]"
@@ -157,24 +217,44 @@ export function HomePage() {
 						</a> */}
 					</div>
 				</div>
-
-				<nav
-					className="mx-auto mt-2 flex w-full max-w-7xl gap-2 overflow-x-auto rounded-xl border border-[color:rgba(166,124,82,0.24)] bg-[color:rgba(255,252,247,0.88)] px-3 py-2 lg:hidden"
-					aria-label={t("navigation.mobileAriaLabel")}
-				>
-					{homeData.siteNavigation.map((item) => (
-						<button
-							key={`mobile-${item.sectionId}`}
-							type="button"
-							onClick={() => scrollToSection(item.sectionId)}
-							className="whitespace-nowrap rounded-full bg-[color:rgba(243,236,227,0.9)] px-3 py-1.5 text-xs text-muted-foreground transition-colors duration-200 hover:bg-[color:rgba(212,184,133,0.3)] hover:text-foreground"
-						>
-							{item.label}
-						</button>
-					))}
-					<LanguageSwitcher className="ml-auto flex items-center gap-2 md:hidden" />
-				</nav>
 			</header>
+
+			{mobileNavOpen ? (
+				<div className="fixed inset-0 z-50 lg:hidden">
+					<button
+						type="button"
+						aria-label={t("navigation.mobileMenuCloseAriaLabel")}
+						className="absolute inset-0 bg-black/35"
+						onClick={closeMobileNav}
+					/>
+					<div
+						id="home-mobile-nav-drawer"
+						role="dialog"
+						aria-modal="true"
+						aria-label={t("navigation.mobileDrawerAriaLabel")}
+						className="absolute inset-x-0 top-0 border-b border-[color:rgba(166,124,82,0.24)] bg-[color:rgba(255,252,247,0.97)] p-4 shadow-xl backdrop-blur-md"
+					>
+						<nav
+							className="flex flex-col gap-2"
+							aria-label={t("navigation.mobileAriaLabel")}
+						>
+							{homeData.siteNavigation.map((item) => (
+								<button
+									key={`mobile-drawer-${item.sectionId}`}
+									type="button"
+									onClick={() => handleMobileNavSelect(item.sectionId)}
+									className="w-full rounded-full bg-[color:rgba(243,236,227,0.9)] px-4 py-2 text-left text-sm text-muted-foreground transition-colors duration-200 hover:bg-[color:rgba(212,184,133,0.3)] hover:text-foreground"
+								>
+									{item.label}
+								</button>
+							))}
+						</nav>
+						<div className="mt-4 border-t border-[color:rgba(166,124,82,0.2)] pt-4">
+							<LanguageSwitcher className="flex items-center gap-2" />
+						</div>
+					</div>
+				</div>
+			) : null}
 
 			<main id="main-content" className="w-full pb-20">
 				<div className="">

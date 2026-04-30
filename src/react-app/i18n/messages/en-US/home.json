@@ -25,7 +25,10 @@
   },
   "navigation": {
     "mainAriaLabel": "Main navigation",
-    "mobileAriaLabel": "Mobile quick navigation"
+    "mobileAriaLabel": "Mobile quick navigation",
+    "mobileMenuOpenAriaLabel": "Open mobile navigation menu",
+    "mobileMenuCloseAriaLabel": "Close mobile navigation menu",
+    "mobileDrawerAriaLabel": "Mobile navigation drawer"
   },
   "fallbackNotice": "Content service is temporarily unavailable. Showing local fallback content.",
   "home": {

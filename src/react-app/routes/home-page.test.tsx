@@ -25,7 +25,10 @@ vi.mock("@/components/video/video-player-modal", () => ({
 		}),
 }));
 
-import { scheduleHomeEntryScrollReset } from "./home-page.scroll";
+import {
+	handleMobileNavSelection,
+	scheduleHomeEntryScrollReset,
+} from "./home-page.scroll";
 import { HomePage } from "./home-page";
 
 describe("home page", () => {
@@ -36,16 +39,35 @@ describe("home page", () => {
 			return 11;
 		});
 
-	const frameId = scheduleHomeEntryScrollReset({
-		requestAnimationFrame: requestAnimationFrame as (
-			callback: FrameRequestCallback,
-		) => number,
+		const frameId = scheduleHomeEntryScrollReset({
+			requestAnimationFrame: requestAnimationFrame as (
+				callback: FrameRequestCallback,
+			) => number,
 			scrollTo: scrollTo as (options: ScrollToOptions) => void,
 		});
 
 		expect(frameId).toBe(11);
 		expect(requestAnimationFrame).toHaveBeenCalledOnce();
 		expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });
+	});
+
+	it("closes mobile drawer before scheduling section scroll", () => {
+		const steps: string[] = [];
+		const requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+			steps.push("raf");
+			callback(0);
+			return 1;
+		});
+
+		handleMobileNavSelection("section-home-origin", {
+			closeDrawer: () => steps.push("close"),
+			onScrollToSection: () => steps.push("scroll"),
+			requestAnimationFrame: requestAnimationFrame as (
+				callback: FrameRequestCallback,
+			) => number,
+		});
+
+		expect(steps).toEqual(["close", "raf", "scroll"]);
 	});
 
 	it("renders home shell and keeps unified video modal entry closed by default", () => {
@@ -60,5 +82,7 @@ describe("home page", () => {
 		expect(html).toContain("家塾起源");
 		expect(html).toContain('data-testid="home-video-modal-proxy"');
 		expect(html).toContain('data-open="false"');
+		expect(html).toContain("navigation.mobileMenuOpenAriaLabel");
+		expect(html).not.toContain("navigation.mobileAriaLabel");
 	});
 });
