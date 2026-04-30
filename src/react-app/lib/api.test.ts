@@ -12,6 +12,7 @@ import {
 	publishAdminVideo,
 	publishAdminHomeSection,
 	saveAdminHomeSectionDraft,
+	syncAdminVideoCatalog,
 	syncAdminVideoStatus,
 	unpublishAdminVideo,
 	updateAdminVideo,
@@ -600,6 +601,36 @@ describe("react api client", () => {
 		});
 		expect(result.deleted).toBe(true);
 		expect(result.remoteDeleted).toBe(true);
+	});
+
+	it("syncs admin video catalog from /api/admin/videos/sync-catalog", async () => {
+		fetchMock.mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					success: true,
+					data: {
+						created: 3,
+						updated: 5,
+						downgraded: 1,
+						failed: 0,
+						partial: false,
+						totalRemote: 9,
+						processedRemote: 9,
+					},
+					requestId: "req-video-sync-catalog",
+				}),
+				{ status: 200, headers: { "content-type": "application/json" } },
+			),
+		);
+
+		const summary = await syncAdminVideoCatalog();
+
+		expect(fetchMock).toHaveBeenCalledWith("/api/admin/videos/sync-catalog", {
+			method: "POST",
+			headers: { Accept: "application/json" },
+		});
+		expect(summary.created).toBe(3);
+		expect(summary.downgraded).toBe(1);
 	});
 
 	it("lists public videos from /api/content/videos", async () => {

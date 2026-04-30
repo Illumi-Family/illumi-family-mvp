@@ -6,6 +6,7 @@ import {
 	importAdminVideoHandlers,
 	listAdminVideosHandlers,
 	publishAdminVideoHandlers,
+	syncAdminVideoCatalogHandlers,
 	syncAdminVideoStatusHandlers,
 	unpublishAdminVideoHandlers,
 	updateAdminVideoHandlers,
@@ -16,6 +17,7 @@ const adminVideoRouter = new Hono<AppContext>();
 adminVideoRouter.get("/", ...listAdminVideosHandlers);
 adminVideoRouter.post("/upload-url", ...createAdminVideoUploadUrlHandlers);
 adminVideoRouter.post("/import", ...importAdminVideoHandlers);
+adminVideoRouter.post("/sync-catalog", ...syncAdminVideoCatalogHandlers);
 adminVideoRouter.patch("/:videoId", ...updateAdminVideoHandlers);
 adminVideoRouter.post("/:videoId/publish", ...publishAdminVideoHandlers);
 adminVideoRouter.post("/:videoId/unpublish", ...unpublishAdminVideoHandlers);

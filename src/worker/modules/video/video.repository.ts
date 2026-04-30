@@ -11,6 +11,8 @@ type VideoUpdatePatch = Partial<
 		| "title"
 		| "posterUrl"
 		| "durationSeconds"
+		| "missingFromStreamStreak"
+		| "lastSeenInStreamAt"
 		| "publishedAt"
 		| "updatedByAuthUserId"
 	>
@@ -46,6 +48,8 @@ export class VideoRepository {
 			title: input.title?.trim() || "",
 			posterUrl: null,
 			durationSeconds: null,
+			missingFromStreamStreak: 0,
+			lastSeenInStreamAt: null,
 			createdByAuthUserId: input.authUserId,
 			updatedByAuthUserId: input.authUserId,
 			createdAt: now,
@@ -81,6 +85,8 @@ export class VideoRepository {
 			title: input.title?.trim() || "",
 			posterUrl: input.posterUrl ?? null,
 			durationSeconds: input.durationSeconds ?? null,
+			missingFromStreamStreak: 0,
+			lastSeenInStreamAt: null,
 			createdByAuthUserId: input.authUserId,
 			updatedByAuthUserId: input.authUserId,
 			createdAt: now,
@@ -110,6 +116,36 @@ export class VideoRepository {
 		};
 	}
 
+	async createSyncedDraft(input: {
+		streamVideoId: string;
+		title: string;
+		posterUrl: string | null;
+		durationSeconds: number | null;
+		processingStatus: VideoProcessingStatus;
+		authUserId: string;
+		seenAt: Date;
+	}) {
+		const now = new Date();
+		const record = {
+			id: crypto.randomUUID(),
+			streamVideoId: input.streamVideoId,
+			processingStatus: input.processingStatus,
+			publishStatus: "draft",
+			title: input.title,
+			posterUrl: input.posterUrl,
+			durationSeconds: input.durationSeconds,
+			missingFromStreamStreak: 0,
+			lastSeenInStreamAt: input.seenAt,
+			createdByAuthUserId: input.authUserId,
+			updatedByAuthUserId: input.authUserId,
+			createdAt: now,
+			updatedAt: now,
+			publishedAt: null,
+		} as const;
+		await this.db.insert(videoAssets).values(record);
+		return record;
+	}
+
 	async listAdminVideos() {
 		return this.db.select().from(videoAssets).orderBy(desc(videoAssets.createdAt));
 	}
@@ -125,6 +161,18 @@ export class VideoRepository {
 				),
 			)
 			.orderBy(desc(videoAssets.publishedAt));
+	}
+
+	async listSyncStates() {
+		return this.db
+			.select({
+				id: videoAssets.id,
+				streamVideoId: videoAssets.streamVideoId,
+				processingStatus: videoAssets.processingStatus,
+				publishStatus: videoAssets.publishStatus,
+				missingFromStreamStreak: videoAssets.missingFromStreamStreak,
+			})
+			.from(videoAssets);
 	}
 
 	async getById(videoId: string) {

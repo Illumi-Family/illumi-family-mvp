@@ -1,6 +1,6 @@
 # Illumi Family MVP Current State
 
-Last verified: 2026-04-17
+Last verified: 2026-04-18
 
 ## 1) Canonical Fact Sources
 - `wrangler.json`
@@ -74,6 +74,7 @@ Last verified: 2026-04-17
 - `GET /api/admin/videos` (whitelist + verified email required)
 - `POST /api/admin/videos/upload-url` (whitelist + verified email required)
 - `POST /api/admin/videos/import` (whitelist + verified email required; validates Stream ID first, idempotent by env-local `stream_video_id`)
+- `POST /api/admin/videos/sync-catalog` (whitelist + verified email required; manual full sync from current Stream account to env-local D1)
 - `PATCH /api/admin/videos/:videoId` (whitelist + verified email required)
 - `POST /api/admin/videos/:videoId/publish` (whitelist + verified email required)
 - `POST /api/admin/videos/:videoId/unpublish` (whitelist + verified email required)
@@ -100,7 +101,7 @@ Last verified: 2026-04-17
   - `cms_assets`
   - `cms_entry_assets`
 - Video tables:
-  - `video_assets`
+  - `video_assets` (includes sync-state columns `missing_from_stream_streak`, `last_seen_in_stream_at`)
 - CMS locale dimension:
   - `cms_entries.locale` exists (`zh-CN` default)
   - uniqueness is `UNIQUE(entry_key, locale)` (not `entry_key` only)
@@ -131,6 +132,11 @@ Last verified: 2026-04-17
 - Public video list cache key: `videos:public:v1` (publish/unpublish + ready-state drift triggers invalidation)
 - Stream webhook validation uses HMAC SHA-256 + header `Webhook-Signature` (`time` + `sig1`) with `STREAM_WEBHOOK_SECRET`.
 - Admin video actions emit structured log fields for observability (`actionType`, `streamVideoId`, `operator`, `env`) to distinguish upload-create vs import-reuse.
+- Manual stream catalog sync (`POST /api/admin/videos/sync-catalog`) rules:
+  - new records default to `draft`,
+  - existing records refresh metadata while preserving `publishStatus`,
+  - missing remote videos downgrade to `draft + failed` only after 2 consecutive full-sync misses,
+  - partial page failures skip missing-video downgrade for that run.
 
 ## 9) Template Tooling (Local Scaffold)
 - Commands:

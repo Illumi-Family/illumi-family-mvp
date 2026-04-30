@@ -8,6 +8,8 @@ import {
 	createStreamDirectUpload,
 	deleteStreamVideoById,
 	getStreamVideoById,
+	listStreamVideos,
+	type StreamVideoCatalogResponse,
 } from "../../shared/integrations/stream/stream-client";
 import {
 	parseStreamWebhookEvent,
@@ -25,6 +27,10 @@ import type { VideoRepository } from "./video.repository";
 
 const PUBLIC_VIDEO_CACHE_KEY = "videos:public:v1";
 const PUBLIC_VIDEO_CACHE_TTL_SECONDS = 120;
+const STREAM_CATALOG_SYNC_LOCK_KEY = "videos:sync:catalog:lock:v1";
+const STREAM_CATALOG_SYNC_LOCK_TTL_SECONDS = 120;
+const STREAM_CATALOG_PAGE_LIMIT = 1_000;
+const STREAM_MISSING_STREAK_THRESHOLD = 2;
 type VideoActionType = "upload_create" | "import_reuse";
 
 export type AdminVideoRecord = {
@@ -51,8 +57,78 @@ export type PublicVideoRecord = {
 	publishedAt: string;
 };
 
+export type AdminVideoCatalogSyncSummary = {
+	created: number;
+	updated: number;
+	downgraded: number;
+	failed: number;
+	partial: boolean;
+	totalRemote: number | null;
+	processedRemote: number;
+};
+
+type StreamCatalogVideo = StreamVideoCatalogResponse;
+
 const toIsoString = (value: Date | null | undefined) =>
 	value instanceof Date ? value.toISOString() : null;
+
+const normalizeDurationSeconds = (value: number | null | undefined) => {
+	if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+		return null;
+	}
+	return Math.max(0, Math.round(value));
+};
+
+const normalizeReadyToStream = (value: unknown) => value === true;
+
+const normalizeStreamStatus = (value: unknown) => {
+	if (typeof value === "string") {
+		return value;
+	}
+	if (!value || typeof value !== "object") {
+		return undefined;
+	}
+	const state = (value as { state?: unknown }).state;
+	if (typeof state === "string") {
+		return { state };
+	}
+	return undefined;
+};
+
+const normalizeStreamTitleFromMeta = (meta: unknown) => {
+	if (!meta || typeof meta !== "object") {
+		return null;
+	}
+	if (!("name" in meta)) {
+		return null;
+	}
+	const rawName = (meta as { name?: unknown }).name;
+	if (typeof rawName !== "string") {
+		return null;
+	}
+	const title = rawName.trim();
+	return title.length > 0 ? title : null;
+};
+
+const resolvePosterFromStreamCatalog = (video: StreamCatalogVideo) =>
+	video.thumbnail?.trim() || video.preview?.trim() || null;
+
+const resolveBeforeCursor = (videos: StreamCatalogVideo[]) => {
+	let oldestTimestampMs: number | null = null;
+	for (const video of videos) {
+		if (!video.created) continue;
+		const parsed = Date.parse(video.created);
+		if (!Number.isFinite(parsed)) continue;
+		if (oldestTimestampMs === null || parsed < oldestTimestampMs) {
+			oldestTimestampMs = parsed;
+		}
+	}
+	if (oldestTimestampMs === null) {
+		return null;
+	}
+	const cursorMs = Math.max(0, oldestTimestampMs - 1);
+	return new Date(cursorMs).toISOString();
+};
 
 const toAdminRecord = (
 	row: Awaited<ReturnType<VideoRepository["listAdminVideos"]>>[number],
@@ -336,6 +412,191 @@ export class VideoService {
 		};
 	}
 
+	async syncCatalogFromStream(
+		env: AppBindings,
+		input: {
+			authUserId: string;
+		},
+	): Promise<AdminVideoCatalogSyncSummary> {
+		const lockToken = await this.acquireCatalogSyncLock(env);
+		if (!lockToken) {
+			throw new AppError(
+				"CONFLICT",
+				"Video catalog sync is already in progress",
+				409,
+			);
+		}
+
+		let created = 0;
+		let updated = 0;
+		let downgraded = 0;
+		let failed = 0;
+		let partial = false;
+		let totalRemote: number | null = null;
+		const seenStreamVideoIds = new Set<string>();
+		let beforeCursor: string | undefined;
+
+		try {
+			while (true) {
+				let page: Awaited<ReturnType<typeof listStreamVideos>>;
+				try {
+					page = await listStreamVideos(env, {
+						limit: STREAM_CATALOG_PAGE_LIMIT,
+						before: beforeCursor,
+						includeCounts: beforeCursor === undefined,
+					});
+				} catch (error) {
+					console.warn("stream_catalog_sync_page_failed", {
+						env: env.APP_ENV ?? "unknown",
+						beforeCursor: beforeCursor ?? null,
+						error,
+					});
+					partial = true;
+					failed += 1;
+					break;
+				}
+
+				if (beforeCursor === undefined && typeof page.total === "number") {
+					totalRemote = page.total;
+				}
+
+				const pageVideos = page.videos;
+				if (pageVideos.length === 0) {
+					break;
+				}
+
+				let foundFreshVideoInPage = false;
+				for (const streamVideo of pageVideos) {
+					const streamVideoId = streamVideo.uid?.trim();
+					if (!streamVideoId || seenStreamVideoIds.has(streamVideoId)) {
+						continue;
+					}
+					seenStreamVideoIds.add(streamVideoId);
+					foundFreshVideoInPage = true;
+
+					const processingStatus = resolveVideoProcessingStatus({
+						status: normalizeStreamStatus(streamVideo.status),
+						readyToStream: normalizeReadyToStream(streamVideo.readyToStream),
+					});
+					const durationSeconds = normalizeDurationSeconds(streamVideo.duration);
+					const streamTitle = normalizeStreamTitleFromMeta(streamVideo.meta);
+					const posterUrl = resolvePosterFromStreamCatalog(streamVideo);
+					const seenAt = new Date();
+
+					try {
+						const existing = await this.repository.getByStreamVideoId(streamVideoId);
+						if (!existing) {
+							await this.repository.createSyncedDraft({
+								streamVideoId,
+								title: streamTitle ?? "",
+								posterUrl,
+								durationSeconds,
+								processingStatus,
+								authUserId: input.authUserId,
+								seenAt,
+							});
+							created += 1;
+							continue;
+						}
+
+						await this.repository.updateByStreamVideoId(streamVideoId, {
+							title: streamTitle ?? existing.title,
+							posterUrl: posterUrl ?? existing.posterUrl,
+							durationSeconds: durationSeconds ?? existing.durationSeconds,
+							processingStatus,
+							missingFromStreamStreak: 0,
+							lastSeenInStreamAt: seenAt,
+							updatedByAuthUserId: input.authUserId,
+						});
+						updated += 1;
+					} catch (error) {
+						failed += 1;
+						console.warn("stream_catalog_sync_video_upsert_failed", {
+							env: env.APP_ENV ?? "unknown",
+							streamVideoId,
+							error,
+						});
+					}
+				}
+
+				if (pageVideos.length < STREAM_CATALOG_PAGE_LIMIT) {
+					break;
+				}
+
+				const nextBeforeCursor = resolveBeforeCursor(pageVideos);
+				if (
+					!nextBeforeCursor ||
+					nextBeforeCursor === beforeCursor ||
+					!foundFreshVideoInPage
+				) {
+					break;
+				}
+				beforeCursor = nextBeforeCursor;
+			}
+
+			if (!partial) {
+				const localStates = await this.repository.listSyncStates();
+				let shouldInvalidatePublicCache = false;
+				for (const localVideo of localStates) {
+					const streamVideoId = localVideo.streamVideoId.trim();
+					if (!streamVideoId || seenStreamVideoIds.has(streamVideoId)) {
+						continue;
+					}
+
+					const nextMissingStreak =
+						Math.max(0, localVideo.missingFromStreamStreak ?? 0) + 1;
+					const shouldDowngrade =
+						nextMissingStreak >= STREAM_MISSING_STREAK_THRESHOLD;
+
+					try {
+						await this.repository.updateByStreamVideoId(streamVideoId, {
+							missingFromStreamStreak: nextMissingStreak,
+							updatedByAuthUserId: input.authUserId,
+							...(shouldDowngrade
+								? {
+										publishStatus: "draft",
+										processingStatus: "failed" as const,
+										publishedAt: null,
+									}
+								: {}),
+						});
+						if (!shouldDowngrade) {
+							continue;
+						}
+
+						downgraded += 1;
+						if (localVideo.publishStatus === "published") {
+							shouldInvalidatePublicCache = true;
+						}
+					} catch (error) {
+						failed += 1;
+						console.warn("stream_catalog_sync_missing_update_failed", {
+							env: env.APP_ENV ?? "unknown",
+							streamVideoId,
+							error,
+						});
+					}
+				}
+
+				if (shouldInvalidatePublicCache) {
+					await this.invalidatePublicCache(env);
+				}
+			}
+
+			return {
+				created,
+				updated,
+				downgraded,
+				failed,
+				partial,
+				totalRemote,
+				processedRemote: seenStreamVideoIds.size,
+			};
+		} finally {
+			await this.releaseCatalogSyncLock(env, lockToken);
+		}
+	}
+
 	async ingestStreamWebhook(env: AppBindings, input: {
 		rawBody: string;
 		signature: string | null | undefined;
@@ -429,5 +690,29 @@ export class VideoService {
 
 	private async invalidatePublicCache(env: AppBindings) {
 		await deleteCacheKey(env.CACHE, VideoService.getPublicCacheKey());
+	}
+
+	private async acquireCatalogSyncLock(env: AppBindings) {
+		const existing = await env.CACHE.get(STREAM_CATALOG_SYNC_LOCK_KEY);
+		if (existing) {
+			return null;
+		}
+
+		const token = `${Date.now()}:${crypto.randomUUID()}`;
+		await env.CACHE.put(STREAM_CATALOG_SYNC_LOCK_KEY, token, {
+			expirationTtl: STREAM_CATALOG_SYNC_LOCK_TTL_SECONDS,
+		});
+		const confirmed = await env.CACHE.get(STREAM_CATALOG_SYNC_LOCK_KEY);
+		return confirmed === token ? token : null;
+	}
+
+	private async releaseCatalogSyncLock(env: AppBindings, token: string | null) {
+		if (!token) {
+			return;
+		}
+		const current = await env.CACHE.get(STREAM_CATALOG_SYNC_LOCK_KEY);
+		if (current === token) {
+			await env.CACHE.delete(STREAM_CATALOG_SYNC_LOCK_KEY);
+		}
 	}
 }

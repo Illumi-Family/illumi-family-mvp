@@ -142,12 +142,17 @@ curl -s 'http://localhost:5173/api/content/videos'
 2. 复用导入与新上传必须语义分离：
    - 新上传：`POST /api/admin/videos/upload-url`（会创建新的 Stream 计费对象）；
    - 导入复用：`POST /api/admin/videos/import`（只在当前环境写入 D1，不新增 Stream 视频对象）。
-3. 推荐协作流程：任一环境可首传，其他环境优先使用导入复用；不做环境级上传禁用。
-4. 前端改动需同步校验 `/admin/videos` 与 `/videos` 两条页面路径。
-5. 变更后至少执行：
+3. 手动全量同步目录：`POST /api/admin/videos/sync-catalog`（读取当前 `STREAM_ACCOUNT_ID` 目录并同步到当前环境 D1）：
+   - 新增记录默认 `draft`；
+   - 已存在记录覆盖 `title/poster/duration/processing`，保留 `publishStatus`；
+   - 远端缺失需连续 2 次手动同步命中才自动下架为 `draft + failed`；
+   - 若分页中途失败，本次允许已成功页入库，但必须跳过“缺失下架”阶段。
+4. 推荐协作流程：任一环境可首传，其他环境优先使用“全量同步或导入复用”；不做环境级上传禁用。
+5. 前端改动需同步校验 `/admin/videos` 与 `/videos` 两条页面路径。
+6. 变更后至少执行：
    - `pnpm test`
    - `pnpm run build`
-6. 需要新增/修改 Stream 配置时，按 8.2 的 secret 流程处理，不得写入仓库。
+7. 需要新增/修改 Stream 配置时，按 8.2 的 secret 流程处理，不得写入仓库。
 
 ### 5.5 首页关键区块配置变更（Slogan + Featured Videos）
 1. 共享配置 entry key：
@@ -214,6 +219,7 @@ curl -s -i 'https://dev.illumi-family.com/api/content/videos'
 curl -s -i 'https://dev.illumi-family.com/api/admin/content/home?locale=zh-CN' # 未登录应为 401
 curl -s -i 'https://dev.illumi-family.com/api/admin/videos'  # 未登录应为 401
 curl -s -i -X POST 'https://dev.illumi-family.com/api/admin/videos/import' -H 'content-type: application/json' -d '{"streamVideoId":"stream-test"}' # 未登录应为 401
+curl -s -i -X POST 'https://dev.illumi-family.com/api/admin/videos/sync-catalog' # 未登录应为 401
 ```
 
 ### 7.2 Prod 发布（标准）
@@ -232,6 +238,7 @@ curl -s -i 'https://illumi-family.com/api/content/videos'
 curl -s -i 'https://illumi-family.com/api/admin/content/home?locale=zh-CN' # 未登录应为 401
 curl -s -i 'https://illumi-family.com/api/admin/videos'      # 未登录应为 401
 curl -s -i -X POST 'https://illumi-family.com/api/admin/videos/import' -H 'content-type: application/json' -d '{"streamVideoId":"stream-test"}' # 未登录应为 401
+curl -s -i -X POST 'https://illumi-family.com/api/admin/videos/sync-catalog' # 未登录应为 401
 ```
 
 ### 7.3 回滚策略
@@ -285,6 +292,7 @@ pnpm exec wrangler secret put STREAM_WEBHOOK_SECRET
 - `/api/admin/content/home?locale=zh-CN`（未登录期望 `401`）
 - `/api/admin/videos`（未登录期望 `401`）
 - `/api/admin/videos/import`（未登录期望 `401`）
+- `/api/admin/videos/sync-catalog`（未登录期望 `401`）
 - 鉴权基本链路（至少 session 获取）
 
 ## 9. i18n 与内容发布专项规则
@@ -328,7 +336,7 @@ AI 代理在执行开发/部署任务时，必须按以下顺序：
 - [ ] `pnpm run check` 或 `pnpm run check:prod` 通过
 - [ ] 部署成功并记录 Version ID
 - [ ] 核心 smoke check 返回 200
-- [ ] 若涉及视频能力，已验证 `/api/content/videos`、`/api/admin/content/home`、`/api/admin/videos`、`/api/admin/videos/import` 未登录返回 401
+- [ ] 若涉及视频能力，已验证 `/api/content/videos`、`/api/admin/content/home`、`/api/admin/videos`、`/api/admin/videos/import`、`/api/admin/videos/sync-catalog` 未登录返回 401
 - [ ] 文档同步（架构 + runbook + playbook references）
 
 发布后 checklist：

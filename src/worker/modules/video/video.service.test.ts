@@ -13,6 +13,8 @@ const buildVideoRow = (overrides?: Record<string, unknown>) => ({
 	title: "Video 1",
 	posterUrl: "https://example.com/poster.jpg",
 	durationSeconds: 10,
+	missingFromStreamStreak: 0,
+	lastSeenInStreamAt: null,
 	createdByAuthUserId: "auth-1",
 	updatedByAuthUserId: "auth-1",
 	createdAt: new Date("2026-04-15T00:00:00.000Z"),
@@ -20,6 +22,19 @@ const buildVideoRow = (overrides?: Record<string, unknown>) => ({
 	publishedAt: null,
 	...overrides,
 });
+
+const createCacheMock = (seed?: Record<string, string>) => {
+	const store = new Map<string, string>(Object.entries(seed ?? {}));
+	return {
+		get: vi.fn(async (key: string) => store.get(key) ?? null),
+		put: vi.fn(async (key: string, value: string) => {
+			store.set(key, value);
+		}),
+		delete: vi.fn(async (key: string) => {
+			store.delete(key);
+		}),
+	};
+};
 
 describe("video service", () => {
 	beforeEach(() => {
@@ -249,6 +264,197 @@ describe("video service", () => {
 		expect(repository.listPublicReadyVideos).not.toHaveBeenCalled();
 		expect(readCacheSpy).toHaveBeenCalledTimes(1);
 		expect(writeCacheSpy).not.toHaveBeenCalled();
+	});
+
+	it("syncs stream catalog and returns summary", async () => {
+		vi.spyOn(streamClient, "listStreamVideos")
+			.mockResolvedValueOnce({
+				total: 2,
+				range: 2,
+				videos: [
+					{
+						uid: "stream-new",
+						readyToStream: "",
+						status: { state: "ready" },
+						meta: null,
+						duration: 10.2,
+						thumbnail: "",
+						created: "2026-04-17T10:00:00.000Z",
+					},
+					{
+						uid: "stream-existing",
+						readyToStream: true,
+						status: { state: "ready" },
+						meta: { name: "Updated Title" },
+						duration: 12.6,
+						thumbnail: "https://example.com/updated.jpg",
+						created: "2026-04-17T09:00:00.000Z",
+					},
+				],
+			})
+			.mockResolvedValueOnce({
+				total: 2,
+				range: 0,
+				videos: [],
+			});
+		const repository = {
+			getByStreamVideoId: vi
+				.fn()
+				.mockResolvedValueOnce(null)
+				.mockResolvedValueOnce(
+					buildVideoRow({
+						id: "video-existing",
+						streamVideoId: "stream-existing",
+						title: "Old Title",
+						posterUrl: "https://example.com/old.jpg",
+						durationSeconds: 8,
+					}),
+				),
+			createSyncedDraft: vi.fn().mockResolvedValue(
+				buildVideoRow({
+					id: "video-new",
+					streamVideoId: "stream-new",
+					title: "New Video",
+				}),
+			),
+			updateByStreamVideoId: vi.fn().mockResolvedValue(buildVideoRow()),
+			listSyncStates: vi.fn().mockResolvedValue([]),
+		};
+		const service = new VideoService(repository as never);
+		const cache = createCacheMock();
+
+		const summary = await service.syncCatalogFromStream(
+			{ APP_ENV: "dev", CACHE: cache } as never,
+			{ authUserId: "auth-1" },
+		);
+
+		expect(repository.createSyncedDraft).toHaveBeenCalledWith(
+			expect.objectContaining({
+				streamVideoId: "stream-new",
+				title: "",
+				posterUrl: null,
+				processingStatus: "ready",
+			}),
+		);
+		expect(repository.updateByStreamVideoId).toHaveBeenCalledWith(
+			"stream-existing",
+			expect.objectContaining({
+				title: "Updated Title",
+				posterUrl: "https://example.com/updated.jpg",
+				durationSeconds: 13,
+				missingFromStreamStreak: 0,
+			}),
+		);
+		expect(summary).toEqual({
+			created: 1,
+			updated: 1,
+			downgraded: 0,
+			failed: 0,
+			partial: false,
+			totalRemote: 2,
+			processedRemote: 2,
+		});
+	});
+
+	it("returns partial summary and skips missing downgrade when page fetch fails", async () => {
+		vi.spyOn(streamClient, "listStreamVideos").mockRejectedValue(
+			new AppError("STREAM_API_ERROR", "boom", 502),
+		);
+		const repository = {
+			listSyncStates: vi.fn(),
+		};
+		const service = new VideoService(repository as never);
+		const cache = createCacheMock();
+
+		const summary = await service.syncCatalogFromStream(
+			{ APP_ENV: "dev", CACHE: cache } as never,
+			{ authUserId: "auth-1" },
+		);
+
+		expect(summary.partial).toBe(true);
+		expect(summary.failed).toBe(1);
+		expect(repository.listSyncStates).not.toHaveBeenCalled();
+	});
+
+	it("downgrades missing published videos only after second missing streak", async () => {
+		const deleteCacheSpy = vi.spyOn(kv, "deleteCacheKey").mockResolvedValue();
+		vi.spyOn(streamClient, "listStreamVideos").mockResolvedValue({
+			total: 1,
+			range: 1,
+			videos: [
+				{
+					uid: "stream-seen",
+					readyToStream: true,
+					status: { state: "ready" },
+					meta: { name: "Seen" },
+					created: "2026-04-17T10:00:00.000Z",
+				},
+			],
+		});
+		const repository = {
+			getByStreamVideoId: vi.fn().mockResolvedValue(
+				buildVideoRow({
+					streamVideoId: "stream-seen",
+					title: "Seen",
+				}),
+			),
+			updateByStreamVideoId: vi.fn().mockResolvedValue(buildVideoRow()),
+			listSyncStates: vi.fn().mockResolvedValue([
+				{
+					id: "video-published",
+					streamVideoId: "stream-missing-published",
+					processingStatus: "ready",
+					publishStatus: "published",
+					missingFromStreamStreak: 1,
+				},
+				{
+					id: "video-draft",
+					streamVideoId: "stream-missing-draft",
+					processingStatus: "ready",
+					publishStatus: "draft",
+					missingFromStreamStreak: 0,
+				},
+			]),
+		};
+		const service = new VideoService(repository as never);
+		const cache = createCacheMock();
+
+		const summary = await service.syncCatalogFromStream(
+			{ APP_ENV: "dev", CACHE: cache } as never,
+			{ authUserId: "auth-1" },
+		);
+
+		expect(repository.updateByStreamVideoId).toHaveBeenCalledWith(
+			"stream-missing-published",
+			expect.objectContaining({
+				missingFromStreamStreak: 2,
+				publishStatus: "draft",
+				processingStatus: "failed",
+				publishedAt: null,
+			}),
+		);
+		expect(repository.updateByStreamVideoId).toHaveBeenCalledWith(
+			"stream-missing-draft",
+			expect.objectContaining({
+				missingFromStreamStreak: 1,
+			}),
+		);
+		expect(deleteCacheSpy).toHaveBeenCalledWith(cache, "videos:public:v1");
+		expect(summary.downgraded).toBe(1);
+	});
+
+	it("rejects sync when another sync is already running", async () => {
+		const service = new VideoService({} as never);
+		const cache = createCacheMock({
+			"videos:sync:catalog:lock:v1": "active-lock",
+		});
+
+		await expect(
+			service.syncCatalogFromStream(
+				{ APP_ENV: "dev", CACHE: cache } as never,
+				{ authUserId: "auth-1" },
+			),
+		).rejects.toThrow("Video catalog sync is already in progress");
 	});
 
 	it("syncs video status from Stream API", async () => {

@@ -16,5 +16,9 @@ describe("video schema", () => {
 		expect(videoAssets.processingStatus.name).toBe("processing_status");
 		expect(videoAssets.publishStatus.name).toBe("publish_status");
 		expect(videoAssets.publishedAt.name).toBe("published_at");
+		expect(videoAssets.missingFromStreamStreak.name).toBe(
+			"missing_from_stream_streak",
+		);
+		expect(videoAssets.lastSeenInStreamAt.name).toBe("last_seen_in_stream_at");
 	});
 });

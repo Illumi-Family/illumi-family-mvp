@@ -11,6 +11,7 @@ const publishVideo = vi.fn();
 const unpublishVideo = vi.fn();
 const syncVideoStatus = vi.fn();
 const cleanupDraftVideo = vi.fn();
+const syncCatalogFromStream = vi.fn();
 
 vi.mock("../../shared/auth/session", () => ({
 	requireAdminSession: async (
@@ -41,6 +42,7 @@ vi.mock("./video.service", () => ({
 			unpublishVideo,
 			syncVideoStatus,
 			cleanupDraftVideo,
+			syncCatalogFromStream,
 		};
 	}),
 }));
@@ -162,6 +164,31 @@ describe("admin video controller", () => {
 
 		expect(response.status).toBe(200);
 		expect(listAdminVideos).toHaveBeenCalledTimes(1);
+	});
+
+	it("syncs stream catalog for current environment", async () => {
+		syncCatalogFromStream.mockResolvedValue({
+			created: 1,
+			updated: 2,
+			downgraded: 0,
+			failed: 0,
+			partial: false,
+			totalRemote: 3,
+			processedRemote: 3,
+		});
+		const app = createTestApp();
+
+		const response = await app.request(
+			"/api/admin/videos/sync-catalog",
+			{ method: "POST" },
+			{} as never,
+		);
+
+		expect(response.status).toBe(200);
+		expect(syncCatalogFromStream).toHaveBeenCalledWith(
+			{},
+			{ authUserId: "auth-test" },
+		);
 	});
 
 	it("cleans up draft video by id", async () => {

@@ -183,3 +183,16 @@ export const cleanupAdminVideoDraftHandlers = factory.createHandlers(
 		return jsonSuccess(c, result);
 	},
 );
+
+export const syncAdminVideoCatalogHandlers = factory.createHandlers(
+	requireAdminSession,
+	async (c) => {
+		const authUserId = c.get("authUserId");
+		if (!authUserId) {
+			throw new AppError("UNAUTHORIZED", "Authentication required", 401);
+		}
+		const service = buildVideoService(c.env);
+		const summary = await service.syncCatalogFromStream(c.env, { authUserId });
+		return jsonSuccess(c, summary);
+	},
+);

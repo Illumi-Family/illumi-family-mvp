@@ -10,6 +10,12 @@ export const videoAssets = sqliteTable(
 		title: text("title").notNull().default(""),
 		posterUrl: text("poster_url"),
 		durationSeconds: integer("duration_seconds"),
+		missingFromStreamStreak: integer("missing_from_stream_streak")
+			.notNull()
+			.default(0),
+		lastSeenInStreamAt: integer("last_seen_in_stream_at", {
+			mode: "timestamp_ms",
+		}),
 		createdByAuthUserId: text("created_by_auth_user_id"),
 		updatedByAuthUserId: text("updated_by_auth_user_id"),
 		createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),

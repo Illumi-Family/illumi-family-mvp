@@ -2,10 +2,10 @@
 
 ## 0. 文档信息
 - 项目：`illumi-family-mvp`
-- 文档版本：`v1.4.0`
-- 最近更新：`2026-04-17`
+- 文档版本：`v1.5.0`
+- 最近更新：`2026-04-18`
 - 运行规范入口：`docs/runbooks/development-deployment-cicd-runbook.md`
-- 当前阶段：模板初始化后已完成 UI 基础设施 + 前端路由/数据缓存（TanStack Router + Query）+ 后端基础能力（dev/prod + D1/KV/R2 + Drizzle + Hono API 分层）+ Better Auth + Resend 鉴权主链路（邮箱密码 + Google）+ Admin CMS 基础能力（白名单鉴权 + admin 子域 + D1 内容版本化 + R2 资产 + 内容发布 API）+ i18n Phase 1/2（前端双语、CMS locale、内容 fallback、locale 缓存分片）+ Cloudflare Stream 视频能力层（后台直传签发 + 导入复用、webhook 状态回写、发布门禁、公网播放）+ 首页关键区块后台可编辑化（Slogan + 核心视频 + 动态角色视频、shared 双 locale 镜像发布）+ 本地模板脚手架（template:new/sync/doctor）
+- 当前阶段：模板初始化后已完成 UI 基础设施 + 前端路由/数据缓存（TanStack Router + Query）+ 后端基础能力（dev/prod + D1/KV/R2 + Drizzle + Hono API 分层）+ Better Auth + Resend 鉴权主链路（邮箱密码 + Google）+ Admin CMS 基础能力（白名单鉴权 + admin 子域 + D1 内容版本化 + R2 资产 + 内容发布 API）+ i18n Phase 1/2（前端双语、CMS locale、内容 fallback、locale 缓存分片）+ Cloudflare Stream 视频能力层（后台直传签发 + 导入复用 + 手动全量同步目录、webhook 状态回写、发布门禁、公网播放）+ 首页关键区块后台可编辑化（Slogan + 核心视频 + 动态角色视频、shared 双 locale 镜像发布）+ 本地模板脚手架（template:new/sync/doctor）
 
 ## 1. 架构目标与边界
 本项目采用 **React + Vite + Hono + Cloudflare Workers** 的一体化架构，目标是在 Cloudflare 边缘网络上实现：
@@ -119,7 +119,7 @@ flowchart LR
 - `src/worker/modules/video/*`：视频上传签发、状态同步、生命周期管理与公网视频读取 API。
 - `src/worker/shared/integrations/stream/*`：Stream API 与 webhook 校验封装。
 - `src/worker/shared/db/schema/cms.ts`：CMS 主档/版本/资产/关联表定义。
-- `src/worker/shared/db/schema/video.ts`：视频能力层表结构定义（`video_assets`）。
+- `src/worker/shared/db/schema/video.ts`：视频能力层表结构定义（`video_assets`，含同步状态字段）。
 - `src/worker/shared/auth/admin-access.ts`：硬编码白名单与邮箱归一化逻辑。
 
 ## 5. 配置基线（Cloudflare 侧）
@@ -299,8 +299,10 @@ flowchart LR
 - Cloudflare Stream 视频能力层：
   - admin 直传 URL 签发（`POST /api/admin/videos/upload-url`）；
   - admin 复用导入（`POST /api/admin/videos/import`，仅落当前环境 D1）；
+  - admin 手动全量同步目录（`POST /api/admin/videos/sync-catalog`，仅落当前环境 D1）；
   - webhook 状态回写（`POST /api/webhooks/stream`）；
   - 视频生命周期管理（list/edit/publish/unpublish/sync）；
+  - 同步治理规则：新增默认 `draft`、元数据覆盖保留 `publishStatus`、远端缺失连续 2 次才自动下架、分页失败跳过缺失下架；
   - 行为日志字段（`actionType`、`streamVideoId`、`operator`、`env`）用于区分“新上传”与“导入复用”；
   - 公网视频列表与播放（`GET /api/content/videos` + `/videos` 弹窗播放器）；
 - 业务用户身份映射与审计模型（`app_users`、`user_identities`、`user_security_events`）；
@@ -356,3 +358,4 @@ flowchart LR
 | 2026-04-17 | v1.3.0 | 新增 Stream 视频导入复用链路：`POST /api/admin/videos/import`、环境内幂等落库与上传/导入行为日志字段 |
 | 2026-04-17 | v1.4.0 | 首页关键区块后台可编辑化：新增 `home.hero_slogan` / `home.main_video` / `home.character_videos` shared 配置、发布门禁、首页配置驱动渲染 |
 | 2026-04-17 | v1.4.1 | 收敛部署规范：明确 `deploy*` 不含 migration，新增“每次发布强制 schema parity gate（db:migrate + migrations list=No pending）”并统一 dev/prod 发布顺序 |
+| 2026-04-18 | v1.5.0 | 新增 Stream 目录手动全量同步链路：`POST /api/admin/videos/sync-catalog`、缺失视频双次命中下架规则、同步状态字段与前端顶部同步入口 |

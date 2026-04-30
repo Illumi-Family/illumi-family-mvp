@@ -190,6 +190,16 @@ export type AdminVideoRecord = {
 	publishedAt: string | null;
 };
 
+export type AdminVideoCatalogSyncSummary = {
+	created: number;
+	updated: number;
+	downgraded: number;
+	failed: number;
+	partial: boolean;
+	totalRemote: number | null;
+	processedRemote: number;
+};
+
 export type PublicVideoRecord = {
 	id: string;
 	streamVideoId: string;
@@ -465,6 +475,12 @@ export const deleteAdminVideoDraft = async (
 			method: "DELETE",
 		},
 	);
+};
+
+export const syncAdminVideoCatalog = async (): Promise<AdminVideoCatalogSyncSummary> => {
+	return request<AdminVideoCatalogSyncSummary>("/api/admin/videos/sync-catalog", {
+		method: "POST",
+	});
 };
 
 export const listPublicVideos = async (): Promise<PublicVideoRecord[]> => {

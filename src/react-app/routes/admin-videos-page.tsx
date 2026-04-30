@@ -10,10 +10,12 @@ import {
 	getVideoDateTimeLabel,
 } from "@/components/video/admin/video-state";
 import {
+	ApiClientError,
 	createAdminVideoUploadUrl,
 	deleteAdminVideoDraft,
 	importAdminVideo,
 	publishAdminVideo,
+	syncAdminVideoCatalog,
 	syncAdminVideoStatus,
 	unpublishAdminVideo,
 	updateAdminVideo,
@@ -99,6 +101,7 @@ export function AdminVideosPage() {
 	const unpublishMutation = useMutation({ mutationFn: unpublishAdminVideo });
 	const syncMutation = useMutation({ mutationFn: syncAdminVideoStatus });
 	const deleteDraftMutation = useMutation({ mutationFn: deleteAdminVideoDraft });
+	const syncCatalogMutation = useMutation({ mutationFn: syncAdminVideoCatalog });
 
 	const isActionPending = useMemo(
 		() =>
@@ -107,7 +110,8 @@ export function AdminVideosPage() {
 			publishMutation.isPending ||
 			unpublishMutation.isPending ||
 			syncMutation.isPending ||
-			deleteDraftMutation.isPending,
+			deleteDraftMutation.isPending ||
+			syncCatalogMutation.isPending,
 		[
 			updateMetadataMutation.isPending,
 			importMutation.isPending,
@@ -115,6 +119,7 @@ export function AdminVideosPage() {
 			unpublishMutation.isPending,
 			syncMutation.isPending,
 			deleteDraftMutation.isPending,
+			syncCatalogMutation.isPending,
 		],
 	);
 
@@ -385,6 +390,23 @@ export function AdminVideosPage() {
 		}
 	};
 
+	const handleSyncCatalog = async () => {
+		resetNotice();
+		try {
+			const summary = await syncCatalogMutation.mutateAsync();
+			setStatusMessage(
+				`同步完成：新增 ${summary.created}，更新 ${summary.updated}，下架 ${summary.downgraded}，失败 ${summary.failed}`,
+			);
+			await invalidateVideoQueries();
+		} catch (error) {
+			if (error instanceof ApiClientError && error.code === "CONFLICT") {
+				setStatusMessage("同步进行中");
+				return;
+			}
+			setErrorMessage(readErrorMessage(error));
+		}
+	};
+
 	const handleDeleteDraft = async (videoId: string) => {
 		resetNotice();
 		const shouldDelete = globalThis.confirm?.(
@@ -505,6 +527,15 @@ export function AdminVideosPage() {
 								自动刷新中，截止 {getVideoDateTimeLabel(new Date(autoRefreshUntil).toISOString())}
 							</p>
 						) : null}
+						<Button
+							type="button"
+							onClick={() => void handleSyncCatalog()}
+							disabled={syncCatalogMutation.isPending}
+						>
+							{syncCatalogMutation.isPending
+								? "同步中..."
+								: "同步 Stream 目录"}
+						</Button>
 						<Button
 							type="button"
 							variant="outline"

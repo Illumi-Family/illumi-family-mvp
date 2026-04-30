@@ -16,6 +16,7 @@ describe("admin videos page", () => {
 		expect(html).toContain("导入已有 Stream 视频");
 		expect(html).toContain("新上传会创建新的 Stream 计费对象");
 		expect(html).toContain("视频列表");
+		expect(html).toContain("同步 Stream 目录");
 	});
 
 	it("shows row actions and more menu trigger for records", () => {

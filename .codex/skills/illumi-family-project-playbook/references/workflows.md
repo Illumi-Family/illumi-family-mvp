@@ -112,7 +112,12 @@ pnpm run deploy:prod
 ## 5.1) Stream Video Reuse Workflow (Across local/dev/prod)
 1. First upload can happen in any environment via `POST /api/admin/videos/upload-url`.
 2. Reuse in another environment via `POST /api/admin/videos/import` with existing `streamVideoId` (no new Stream upload object).
-3. Keep upload capability enabled in all environments; enforce cost control through workflow guidance (prefer import when asset already exists).
+3. For batch reconciliation, run `POST /api/admin/videos/sync-catalog` (manual full sync to current env D1):
+   - new records default to `draft`,
+   - existing records refresh metadata while preserving `publishStatus`,
+   - missing remote videos downgrade only after 2 consecutive full-sync misses,
+   - partial page failures skip missing-video downgrade for that run.
+4. Keep upload capability enabled in all environments; enforce cost control through workflow guidance (prefer sync/import when asset already exists).
 
 ## 5.2) Admin Home Shared-Section Workflow
 1. Editable shared keys are:
@@ -149,6 +154,7 @@ curl -s https://illumi-family-mvp.lguangcong0712.workers.dev/api/health
   - `POST /api/admin/assets/upload` (unauthenticated should return `401`)
   - `GET /api/admin/videos` (unauthenticated should return `401`)
   - `POST /api/admin/videos/import` (unauthenticated should return `401`)
+  - `POST /api/admin/videos/sync-catalog` (unauthenticated should return `401`)
   - `HEAD /admin` on admin domains returns `200` HTML
 
 ## 6.1) Auth Secrets Setup (Before Auth Deploy)
