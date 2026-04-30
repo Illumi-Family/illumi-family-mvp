@@ -241,6 +241,66 @@ describe("video service", () => {
 		expect(result.video?.publishStatus).toBe("published");
 	});
 
+	it("invalidates public cache when updating metadata for published video", async () => {
+		const deleteCacheSpy = vi.spyOn(kv, "deleteCacheKey").mockResolvedValue();
+		const repository = {
+			updateById: vi.fn().mockResolvedValue(
+				buildVideoRow({
+					title: "Updated title",
+					publishStatus: "published",
+					publishedAt: new Date("2026-04-16T00:00:00.000Z"),
+				}),
+			),
+		};
+		const service = new VideoService(repository as never);
+
+		const result = await service.updateVideoMetadata(
+			{ CACHE: {} } as never,
+			{
+				videoId: "video-1",
+				authUserId: "auth-1",
+				body: {
+					title: "Updated title",
+				},
+			},
+		);
+
+		expect(repository.updateById).toHaveBeenCalledWith("video-1", {
+			title: "Updated title",
+			posterUrl: undefined,
+			updatedByAuthUserId: "auth-1",
+		});
+		expect(deleteCacheSpy).toHaveBeenCalledWith({}, "videos:public:v1");
+		expect(result.title).toBe("Updated title");
+	});
+
+	it("does not invalidate public cache when updating metadata for draft video", async () => {
+		const deleteCacheSpy = vi.spyOn(kv, "deleteCacheKey").mockResolvedValue();
+		const repository = {
+			updateById: vi.fn().mockResolvedValue(
+				buildVideoRow({
+					title: "Updated draft title",
+					publishStatus: "draft",
+					publishedAt: null,
+				}),
+			),
+		};
+		const service = new VideoService(repository as never);
+
+		await service.updateVideoMetadata(
+			{ CACHE: {} } as never,
+			{
+				videoId: "video-1",
+				authUserId: "auth-1",
+				body: {
+					title: "Updated draft title",
+				},
+			},
+		);
+
+		expect(deleteCacheSpy).not.toHaveBeenCalled();
+	});
+
 	it("returns cached public videos when cache hit", async () => {
 		const readCacheSpy = vi.spyOn(kv, "readCacheJson").mockResolvedValue([
 			{

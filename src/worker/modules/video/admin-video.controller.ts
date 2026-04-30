@@ -103,7 +103,7 @@ export const updateAdminVideoHandlers = factory.createHandlers(
 			throw new AppError("BAD_REQUEST", "Invalid video id", 400);
 		}
 		const service = buildVideoService(c.env);
-		const video = await service.updateVideoMetadata({
+		const video = await service.updateVideoMetadata(c.env, {
 			videoId,
 			authUserId,
 			body: c.req.valid("json"),

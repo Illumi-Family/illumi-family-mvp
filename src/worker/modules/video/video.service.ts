@@ -269,7 +269,7 @@ export class VideoService {
 		return videos.map(toAdminRecord);
 	}
 
-	async updateVideoMetadata(input: {
+	async updateVideoMetadata(env: AppBindings, input: {
 		videoId: string;
 		authUserId: string;
 		body: AdminVideoUpdateBody;
@@ -281,6 +281,9 @@ export class VideoService {
 		});
 		if (!updated) {
 			throw new AppError("NOT_FOUND", "Video not found", 404);
+		}
+		if (updated.publishStatus === "published") {
+			await this.invalidatePublicCache(env);
 		}
 		return toAdminRecord(updated);
 	}
