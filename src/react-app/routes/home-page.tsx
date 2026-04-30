@@ -103,8 +103,8 @@ export function HomePage() {
 				className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-[linear-gradient(180deg,rgba(255,252,247,0.9),transparent)]"
 			/>
 
-			<header className="sticky top-3 z-40 px-3 md:px-6">
-				<div className="mx-auto mt-2 flex w-full max-w-7xl items-center justify-between gap-3 rounded-2xl border border-[color:rgba(166,124,82,0.24)] bg-[color:rgba(255,252,247,0.85)] px-4 py-2 backdrop-blur-md">
+			<header className="sticky top-0 z-40">
+				<div className="mx-auto flex w-full items-center justify-between gap-3 border-b border-[color:rgba(166,124,82,0.24)] bg-[color:rgba(255,252,247,0.85)] px-4 py-2 backdrop-blur-md">
 					<a href="/" className="flex min-w-0 items-center gap-3">
 						<img
 							src="/images/logo.jpg"

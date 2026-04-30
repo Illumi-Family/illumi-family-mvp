@@ -21,8 +21,8 @@ export function RootLayout() {
 				{t("skipToContent")}
 			</a>
 			{showUtilityNav ? (
-				<header className="border-b border-border bg-[color:rgba(255,252,247,0.92)]">
-					<div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3">
+				<header className="fixed inset-x-0 top-0 z-40 border-b border-border/80 bg-[color:rgba(255,252,247,0.84)] backdrop-blur-md">
+					<div className="flex w-full items-center justify-between px-4 py-3 md:px-6">
 						<nav className="flex items-center gap-2 text-sm" aria-label={t("utilityNav.ariaLabel")}>
 							<Link to="/">
 								<Button variant="ghost" size="sm">
@@ -70,7 +70,7 @@ export function RootLayout() {
 					</div>
 				</header>
 			) : null}
-			<main id="app-main-content">
+			<main id="app-main-content" className={showUtilityNav ? "pt-16" : undefined}>
 				<Outlet />
 			</main>
 		</div>
