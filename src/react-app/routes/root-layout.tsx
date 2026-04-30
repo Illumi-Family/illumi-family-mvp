@@ -1,7 +1,6 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { LanguageSwitcher } from "@/i18n/language-switcher";
 import { authClient } from "@/lib/auth-client";
 
 export function RootLayout() {
@@ -60,7 +59,6 @@ export function RootLayout() {
 							</Link>
 						</nav>
 						<div className="flex items-center gap-3">
-							<LanguageSwitcher className="flex items-center gap-2" />
 							<p className="text-xs text-muted-foreground">
 								{session?.user
 									? t("session.signedInAs", { email: session.user.email })

@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Menu, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getHomePageData } from "@/routes/home-page.data";
-import { LanguageSwitcher } from "@/i18n/language-switcher";
 import { useAppI18n } from "@/i18n/context";
 import {
 	homeContentQueryOptions,
@@ -173,24 +172,22 @@ export function HomePage() {
 						</div> */}
 					</a>
 
-					<nav
-						className="hidden items-center gap-1 lg:flex"
-						aria-label={t("navigation.mainAriaLabel")}
-					>
-						{homeData.siteNavigation.map((item) => (
-							<button
-								key={item.sectionId}
-								type="button"
-								onClick={() => scrollToSection(item.sectionId)}
-								className="rounded-full px-3 py-2 text-sm text-muted-foreground transition-colors duration-200 hover:bg-[color:rgba(166,124,82,0.12)] hover:text-foreground"
-							>
-								{item.label}
-							</button>
-						))}
-					</nav>
-
-					<div className="flex items-center gap-2">
-						<LanguageSwitcher className="hidden items-center gap-2 lg:flex" />
+					<div className="flex flex-1 items-center justify-end gap-2">
+						<nav
+							className="hidden items-center gap-1 lg:flex"
+							aria-label={t("navigation.mainAriaLabel")}
+						>
+							{homeData.siteNavigation.map((item) => (
+								<button
+									key={item.sectionId}
+									type="button"
+									onClick={() => scrollToSection(item.sectionId)}
+									className="rounded-full px-3 py-2 text-sm text-muted-foreground transition-colors duration-200 hover:bg-[color:rgba(166,124,82,0.12)] hover:text-foreground"
+								>
+									{item.label}
+								</button>
+							))}
+						</nav>
 						<button
 							type="button"
 							className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:rgba(166,124,82,0.3)] bg-[color:rgba(255,252,247,0.95)] text-muted-foreground transition-colors duration-200 hover:bg-[color:rgba(243,236,227,0.92)] hover:text-foreground lg:hidden"
@@ -249,9 +246,6 @@ export function HomePage() {
 								</button>
 							))}
 						</nav>
-						<div className="mt-4 border-t border-[color:rgba(166,124,82,0.2)] pt-4">
-							<LanguageSwitcher className="flex items-center gap-2" />
-						</div>
 					</div>
 				</div>
 			) : null}

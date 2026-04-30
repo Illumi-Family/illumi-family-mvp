@@ -10,7 +10,7 @@ import zhAuth from "./messages/zh-CN/auth.json";
 import zhCommon from "./messages/zh-CN/common.json";
 import zhHome from "./messages/zh-CN/home.json";
 import zhUsers from "./messages/zh-CN/users.json";
-import { DEFAULT_LOCALE, detectLocale } from "./detector";
+import { DEFAULT_LOCALE } from "./detector";
 
 const resources = {
 	"zh-CN": {
@@ -31,7 +31,7 @@ const resources = {
 
 void i18n.use(initReactI18next).init({
 	resources,
-	lng: detectLocale(),
+	lng: DEFAULT_LOCALE,
 	fallbackLng: DEFAULT_LOCALE,
 	defaultNS: "common",
 	interpolation: {
