@@ -2,9 +2,11 @@ import { useTranslation } from "react-i18next";
 import { PublicVideoCard } from "@/components/video/public/public-video-card";
 import { Button } from "@/components/ui/button";
 import type { ResolvedHomeFeaturedVideo } from "@/routes/home/home-featured-videos";
+import type { HomeFamilyStoriesConfig } from "@/routes/home-page.data";
 import { SectionHeading } from "@/routes/home/components/section-heading";
 
-type HomeCharacterVideosSectionProps = {
+type HomeFamilyStoryVideosSectionProps = {
+	config: HomeFamilyStoriesConfig;
 	items: ResolvedHomeFeaturedVideo[];
 	isLoading: boolean;
 	isError: boolean;
@@ -19,27 +21,24 @@ const resolveMessage = (value: string | null) => {
 	return trimmed && trimmed.length > 0 ? trimmed : null;
 };
 
-export function HomeCharacterVideosSection(props: HomeCharacterVideosSectionProps) {
-	const { items, isLoading, isError, errorMessage, onRetry, onPlay, onPlayIntent } = props;
+export function HomeFamilyStoryVideosSection(props: HomeFamilyStoryVideosSectionProps) {
 	const { t } = useTranslation("home");
+	const { config, items, isLoading, isError, errorMessage, onRetry, onPlay, onPlayIntent } =
+		props;
 
 	return (
-		<section
-			id="section-home-character-videos"
-			className="space-y-6 py-2"
-			aria-live="polite"
-		>
+		<section id={config.sectionId} className="space-y-8 py-2" aria-live="polite">
 			<SectionHeading
-				label={t("homeVideo.charactersLabel")}
-				title={t("homeVideo.charactersTitle")}
-				description={t("homeVideo.charactersDescription")}
+				label={config.label}
+				title={config.title}
+				description={config.description}
 			/>
 
 			{isLoading ? (
 				<div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
 					{Array.from({ length: Math.max(items.length, 3) }).map((_, index) => (
 						<div
-							key={`loading-${index}`}
+							key={`family-story-loading-${index}`}
 							className="min-h-56 animate-pulse rounded-2xl border border-[color:rgba(166,124,82,0.2)] bg-[color:rgba(243,236,227,0.66)]"
 						/>
 					))}
@@ -59,7 +58,13 @@ export function HomeCharacterVideosSection(props: HomeCharacterVideosSectionProp
 				</div>
 			) : null}
 
-			{!isLoading && !isError ? (
+			{!isLoading && !isError && items.length === 0 ? (
+				<div className="rounded-2xl border border-dashed border-border/70 bg-background/70 px-4 py-5 text-sm text-muted-foreground">
+					{t("home.familyStoriesEmpty")}
+				</div>
+			) : null}
+
+			{!isLoading && !isError && items.length > 0 ? (
 				<div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
 					{items.map((item) => {
 						const playable = item.status === "ready" && Boolean(item.video);
@@ -76,8 +81,8 @@ export function HomeCharacterVideosSection(props: HomeCharacterVideosSectionProp
 								disabled={!playable}
 								ariaLabel={
 									playable
-										? `播放视频：${item.title}`
-										: `角色视频待配置：${item.title}`
+										? `${t("home.familyStoriesPlayAria")}${item.title}`
+										: `${t("home.familyStoriesUnavailableAria")}${item.title}`
 								}
 								onPlay={() => onPlay(item)}
 								onPlayIntent={() => onPlayIntent(item)}

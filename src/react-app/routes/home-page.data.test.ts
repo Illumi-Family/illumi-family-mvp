@@ -1,52 +1,48 @@
 import { describe, expect, it } from "vitest";
 import {
-	aboutContent,
-	colearningMethods,
-	dailyNotes,
 	defaultHomeContent,
-	footerContent,
-	heroContent,
-	philosophyItems,
+	homeBusinessContactContent,
+	homeContentMatrixContent,
+	homeOriginContent,
 	siteNavigation,
-	stories,
+	getHomePageData,
 } from "./home-page.data";
 
 describe("official website home data", () => {
-	it("contains all required anchor sections", () => {
-		expect(siteNavigation.map((item) => item.href)).toEqual([
-			"#philosophy",
-			"#daily",
-			"#stories",
-			"#colearning",
-			"#about",
+	it("contains five non-hash navigation sections", () => {
+		expect(siteNavigation.map((item) => item.sectionId)).toEqual([
+			"section-home-origin",
+			"section-home-character-videos",
+			"section-home-family-stories",
+			"section-home-content-matrix",
+			"section-home-business",
 		]);
 	});
 
-	it("keeps core content blocks non-empty", () => {
-		expect(heroContent.title.length).toBeGreaterThan(0);
-		expect(philosophyItems.length).toBeGreaterThanOrEqual(3);
-		expect(dailyNotes.length).toBeGreaterThanOrEqual(3);
-		expect(colearningMethods.length).toBeGreaterThanOrEqual(3);
-		expect(aboutContent.roles.length).toBeGreaterThan(0);
-		expect(footerContent.links.length).toBeGreaterThan(0);
+	it("locks home origin copy from requirement source", () => {
+		expect(homeOriginContent.ipIntro[0]).toContain("童蒙家塾");
+		expect(homeOriginContent.brandVision[0]).toContain("传统文化");
 	});
 
-	it("defines both published and coming soon story states", () => {
-		const statuses = new Set(stories.map((story) => story.status));
-		expect(statuses.has("published")).toBe(true);
-		expect(statuses.has("coming_soon")).toBe(true);
+	it("defines matrix and business contact blocks", () => {
+		expect(homeContentMatrixContent.items).toHaveLength(4);
+		expect(homeBusinessContactContent.phone).toBe("13570380204");
+		expect(homeBusinessContactContent.email).toBe("contact@illumi-family.com");
+	});
 
-		stories.forEach((story) => {
-			if (story.status === "published") {
-				expect(typeof story.link).toBe("string");
-				expect(story.link?.length).toBeGreaterThan(0);
-			}
-		});
+	it("keeps zh and en locale structures aligned", () => {
+		const zh = getHomePageData("zh-CN");
+		const en = getHomePageData("en-US");
+		expect(zh.siteNavigation).toHaveLength(5);
+		expect(en.siteNavigation).toHaveLength(5);
+		expect(zh.homeContentMatrixContent.items).toHaveLength(4);
+		expect(en.homeContentMatrixContent.items).toHaveLength(4);
 	});
 
 	it("keeps slogan fallback and dynamic featured videos defaults", () => {
-		expect(defaultHomeContent.heroSlogan.title).toBe(heroContent.title);
-		expect(defaultHomeContent.heroSlogan.subtitle).toBe(heroContent.subtitle);
+		const zh = getHomePageData("zh-CN");
+		expect(defaultHomeContent.heroSlogan.title).toBe(zh.heroContent.title);
+		expect(defaultHomeContent.heroSlogan.subtitle).toBe(zh.heroContent.subtitle);
 		expect(defaultHomeContent.featuredVideos.main.streamVideoId).toBe("");
 		expect(defaultHomeContent.featuredVideos.characters.items).toEqual([]);
 	});

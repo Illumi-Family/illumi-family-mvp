@@ -11,6 +11,7 @@
     "loadingHint": "Loading main video",
     "errorTitle": "Main video is temporarily unavailable",
     "errorHint": "Please retry later, or explore the character videos below.",
+    "play": "Play video",
     "retry": "Retry",
     "errorUnknown": "Unknown error",
     "charactersLabel": "Character Stories",
@@ -27,6 +28,11 @@
     "mobileAriaLabel": "Mobile quick navigation"
   },
   "fallbackNotice": "Content service is temporarily unavailable. Showing local fallback content.",
+  "home": {
+    "familyStoriesEmpty": "Family story videos are in preparation.",
+    "familyStoriesPlayAria": "Play family story video: ",
+    "familyStoriesUnavailableAria": "Family story video unavailable: "
+  },
   "philosophy": {
     "label": "Family Philosophy",
     "title": "Rooted family education without anxiety-driven pressure"

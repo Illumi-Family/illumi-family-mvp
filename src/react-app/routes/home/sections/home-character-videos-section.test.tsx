@@ -47,8 +47,9 @@ describe("home-character-videos-section", () => {
 			}),
 		);
 
+		expect(html).toContain('id="section-home-character-videos"');
 		expect(html).toContain("animate-pulse");
-		expect(html).toContain("homeVideo.charactersTitle");
+		expect(html).toContain("homeVideo.charactersLabel");
 	});
 
 	it("renders cards with /videos-aligned style and keeps unavailable card disabled", () => {
@@ -81,7 +82,7 @@ describe("home-character-videos-section", () => {
 		expect(html).toContain("播放视频：角色视频一");
 		expect(html).toContain("角色视频待配置：角色视频二");
 		expect(html).toContain("disabled");
-		expect(html).toContain("rounded-2xl");
+		expect(html).toContain("group overflow-hidden");
 	});
 
 	it("renders error panel with retry when query fails", () => {

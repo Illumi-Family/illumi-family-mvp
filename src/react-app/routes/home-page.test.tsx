@@ -36,34 +36,16 @@ describe("home page", () => {
 			return 11;
 		});
 
-		const frameId = scheduleHomeEntryScrollReset({
-			hash: "",
-			requestAnimationFrame: requestAnimationFrame as (
-				callback: FrameRequestCallback,
-			) => number,
+	const frameId = scheduleHomeEntryScrollReset({
+		requestAnimationFrame: requestAnimationFrame as (
+			callback: FrameRequestCallback,
+		) => number,
 			scrollTo: scrollTo as (options: ScrollToOptions) => void,
 		});
 
 		expect(frameId).toBe(11);
 		expect(requestAnimationFrame).toHaveBeenCalledOnce();
 		expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });
-	});
-
-	it("keeps explicit hash anchor behavior on initial entry", () => {
-		const scrollTo = vi.fn();
-		const requestAnimationFrame = vi.fn();
-
-		const frameId = scheduleHomeEntryScrollReset({
-			hash: "#contact",
-			requestAnimationFrame: requestAnimationFrame as (
-				callback: FrameRequestCallback,
-			) => number,
-			scrollTo: scrollTo as (options: ScrollToOptions) => void,
-		});
-
-		expect(frameId).toBeNull();
-		expect(requestAnimationFrame).not.toHaveBeenCalled();
-		expect(scrollTo).not.toHaveBeenCalled();
 	});
 
 	it("renders home shell and keeps unified video modal entry closed by default", () => {
@@ -75,7 +57,7 @@ describe("home page", () => {
 		);
 
 		expect(html).toContain('id="main-content"');
-		expect(html).toContain('href="#philosophy"');
+		expect(html).toContain("家塾起源");
 		expect(html).toContain('data-testid="home-video-modal-proxy"');
 		expect(html).toContain('data-open="false"');
 	});

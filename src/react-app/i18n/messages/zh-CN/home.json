@@ -11,10 +11,11 @@
     "loadingHint": "主视频加载中",
     "errorTitle": "主视频暂时不可用",
     "errorHint": "请稍后重试，或先浏览下方角色视频。",
+    "play": "播放视频",
     "retry": "重试加载",
     "errorUnknown": "未知错误",
     "charactersLabel": "角色介绍",
-    "charactersTitle": "从六个角色视角看见一个家庭",
+    "charactersTitle": "从角色视角看见一个家庭",
     "charactersDescription": "点击任意角色视频，进入沉浸播放。",
     "charactersError": "角色视频列表加载失败：{{message}}",
     "cardPlay": "沉浸播放",
@@ -27,6 +28,11 @@
     "mobileAriaLabel": "移动端快捷导航"
   },
   "fallbackNotice": "内容服务暂时不可用，当前展示本地兜底内容。",
+  "home": {
+    "familyStoriesEmpty": "家庭故事视频正在筹备中。",
+    "familyStoriesPlayAria": "播放家庭故事视频：",
+    "familyStoriesUnavailableAria": "家庭故事视频待配置："
+  },
   "philosophy": {
     "label": "家风家学·理念",
     "title": "扎根生命的家庭教育，不靠焦虑驱动"

@@ -35,7 +35,7 @@ export function PublicVideoCard(props: PublicVideoCardProps) {
 		(playable ? `播放视频：${displayTitle}` : `视频暂不可播放：${displayTitle}`);
 
 	return (
-		<article className="group overflow-hidden rounded-2xl border border-border/70 bg-card/95 shadow-[0_18px_40px_-28px_rgba(0,0,0,0.45)] transition-transform duration-300 hover:-translate-y-0.5">
+		<article className="group overflow-hidden rounded-[4px] border border-border/70 bg-card/95 shadow-[0_18px_40px_-28px_rgba(0,0,0,0.45)] transition-transform duration-300 hover:-translate-y-0.5">
 			<button
 				type="button"
 				disabled={disabled}

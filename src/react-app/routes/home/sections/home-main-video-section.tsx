@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Stream, type StreamPlayerApi } from "@cloudflare/stream-react";
+import { Play } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import type { ResolvedHomeFeaturedVideo } from "@/routes/home/home-featured-videos";
@@ -17,6 +18,7 @@ type MainVideoStartupPhase = "loading" | "ready" | "error";
 type MainVideoPlayerProps = {
 	streamVideoId: string;
 	posterUrl: string | null;
+	playLabel: string;
 	onRetry: () => void;
 	loadingHint: string;
 	errorTitle: string;
@@ -33,6 +35,7 @@ function MainVideoPlayer(props: MainVideoPlayerProps) {
 	const {
 		streamVideoId,
 		posterUrl,
+		playLabel,
 		onRetry,
 		loadingHint,
 		errorTitle,
@@ -40,50 +43,53 @@ function MainVideoPlayer(props: MainVideoPlayerProps) {
 		retryLabel,
 	} = props;
 	const streamRef = useRef<StreamPlayerApi | undefined>(undefined);
-	const viewportRef = useRef<HTMLDivElement | null>(null);
+	const [hasStarted, setHasStarted] = useState(false);
 	const [startupPhase, setStartupPhase] = useState<MainVideoStartupPhase>("loading");
 
 	useEffect(() => {
-		if (typeof IntersectionObserver !== "function") return;
-		const node = viewportRef.current;
-		if (!node) return;
+		if (!hasStarted) return;
+		const player = streamRef.current;
+		if (!player) return;
 
-		const observer = new IntersectionObserver(
-			(entries) => {
-				const entry = entries[0];
-				const player = streamRef.current;
-				if (!entry || !player) {
-					return;
-				}
-
-				if (entry.isIntersecting) {
-					if (player.paused) {
-						void player.play().catch(() => {
-							// ignore autoplay policy failures; overlay already provides fallback
-						});
-					}
-					return;
-				}
-
-				if (!player.paused) {
-					player.pause();
-				}
-			},
-			{ threshold: 0.35 },
-		);
-
-		observer.observe(node);
-		return () => observer.disconnect();
-	}, [streamVideoId]);
+		void player.play().catch(() => {
+			setStartupPhase("error");
+		});
+	}, [hasStarted, streamVideoId]);
 
 	const showLoadingOverlay = startupPhase === "loading";
 	const showErrorOverlay = startupPhase === "error";
 
+	if (!hasStarted) {
+		return (
+			<div className="relative aspect-video w-full overflow-hidden border-none">
+				{posterUrl ? (
+					<img
+						src={posterUrl}
+						alt=""
+						aria-hidden="true"
+						className="h-full w-full object-cover opacity-90"
+					/>
+				) : null}
+				<div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.08)_0%,rgba(0,0,0,0.52)_100%)]" />
+				<div className="absolute inset-0 flex items-center justify-center">
+					<Button
+						type="button"
+						aria-label={playLabel}
+						onClick={() => {
+							setStartupPhase("loading");
+							setHasStarted(true);
+						}}
+						className="h-16 w-16 rounded-full border border-white/35 bg-black/60 p-0 text-white hover:bg-black/75"
+					>
+						<Play className="size-10 translate-x-[1px]" />
+					</Button>
+				</div>
+			</div>
+		);
+	}
+
 	return (
-		<div
-			ref={viewportRef}
-			className="relative aspect-video w-full overflow-hidden rounded-[20px]"
-		>
+		<div className="relative aspect-video w-full overflow-hidden">
 			<div className="absolute inset-0 h-full w-full">
 				<Stream
 					src={streamVideoId}
@@ -183,7 +189,7 @@ export function HomeMainVideoSection(props: HomeMainVideoSectionProps) {
 	}
 
 	return (
-		<section id="home-main-video" className="space-y-4 py-2" aria-live="polite">
+		<section id="home-main-video" className="" aria-live="polite">
 			{/* <div className="flex flex-wrap items-end justify-between gap-3">
 				<div className="space-y-1">
 					<p className="text-xs uppercase tracking-[0.14em] text-[color:var(--brand-primary)]">
@@ -198,6 +204,7 @@ export function HomeMainVideoSection(props: HomeMainVideoSectionProps) {
 				streamVideoId={video.video.streamVideoId}
 				posterUrl={video.video.posterUrl}
 				onRetry={onRetry}
+				playLabel={t("homeVideo.play")}
 				loadingHint={t("homeVideo.loadingHint")}
 				errorTitle={t("homeVideo.errorTitle")}
 				errorHint={t("homeVideo.errorHint")}

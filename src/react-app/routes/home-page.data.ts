@@ -2,13 +2,21 @@ import type { AppLocale } from "@/i18n/types";
 
 export interface NavigationItem {
 	label: string;
-	href: string;
+	sectionId: NavigationSectionId;
 }
 
 export interface CtaLink {
 	label: string;
 	href: string;
 }
+
+export type NavigationSectionId =
+	| "section-home-main-video"
+	| "section-home-origin"
+	| "section-home-character-videos"
+	| "section-home-family-stories"
+	| "section-home-content-matrix"
+	| "section-home-business";
 
 export interface HeroContent {
 	title: string;
@@ -59,19 +67,59 @@ export interface FooterLink {
 	href: string;
 }
 
+export interface HomeOriginContent {
+	sectionId: NavigationSectionId;
+	label: string;
+	title: string;
+	ipIntroHeading: string;
+	brandVisionHeading: string;
+	ipIntro: string[];
+	brandVision: string[];
+}
+
+export interface HomeFamilyStoriesConfig {
+	sectionId: NavigationSectionId;
+	label: string;
+	title: string;
+	description: string;
+	streamVideoIds: string[];
+}
+
+export interface ContentMatrixItem {
+	platform: string;
+	qrImageSrc: string;
+	qrImageAlt: string;
+}
+
+export interface HomeContentMatrixContent {
+	sectionId: NavigationSectionId;
+	label: string;
+	title: string;
+	description: string;
+	items: ContentMatrixItem[];
+}
+
+export interface HomeBusinessContactContent {
+	sectionId: NavigationSectionId;
+	label: string;
+	title: string;
+	description: string;
+	phone: string;
+	email: string;
+}
+
 export const siteMeta = {
 	brandName: "童蒙家塾",
 	brandSubtitle: "三代同堂家风家学实践",
-	headerCta: { label: "开始了解", href: "#philosophy" },
+	headerCta: { label: "开始了解", sectionId: "section-home-origin" as const },
 };
 
 export const siteNavigation: NavigationItem[] = [
-	{ label: "家风家学·理念", href: "#philosophy" },
-	{ label: "践行感悟·日思", href: "#daily" },
-	{ label: "三代同堂·故事", href: "#stories" },
-	{ label: "家庭共学·陪伴", href: "#colearning" },
-	{ label: "知我", href: "#about" },
-	// { label: "联系", href: "#contact" },
+	{ label: "家塾起源", sectionId: "section-home-origin" },
+	{ label: "角色介绍", sectionId: "section-home-character-videos" },
+	{ label: "家庭故事", sectionId: "section-home-family-stories" },
+	{ label: "内容矩阵", sectionId: "section-home-content-matrix" },
+	{ label: "商务合作", sectionId: "section-home-business" },
 ];
 
 export const heroContent: HeroContent = {
@@ -82,8 +130,8 @@ export const heroContent: HeroContent = {
 		"立足三代同堂之根，传承中华家学之美",
 		"让每一户寻常人家，皆可自成书香童蒙",
 	],
-	primaryCta: { label: "阅读理念", href: "#philosophy" },
-	secondaryCta: { label: "认识小罗老师", href: "#about" },
+	primaryCta: { label: "阅读理念", href: "#" },
+	secondaryCta: { label: "认识小罗老师", href: "#" },
 	image: {
 		src: "/images/background.png",
 		alt: "童蒙家塾三代同堂家庭 IP 合照，展现温暖陪伴与家学传承。",
@@ -260,18 +308,86 @@ export const footerContent = {
 	] satisfies FooterLink[],
 };
 
+export const homeOriginContent: HomeOriginContent = {
+	sectionId: "section-home-origin",
+	label: "家塾起源",
+	title: "IP 介绍与品牌愿景",
+	ipIntroHeading: "IP 介绍",
+	brandVisionHeading: "品牌愿景",
+	ipIntro: [
+		"童蒙家塾，起源于真实存在的传统文化传承之家，是以三代同堂的真实生活为原型，诞生的国风原创家庭 IP。",
+		"本 IP 所有故事皆取材于家庭的日常点滴，全然源自真实的实生活轨迹。",
+		"我们以家为塾、以学润心，承袭中华千年家风文脉，践行传统童蒙教养与东方生活哲思，并以原创系列动画为载体，温柔记录一家人修身立品、诗书传家、家学浸润、家风延续的日常片段。",
+		"以经典润心、以家风养正、以家学启智、以践行立身。",
+		"在烟火日常中沉淀底蕴，在朝夕相伴里传承美德，用治愈的动画影像，呈现当代中国式家庭的温润底色与家风家学传承之美。",
+	],
+	brandVision: [
+		"童蒙家塾的家庭成员，浸润于传统文化的滋养之中，受益于优良家风与醇厚家学的影响。",
+		"在长辈榜样带动与家庭成员共同学习之下，我们努力践行修身立德、和睦齐家之道。",
+		"我们以家庭动画传递东方家道，承东方圣贤智慧，循「修身、齐家、治国、平天下」的理想，",
+		"愿通过我们的微薄之力，推动中华家风浸润社会、促进优秀文化温润人心，一起守护孩童正向成长，",
+		"促进社会和谐、家庭和美，共赴世宁人和的美好愿景。",
+	],
+};
+
+export const homeFamilyStoriesConfig: HomeFamilyStoriesConfig = {
+	sectionId: "section-home-family-stories",
+	label: "家庭故事",
+	title: "以家庭动画，记录真实成长轨迹",
+	description: "展示形式与角色介绍保持一致，当前采用首页配置维护视频顺序。",
+	streamVideoIds: [],
+};
+
+export const homeContentMatrixContent: HomeContentMatrixContent = {
+	sectionId: "section-home-content-matrix",
+	label: "内容矩阵",
+	title: "多平台内容矩阵",
+	description: "本期仅展示平台二维码，不提供点击跳转。",
+	items: [
+		{
+			platform: "小红书",
+			qrImageSrc: "/images/logo.jpg",
+			qrImageAlt: "童蒙家塾小红书二维码",
+		},
+		{
+			platform: "B 站",
+			qrImageSrc: "/images/logo.jpg",
+			qrImageAlt: "童蒙家塾B站二维码",
+		},
+		{
+			platform: "抖音",
+			qrImageSrc: "/images/logo.jpg",
+			qrImageAlt: "童蒙家塾抖音二维码",
+		},
+		{
+			platform: "微信视频号",
+			qrImageSrc: "/images/logo.jpg",
+			qrImageAlt: "童蒙家塾微信视频号二维码",
+		},
+	],
+};
+
+export const homeBusinessContactContent: HomeBusinessContactContent = {
+	sectionId: "section-home-business",
+	label: "商务合作",
+	title: "商务合作与联络方式",
+	description: "欢迎品牌合作、内容合作与活动邀约。",
+	phone: "13570380204",
+	email: "contact@illumi-family.com",
+};
+
 const siteMetaEn = {
 	brandName: "Tongmeng Family School",
 	brandSubtitle: "Three-generation family culture in practice",
-	headerCta: { label: "Start Exploring", href: "#philosophy" },
+	headerCta: { label: "Start Exploring", sectionId: "section-home-origin" as const },
 };
 
 const siteNavigationEn: NavigationItem[] = [
-	{ label: "Philosophy", href: "#philosophy" },
-	{ label: "Daily Notes", href: "#daily" },
-	{ label: "Stories", href: "#stories" },
-	{ label: "Co-learning", href: "#colearning" },
-	{ label: "About", href: "#about" },
+	{ label: "Origin", sectionId: "section-home-origin" },
+	{ label: "Characters", sectionId: "section-home-character-videos" },
+	{ label: "Family Stories", sectionId: "section-home-family-stories" },
+	{ label: "Channels", sectionId: "section-home-content-matrix" },
+	{ label: "Business", sectionId: "section-home-business" },
 ];
 
 const heroContentEn: HeroContent = {
@@ -282,8 +398,8 @@ const heroContentEn: HeroContent = {
 		"Stand on the foundation of three generations living together,",
 		"and let ordinary homes become places of lifelong learning.",
 	],
-	primaryCta: { label: "Read the philosophy", href: "#philosophy" },
-	secondaryCta: { label: "Meet Teacher Luo", href: "#about" },
+	primaryCta: { label: "Read the origin", href: "#" },
+	secondaryCta: { label: "Contact us", href: "#" },
 	image: {
 		src: "/images/background.png",
 		alt: "Family portrait showing warm companionship and cultural inheritance.",
@@ -444,6 +560,74 @@ const footerContentEn = {
 	] satisfies FooterLink[],
 };
 
+const homeOriginContentEn: HomeOriginContent = {
+	sectionId: "section-home-origin",
+	label: "Origin",
+	title: "IP Introduction and Brand Vision",
+	ipIntroHeading: "IP Introduction",
+	brandVisionHeading: "Brand Vision",
+	ipIntro: [
+		"Tongmeng Family School originates from a real family rooted in traditional cultural inheritance, inspired by the real life of three generations living together.",
+		"All stories in this IP come from everyday family moments and real-life trajectories.",
+		"We take family as school and learning as nourishment, carrying forward Chinese family values through original animation narratives.",
+		"Root hearts in classics, nurture character through family values, enlighten with family learning, and stand with practice.",
+		"Through warm and healing animation, we present the gentle essence of contemporary Chinese family culture.",
+	],
+	brandVision: [
+		"Our family members grow in the nourishment of traditional culture and benefit from fine family values and learning.",
+		"Guided by elders and co-learning among family members, we practice self-cultivation, virtue, and family harmony.",
+		"Through family animation, we carry Eastern wisdom and the ideal of cultivation, family order, governance, and harmony.",
+		"We hope our modest effort can help family values nourish society and support healthy child growth.",
+		"We aspire to social harmony and happy families.",
+	],
+};
+
+const homeFamilyStoriesConfigEn: HomeFamilyStoriesConfig = {
+	sectionId: "section-home-family-stories",
+	label: "Family Stories",
+	title: "Family Animations from Real Life",
+	description: "Uses the same card layout as character videos, with order from homepage config.",
+	streamVideoIds: [],
+};
+
+const homeContentMatrixContentEn: HomeContentMatrixContent = {
+	sectionId: "section-home-content-matrix",
+	label: "Content Matrix",
+	title: "Multi-Platform Channels",
+	description: "This phase shows QR codes only, without click-through links.",
+	items: [
+		{
+			platform: "Xiaohongshu",
+			qrImageSrc: "/images/logo.jpg",
+			qrImageAlt: "Tongmeng Family School Xiaohongshu QR code",
+		},
+		{
+			platform: "Bilibili",
+			qrImageSrc: "/images/logo.jpg",
+			qrImageAlt: "Tongmeng Family School Bilibili QR code",
+		},
+		{
+			platform: "Douyin",
+			qrImageSrc: "/images/logo.jpg",
+			qrImageAlt: "Tongmeng Family School Douyin QR code",
+		},
+		{
+			platform: "WeChat Channels",
+			qrImageSrc: "/images/logo.jpg",
+			qrImageAlt: "Tongmeng Family School WeChat Channels QR code",
+		},
+	],
+};
+
+const homeBusinessContactContentEn: HomeBusinessContactContent = {
+	sectionId: "section-home-business",
+	label: "Business",
+	title: "Business Contact",
+	description: "For brand collaboration, content partnership, and event invitations.",
+	phone: "13570380204",
+	email: "contact@illumi-family.com",
+};
+
 export const getHomePageData = (locale: AppLocale) => {
 	if (locale === "en-US") {
 		return {
@@ -453,6 +637,10 @@ export const getHomePageData = (locale: AppLocale) => {
 			defaultHomeContent: defaultHomeContentEn,
 			aboutContent: aboutContentEn,
 			footerContent: footerContentEn,
+			homeOriginContent: homeOriginContentEn,
+			homeFamilyStoriesConfig: homeFamilyStoriesConfigEn,
+			homeContentMatrixContent: homeContentMatrixContentEn,
+			homeBusinessContactContent: homeBusinessContactContentEn,
 		};
 	}
 	return {
@@ -462,5 +650,9 @@ export const getHomePageData = (locale: AppLocale) => {
 		defaultHomeContent,
 		aboutContent,
 		footerContent,
+		homeOriginContent,
+		homeFamilyStoriesConfig,
+		homeContentMatrixContent,
+		homeBusinessContactContent,
 	};
 };

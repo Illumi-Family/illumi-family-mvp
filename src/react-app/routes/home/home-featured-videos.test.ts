@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { HomeContentPayload, PublicVideoRecord } from "@/lib/api";
 import {
 	collectDuplicateFeaturedVideoIds,
+	resolveConfiguredVideoList,
 	resolveHomeFeaturedVideos,
 } from "./home-featured-videos";
 
@@ -83,5 +84,27 @@ describe("home featured videos", () => {
 		]);
 
 		expect(duplicates).toEqual(["stream-1", "stream-2"]);
+	});
+
+	it("resolves configured family story list in configured order", () => {
+		const videos: PublicVideoRecord[] = [
+			createVideo({ streamVideoId: "story-2", title: "故事 2" }),
+			createVideo({ streamVideoId: "story-1", title: "故事 1" }),
+		];
+
+		const resolved = resolveConfiguredVideoList(videos, ["story-1", "story-2"], {
+			locale: "zh-CN",
+			keyPrefix: "family-story",
+			roleLabelPrefixZh: "家庭故事",
+			roleLabelPrefixEn: "Family Story",
+			titlePrefixZh: "家庭故事视频",
+			titlePrefixEn: "Family Story Video",
+		});
+
+		expect(resolved).toHaveLength(2);
+		expect(resolved.map((item) => item.video?.streamVideoId)).toEqual([
+			"story-1",
+			"story-2",
+		]);
 	});
 });

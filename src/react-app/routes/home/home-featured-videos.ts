@@ -19,6 +19,15 @@ export type HomeFeaturedVideosResolved = {
 	duplicateConfiguredIds: string[];
 };
 
+type ResolveConfiguredVideoListOptions = {
+	locale: AppLocale;
+	keyPrefix: string;
+	roleLabelPrefixZh: string;
+	roleLabelPrefixEn: string;
+	titlePrefixZh: string;
+	titlePrefixEn: string;
+};
+
 const normalizeStreamVideoId = (value: string) => value.trim();
 
 const resolveMainFallbackTitle = (locale: AppLocale) =>
@@ -109,4 +118,45 @@ export const resolveHomeFeaturedVideos = (
 		characters,
 		duplicateConfiguredIds,
 	};
+};
+
+export const resolveConfiguredVideoList = (
+	videos: PublicVideoRecord[],
+	configuredStreamVideoIds: string[],
+	options: ResolveConfiguredVideoListOptions,
+): ResolvedHomeFeaturedVideo[] => {
+	const videosByStreamVideoId = new Map<string, PublicVideoRecord>();
+	for (const video of videos) {
+		const streamVideoId = normalizeStreamVideoId(video.streamVideoId);
+		if (!streamVideoId || videosByStreamVideoId.has(streamVideoId)) {
+			continue;
+		}
+		videosByStreamVideoId.set(streamVideoId, video);
+	}
+
+	const normalizedIds = configuredStreamVideoIds
+		.map((item) => normalizeStreamVideoId(item))
+		.filter(Boolean);
+	const duplicateIdSet = new Set(collectDuplicateFeaturedVideoIds(normalizedIds));
+
+	return normalizedIds.map((streamVideoId, index) => {
+		const resolvedVideo = videosByStreamVideoId.get(streamVideoId) ?? null;
+		const suffix = `${index + 1}`;
+		return {
+			key: `${options.keyPrefix}-${suffix}`,
+			streamVideoId,
+			roleLabel:
+				options.locale === "en-US"
+					? `${options.roleLabelPrefixEn} ${suffix}`
+					: `${options.roleLabelPrefixZh} ${suffix}`,
+			title:
+				resolvedVideo?.title.trim() ||
+				(options.locale === "en-US"
+					? `${options.titlePrefixEn} ${suffix}`
+					: `${options.titlePrefixZh} ${suffix}`),
+			video: resolvedVideo,
+			status: resolvedVideo ? "ready" : "missing",
+			isDuplicateConfiguredId: duplicateIdSet.has(streamVideoId),
+		} satisfies ResolvedHomeFeaturedVideo;
+	});
 };

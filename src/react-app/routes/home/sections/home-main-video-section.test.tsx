@@ -95,26 +95,21 @@ describe("home-main-video-section", () => {
 		expect(html).toContain("homeVideo.heroMissing");
 	});
 
-	it("passes playback flags and full-size dimensions to stream player", () => {
-		const html = renderToStaticMarkup(
-			createElement(HomeMainVideoSection, {
+it("passes playback flags and full-size dimensions to stream player", () => {
+	const html = renderToStaticMarkup(
+		createElement(HomeMainVideoSection, {
 				video: createFeaturedVideo(),
 				isLoading: false,
 				isError: false,
 				errorMessage: null,
 				onRetry: () => {},
-			}),
-		);
+		}),
+	);
 
-		expect(html).toContain('data-testid="stream-player"');
-		expect(html).toContain('data-autoplay="true"');
-		expect(html).toContain('data-muted="true"');
-		expect(html).toContain('data-loop="true"');
-		expect(html).toContain('data-letterbox-color="transparent"');
-		expect(html).toContain('data-width="100%"');
-		expect(html).toContain('data-height="100%"');
-		expect(html).toContain("aspect-video");
-	});
+	expect(html).toContain("homeVideo.play");
+	expect(html).not.toContain('data-testid="stream-player"');
+	expect(html).toContain("aspect-video");
+});
 
 	it("renders retry affordance on query error", () => {
 		const html = renderToStaticMarkup(

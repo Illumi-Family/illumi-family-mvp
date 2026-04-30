@@ -15,16 +15,15 @@ import {
 	scheduleVideoPlayerSdkWarmup,
 	warmupVideoPlaybackIntent,
 } from "@/lib/video-player-warmup";
-import { AboutSection } from "@/routes/home/sections/about-section";
-import { ColearningSection } from "@/routes/home/sections/colearning-section";
-import { DailyNotesSection } from "@/routes/home/sections/daily-notes-section";
 import { FooterSection } from "@/routes/home/sections/footer-section";
-import { HeroSection } from "@/routes/home/sections/hero-section";
 import { HomeCharacterVideosSection } from "@/routes/home/sections/home-character-videos-section";
+import { HomeContentMatrixSection } from "@/routes/home/sections/home-content-matrix-section";
+import { HomeFamilyStoryVideosSection } from "@/routes/home/sections/home-family-story-videos-section";
 import { HomeMainVideoSection } from "@/routes/home/sections/home-main-video-section";
-import { PhilosophySection } from "@/routes/home/sections/philosophy-section";
-import { StoriesSection } from "@/routes/home/sections/stories-section";
+import { HomeOriginSection } from "@/routes/home/sections/home-origin-section";
+import { HomeBusinessContactSection } from "@/routes/home/sections/home-business-contact-section";
 import {
+	resolveConfiguredVideoList,
 	resolveHomeFeaturedVideos,
 	type ResolvedHomeFeaturedVideo,
 } from "@/routes/home/home-featured-videos";
@@ -40,13 +39,23 @@ export function HomePage() {
 	const homeContentQuery = useQuery(homeContentQueryOptions(locale));
 	const publicVideosQuery = useQuery(publicVideosQueryOptions());
 	const homeContent = homeContentQuery.data ?? homeData.defaultHomeContent;
-	const heroTitle = homeContent.heroSlogan.title.trim() || homeData.heroContent.title;
-	const heroSubtitle =
-		homeContent.heroSlogan.subtitle.trim() || homeData.heroContent.subtitle;
+	const videos = publicVideosQuery.data ?? [];
 	const featuredVideos = resolveHomeFeaturedVideos(
-		publicVideosQuery.data ?? [],
+		videos,
 		homeContent.featuredVideos,
 		locale,
+	);
+	const familyStoryVideos = resolveConfiguredVideoList(
+		videos,
+		homeData.homeFamilyStoriesConfig.streamVideoIds,
+		{
+			locale,
+			keyPrefix: "family-story",
+			roleLabelPrefixZh: "家庭故事",
+			roleLabelPrefixEn: "Family Story",
+			titlePrefixZh: "家庭故事视频",
+			titlePrefixEn: "Family Story Video",
+		},
 	);
 	const showFallbackHint = homeContentQuery.isError;
 	const [selectedVideo, setSelectedVideo] =
@@ -61,7 +70,6 @@ export function HomePage() {
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 		const frameId = scheduleHomeEntryScrollReset({
-			hash: window.location.hash,
 			requestAnimationFrame: window.requestAnimationFrame.bind(window),
 			scrollTo: window.scrollTo.bind(window),
 		});
@@ -91,6 +99,11 @@ export function HomePage() {
 	};
 
 	const publicVideoErrorMessage = readErrorMessage(publicVideosQuery.error);
+	const scrollToSection = (sectionId: string) => {
+		if (typeof document === "undefined") return;
+		const section = document.getElementById(sectionId);
+		section?.scrollIntoView({ behavior: "smooth", block: "start" });
+	};
 
 	return (
 		<div className="relative isolate min-h-[100dvh] overflow-x-clip">
@@ -109,7 +122,7 @@ export function HomePage() {
 						<img
 							src="/images/logo.jpg"
 							alt="童蒙家塾 logo"
-							className="h-12 w-auto rounded-md bg-card p-1"
+							className="h-14 w-auto rounded-md bg-card p-1"
 						/>
 						{/* <div className="min-w-0">
 							<p className="truncate text-xs text-muted-foreground">
@@ -123,13 +136,14 @@ export function HomePage() {
 						aria-label={t("navigation.mainAriaLabel")}
 					>
 						{homeData.siteNavigation.map((item) => (
-							<a
-								key={item.href}
-								href={item.href}
+							<button
+								key={item.sectionId}
+								type="button"
+								onClick={() => scrollToSection(item.sectionId)}
 								className="rounded-full px-3 py-2 text-sm text-muted-foreground transition-colors duration-200 hover:bg-[color:rgba(166,124,82,0.12)] hover:text-foreground"
 							>
 								{item.label}
-							</a>
+							</button>
 						))}
 					</nav>
 
@@ -149,61 +163,58 @@ export function HomePage() {
 					aria-label={t("navigation.mobileAriaLabel")}
 				>
 					{homeData.siteNavigation.map((item) => (
-						<a
-							key={`mobile-${item.href}`}
-							href={item.href}
+						<button
+							key={`mobile-${item.sectionId}`}
+							type="button"
+							onClick={() => scrollToSection(item.sectionId)}
 							className="whitespace-nowrap rounded-full bg-[color:rgba(243,236,227,0.9)] px-3 py-1.5 text-xs text-muted-foreground transition-colors duration-200 hover:bg-[color:rgba(212,184,133,0.3)] hover:text-foreground"
 						>
 							{item.label}
-						</a>
+						</button>
 					))}
 					<LanguageSwitcher className="ml-auto flex items-center gap-2 md:hidden" />
 				</nav>
 			</header>
 
-			<main
-				id="main-content"
-				className="mx-auto w-full max-w-7xl space-y-10 px-4 pb-20 pt-4 md:px-8 md:pt-6"
-			>
-				{showFallbackHint ? (
-					<div className="rounded-2xl border border-[color:rgba(166,124,82,0.22)] bg-[color:rgba(255,252,247,0.82)] px-4 py-3 text-sm text-muted-foreground">
-						{t("fallbackNotice")}
-					</div>
-				) : null}
-				<HeroSection
-					title={heroTitle}
-					subtitle={heroSubtitle}
-					descriptionLines={homeData.heroContent.descriptionLines}
-				/>
-				<HomeMainVideoSection
-					video={featuredVideos.main}
-					isLoading={publicVideosQuery.isLoading}
-					isError={publicVideosQuery.isError}
-					errorMessage={publicVideoErrorMessage}
-					onRetry={() => void publicVideosQuery.refetch()}
-				/>
-				<HomeCharacterVideosSection
-					items={featuredVideos.characters}
-					isLoading={publicVideosQuery.isLoading}
-					isError={publicVideosQuery.isError}
-					errorMessage={publicVideoErrorMessage}
-					onRetry={() => void publicVideosQuery.refetch()}
-					onPlay={handleCharacterVideoPlay}
-					onPlayIntent={handleCharacterVideoPlayIntent}
-				/>
-				<PhilosophySection
-					intro={homeContent.philosophy.intro}
-					items={homeContent.philosophy.items}
-				/>
-				<DailyNotesSection items={homeContent.dailyNotes.items} />
-				<StoriesSection items={homeContent.stories.items} />
-				<ColearningSection
-					intro={homeContent.colearning.intro}
-					methods={homeContent.colearning.methods}
-					benefits={homeContent.colearning.benefits}
-					caseHighlight={homeContent.colearning.caseHighlight}
-				/>
-				<AboutSection content={homeData.aboutContent} />
+			<main id="main-content" className="w-full pb-20">
+				<div className="">
+					<HomeMainVideoSection
+						video={featuredVideos.main}
+						isLoading={publicVideosQuery.isLoading}
+						isError={publicVideosQuery.isError}
+						errorMessage={publicVideoErrorMessage}
+						onRetry={() => void publicVideosQuery.refetch()}
+					/>
+				</div>
+				<div className="mx-auto w-full max-w-7xl space-y-10 px-4 pt-8 md:px-8">
+					{showFallbackHint ? (
+						<div className="rounded-2xl border border-[color:rgba(166,124,82,0.22)] bg-[color:rgba(255,252,247,0.82)] px-4 py-3 text-sm text-muted-foreground">
+							{t("fallbackNotice")}
+						</div>
+					) : null}
+					<HomeOriginSection content={homeData.homeOriginContent} />
+					<HomeCharacterVideosSection
+						items={featuredVideos.characters}
+						isLoading={publicVideosQuery.isLoading}
+						isError={publicVideosQuery.isError}
+						errorMessage={publicVideoErrorMessage}
+						onRetry={() => void publicVideosQuery.refetch()}
+						onPlay={handleCharacterVideoPlay}
+						onPlayIntent={handleCharacterVideoPlayIntent}
+					/>
+					<HomeFamilyStoryVideosSection
+						config={homeData.homeFamilyStoriesConfig}
+						items={familyStoryVideos}
+						isLoading={publicVideosQuery.isLoading}
+						isError={publicVideosQuery.isError}
+						errorMessage={publicVideoErrorMessage}
+						onRetry={() => void publicVideosQuery.refetch()}
+						onPlay={handleCharacterVideoPlay}
+						onPlayIntent={handleCharacterVideoPlayIntent}
+					/>
+					<HomeContentMatrixSection content={homeData.homeContentMatrixContent} />
+					<HomeBusinessContactSection content={homeData.homeBusinessContactContent} />
+				</div>
 			</main>
 
 			<VideoPlayerModal
