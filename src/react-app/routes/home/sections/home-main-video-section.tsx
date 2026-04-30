@@ -1,8 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { Stream, type StreamPlayerApi } from "@cloudflare/stream-react";
-import { Play } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import {
+	beginVideoPlaybackMetricSession,
+	markVideoPlaybackMetric,
+} from "@/lib/video-playback-metrics";
+import {
+	hasVideoPlaybackWarmupHit,
+	warmupVideoPlaybackIntent,
+} from "@/lib/video-player-warmup";
 import type { ResolvedHomeFeaturedVideo } from "@/routes/home/home-featured-videos";
 
 type HomeMainVideoSectionProps = {
@@ -13,13 +20,11 @@ type HomeMainVideoSectionProps = {
 	onRetry: () => void;
 };
 
-type MainVideoStartupPhase = "loading" | "ready" | "error";
+type MainVideoStartupPhase = "idle" | "loading" | "ready" | "error";
 
 type MainVideoPlayerProps = {
 	streamVideoId: string;
 	posterUrl: string | null;
-	playLabel: string;
-	onRetry: () => void;
 	loadingHint: string;
 	errorTitle: string;
 	errorHint: string;
@@ -35,61 +40,97 @@ function MainVideoPlayer(props: MainVideoPlayerProps) {
 	const {
 		streamVideoId,
 		posterUrl,
-		playLabel,
-		onRetry,
 		loadingHint,
 		errorTitle,
 		errorHint,
 		retryLabel,
 	} = props;
 	const streamRef = useRef<StreamPlayerApi | undefined>(undefined);
-	const [hasStarted, setHasStarted] = useState(false);
-	const [startupPhase, setStartupPhase] = useState<MainVideoStartupPhase>("loading");
+	const playIntentStartedRef = useRef(false);
+	const metricSessionIdRef = useRef<string | null>(null);
+	const [hasPlayIntent, setHasPlayIntent] = useState(false);
+	const [startupPhase, setStartupPhase] = useState<MainVideoStartupPhase>("idle");
 
 	useEffect(() => {
-		if (!hasStarted) return;
+		playIntentStartedRef.current = false;
+		metricSessionIdRef.current = null;
+		void warmupVideoPlaybackIntent(streamVideoId);
+	}, [streamVideoId]);
+
+	const requestPlayback = (sessionId: string | null) => {
 		const player = streamRef.current;
 		if (!player) return;
-
 		void player.play().catch(() => {
 			setStartupPhase("error");
+			void markVideoPlaybackMetric(sessionId, "error");
 		});
-	}, [hasStarted, streamVideoId]);
+	};
 
-	const showLoadingOverlay = startupPhase === "loading";
-	const showErrorOverlay = startupPhase === "error";
+	const beginPlayIntent = () => {
+		if (hasPlayIntent) return;
+		const startupKind = hasVideoPlaybackWarmupHit(streamVideoId) ? "warm" : "cold";
+		const sessionId = beginVideoPlaybackMetricSession({
+			streamVideoId,
+			startupKind,
+			surface: "home-main",
+			intentEvent: "play_intent",
+		});
+		playIntentStartedRef.current = true;
+		metricSessionIdRef.current = sessionId;
+		setHasPlayIntent(true);
+		setStartupPhase("loading");
+	};
 
-	if (!hasStarted) {
-		return (
-			<div className="relative aspect-video w-full overflow-hidden border-none">
-				{posterUrl ? (
-					<img
-						src={posterUrl}
-						alt=""
-						aria-hidden="true"
-						className="h-full w-full object-cover opacity-90"
-					/>
-				) : null}
-				<div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.08)_0%,rgba(0,0,0,0.52)_100%)]" />
-				<div className="absolute inset-0 flex items-center justify-center">
-					<Button
-						type="button"
-						aria-label={playLabel}
-						onClick={() => {
-							setStartupPhase("loading");
-							setHasStarted(true);
-						}}
-						className="h-16 w-16 rounded-full border border-white/35 bg-black/60 p-0 text-white hover:bg-black/75"
-					>
-						<Play className="size-10 translate-x-[1px]" />
-					</Button>
-				</div>
-			</div>
-		);
-	}
+	const handlePlayIntent = () => {
+		if (!hasPlayIntent) {
+			beginPlayIntent();
+			return;
+		}
+		if (startupPhase !== "error") return;
+		const startupKind = hasVideoPlaybackWarmupHit(streamVideoId) ? "warm" : "cold";
+		const sessionId = beginVideoPlaybackMetricSession({
+			streamVideoId,
+			startupKind,
+			surface: "home-main",
+			intentEvent: "play_intent",
+		});
+		setMetricSessionId(sessionId);
+		setStartupPhase("loading");
+		requestPlayback(sessionId);
+	};
+
+	const handlePlaybackRetry = () => {
+		const startupKind = hasVideoPlaybackWarmupHit(streamVideoId) ? "warm" : "cold";
+		const sessionId = beginVideoPlaybackMetricSession({
+			streamVideoId,
+			startupKind,
+			surface: "home-main",
+			intentEvent: "play_intent",
+		});
+		playIntentStartedRef.current = true;
+		metricSessionIdRef.current = sessionId;
+		setStartupPhase("loading");
+		requestPlayback(sessionId);
+	};
+
+	const showLoadingOverlay = hasPlayIntent && startupPhase === "loading";
+	const showErrorOverlay = hasPlayIntent && startupPhase === "error";
 
 	return (
-		<div className="relative aspect-video w-full overflow-hidden">
+		<div className="relative aspect-video w-full overflow-hidden border-none">
+			{posterUrl ? (
+				<img
+					src={posterUrl}
+					alt=""
+					aria-hidden="true"
+					className="absolute inset-0 h-full w-full object-cover opacity-90"
+				/>
+			) : (
+				<div
+					aria-hidden="true"
+					className="absolute inset-0 bg-[radial-gradient(circle_at_18%_22%,rgba(166,124,82,0.42),transparent_52%),radial-gradient(circle_at_82%_78%,rgba(96,120,148,0.3),transparent_48%),linear-gradient(140deg,rgba(30,31,38,0.96)_0%,rgba(23,24,33,0.92)_46%,rgba(13,14,21,0.96)_100%)]"
+				/>
+			)}
 			<div className="absolute inset-0 h-full w-full">
 				<Stream
 					src={streamVideoId}
@@ -105,15 +146,34 @@ function MainVideoPlayer(props: MainVideoPlayerProps) {
 					height="100%"
 					className="h-full w-full"
 					poster={posterUrl ?? undefined}
-					onLoadStart={() => setStartupPhase("loading")}
-					onLoadedData={() => setStartupPhase("ready")}
-					onPlaying={() => setStartupPhase("ready")}
-					onError={() => setStartupPhase("error")}
+					onLoadStart={() => {
+						if (!playIntentStartedRef.current) return;
+						setStartupPhase("loading");
+						void markVideoPlaybackMetric(metricSessionIdRef.current, "loadstart");
+					}}
+					onPlay={() => {
+						handlePlayIntent();
+					}}
+					onLoadedData={() => {
+						if (!playIntentStartedRef.current) return;
+						setStartupPhase("ready");
+						void markVideoPlaybackMetric(metricSessionIdRef.current, "loadeddata");
+					}}
+					onPlaying={() => {
+						if (!playIntentStartedRef.current) return;
+						setStartupPhase("ready");
+						void markVideoPlaybackMetric(metricSessionIdRef.current, "playing");
+					}}
+					onError={() => {
+						if (!playIntentStartedRef.current) return;
+						setStartupPhase("error");
+						void markVideoPlaybackMetric(metricSessionIdRef.current, "error");
+					}}
 				/>
 			</div>
 
 			{showLoadingOverlay ? (
-				<div className="absolute inset-0 flex flex-col justify-end bg-[linear-gradient(180deg,rgba(24,20,18,0.06)_0%,rgba(24,20,18,0.62)_100%)] px-5 py-4 text-white">
+				<div className="pointer-events-none absolute inset-0 flex flex-col justify-end bg-[linear-gradient(180deg,rgba(24,20,18,0.06)_0%,rgba(24,20,18,0.62)_100%)] px-5 py-4 text-white">
 					<p className="text-sm font-medium">{loadingHint}</p>
 				</div>
 			) : null}
@@ -122,7 +182,7 @@ function MainVideoPlayer(props: MainVideoPlayerProps) {
 				<div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/70 px-6 text-center text-white">
 					<p className="text-base font-medium">{errorTitle}</p>
 					<p className="text-xs text-white/80">{errorHint}</p>
-					<Button type="button" variant="secondary" onClick={onRetry}>
+					<Button type="button" variant="secondary" onClick={handlePlaybackRetry}>
 						{retryLabel}
 					</Button>
 				</div>
@@ -203,8 +263,6 @@ export function HomeMainVideoSection(props: HomeMainVideoSectionProps) {
 				key={video.video.streamVideoId}
 				streamVideoId={video.video.streamVideoId}
 				posterUrl={video.video.posterUrl}
-				onRetry={onRetry}
-				playLabel={t("homeVideo.play")}
 				loadingHint={t("homeVideo.loadingHint")}
 				errorTitle={t("homeVideo.errorTitle")}
 				errorHint={t("homeVideo.errorHint")}

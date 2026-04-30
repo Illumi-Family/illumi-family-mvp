@@ -1,6 +1,9 @@
 export type VideoPlaybackStartupKind = "cold" | "warm";
+export type VideoPlaybackSurface = "video-modal" | "home-main";
 export type VideoPlaybackMetricEventType =
+	| "play_intent"
 	| "click"
+	| "loadstart"
 	| "loadeddata"
 	| "playing"
 	| "error";
@@ -9,6 +12,7 @@ export type VideoPlaybackMetricEvent = {
 	sessionId: string;
 	streamVideoId: string | null;
 	startupKind: VideoPlaybackStartupKind;
+	surface: VideoPlaybackSurface;
 	event: VideoPlaybackMetricEventType;
 	at: number;
 	elapsedMs: number;
@@ -18,6 +22,7 @@ type PlaybackMetricSession = {
 	sessionId: string;
 	streamVideoId: string | null;
 	startupKind: VideoPlaybackStartupKind;
+	surface: VideoPlaybackSurface;
 	startAt: number;
 };
 
@@ -45,6 +50,7 @@ const appendMetricEvent = (
 		sessionId: session.sessionId,
 		streamVideoId: session.streamVideoId,
 		startupKind: session.startupKind,
+		surface: session.surface,
 		event,
 		at: now,
 		elapsedMs,
@@ -56,24 +62,28 @@ const appendMetricEvent = (
 export const beginVideoPlaybackMetricSession = (input: {
 	streamVideoId: string | null;
 	startupKind: VideoPlaybackStartupKind;
+	surface?: VideoPlaybackSurface;
+	intentEvent?: "click" | "play_intent";
 	now?: number;
 }) => {
 	const now = input.now ?? Date.now();
 	const sessionId = createSessionId();
+	const intentEvent = input.intentEvent ?? "click";
 	const session: PlaybackMetricSession = {
 		sessionId,
 		streamVideoId: input.streamVideoId,
 		startupKind: input.startupKind,
+		surface: input.surface ?? "video-modal",
 		startAt: now,
 	};
 	metricsState.sessions.set(sessionId, session);
-	appendMetricEvent(session, "click", now);
+	appendMetricEvent(session, intentEvent, now);
 	return sessionId;
 };
 
 export const markVideoPlaybackMetric = (
 	sessionId: string | null,
-	event: Exclude<VideoPlaybackMetricEventType, "click">,
+	event: Exclude<VideoPlaybackMetricEventType, "click" | "play_intent">,
 	now?: number,
 ) => {
 	if (!sessionId) return null;

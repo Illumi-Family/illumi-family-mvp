@@ -39,6 +39,7 @@ function VideoPlayerSession(props: VideoPlayerSessionProps) {
 		beginVideoPlaybackMetricSession({
 			streamVideoId,
 			startupKind,
+			surface: "video-modal",
 		}),
 	);
 
@@ -60,6 +61,7 @@ function VideoPlayerSession(props: VideoPlayerSessionProps) {
 		const retrySessionId = beginVideoPlaybackMetricSession({
 			streamVideoId,
 			startupKind,
+			surface: "video-modal",
 		});
 		setMetricSessionId(retrySessionId);
 		setPlayerSession((value) => value + 1);

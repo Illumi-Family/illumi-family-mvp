@@ -19,6 +19,7 @@ vi.mock("@cloudflare/stream-react", () => ({
 		loop?: boolean;
 		controls?: boolean;
 		letterboxColor?: string;
+		preload?: string;
 		poster?: string;
 		width?: string;
 		height?: string;
@@ -31,6 +32,7 @@ vi.mock("@cloudflare/stream-react", () => ({
 			"data-loop": String(Boolean(props.loop)),
 			"data-controls": String(Boolean(props.controls)),
 			"data-letterbox-color": props.letterboxColor ?? "",
+			"data-preload": props.preload ?? "",
 			"data-poster": props.poster ?? "",
 			"data-width": props.width ?? "",
 			"data-height": props.height ?? "",
@@ -95,21 +97,22 @@ describe("home-main-video-section", () => {
 		expect(html).toContain("homeVideo.heroMissing");
 	});
 
-it("passes playback flags and full-size dimensions to stream player", () => {
-	const html = renderToStaticMarkup(
-		createElement(HomeMainVideoSection, {
+	it("renders stream player shell with metadata preload before play intent", () => {
+		const html = renderToStaticMarkup(
+			createElement(HomeMainVideoSection, {
 				video: createFeaturedVideo(),
 				isLoading: false,
 				isError: false,
 				errorMessage: null,
 				onRetry: () => {},
-		}),
-	);
+			}),
+		);
 
-	expect(html).toContain("homeVideo.play");
-	expect(html).not.toContain('data-testid="stream-player"');
-	expect(html).toContain("aspect-video");
-});
+		expect(html).toContain('data-testid="stream-player"');
+		expect(html).toContain('data-preload="metadata"');
+		expect(html).toContain('data-controls="true"');
+		expect(html).toContain("aspect-video");
+	});
 
 	it("renders retry affordance on query error", () => {
 		const html = renderToStaticMarkup(

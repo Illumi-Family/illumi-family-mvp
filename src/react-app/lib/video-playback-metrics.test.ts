@@ -12,6 +12,7 @@ describe("video-playback-metrics", () => {
 		const sessionId = beginVideoPlaybackMetricSession({
 			streamVideoId: "stream-1",
 			startupKind: "cold",
+			surface: "video-modal",
 			now: 10,
 		});
 
@@ -27,6 +28,7 @@ describe("video-playback-metrics", () => {
 			"playing",
 		]);
 		expect(events.every((event) => event.startupKind === "cold")).toBe(true);
+		expect(events.every((event) => event.surface === "video-modal")).toBe(true);
 		expect(events[1]?.elapsedMs).toBe(32);
 		expect(events[2]?.elapsedMs).toBe(63);
 	});
@@ -36,6 +38,7 @@ describe("video-playback-metrics", () => {
 		const sessionId = beginVideoPlaybackMetricSession({
 			streamVideoId: "stream-2",
 			startupKind: "warm",
+			surface: "video-modal",
 			now: 100,
 		});
 
@@ -47,6 +50,7 @@ describe("video-playback-metrics", () => {
 		expect(events).toHaveLength(2);
 		expect(events[1]?.event).toBe("loadeddata");
 		expect(events[1]?.startupKind).toBe("warm");
+		expect(events[1]?.surface).toBe("video-modal");
 		expect(events[1]?.elapsedMs).toBe(44);
 	});
 
@@ -55,6 +59,7 @@ describe("video-playback-metrics", () => {
 		const sessionId = beginVideoPlaybackMetricSession({
 			streamVideoId: "stream-err",
 			startupKind: "cold",
+			surface: "video-modal",
 			now: 500,
 		});
 
@@ -65,5 +70,33 @@ describe("video-playback-metrics", () => {
 		);
 		expect(events.map((event) => event.event)).toEqual(["click", "error"]);
 		expect(events[1]?.elapsedMs).toBe(60);
+	});
+
+	it("supports home-main play_intent and loadstart timeline", () => {
+		clearVideoPlaybackMetricsForTest();
+		const sessionId = beginVideoPlaybackMetricSession({
+			streamVideoId: "stream-home-1",
+			startupKind: "warm",
+			surface: "home-main",
+			intentEvent: "play_intent",
+			now: 200,
+		});
+
+		markVideoPlaybackMetric(sessionId, "loadstart", 206);
+		markVideoPlaybackMetric(sessionId, "loadeddata", 240);
+		markVideoPlaybackMetric(sessionId, "playing", 272);
+
+		const events = getVideoPlaybackMetricEvents().filter(
+			(event) => event.sessionId === sessionId,
+		);
+		expect(events.map((event) => event.event)).toEqual([
+			"play_intent",
+			"loadstart",
+			"loadeddata",
+			"playing",
+		]);
+		expect(events.every((event) => event.surface === "home-main")).toBe(true);
+		expect(events[1]?.elapsedMs).toBe(6);
+		expect(events[3]?.elapsedMs).toBe(72);
 	});
 });
