@@ -19,10 +19,17 @@
   - API 路由与响应契约
   - 数据库 schema/migration 流程
   - 部署与运维命令
+  - UI 组件规范与组件库使用策略（如 shadcn CLI 约束）
 - 同步目标：
   - `docs/core/technical-architecture.md`
   - `.codex/skills/illumi-family-project-playbook/SKILL.md`
   - `.codex/skills/illumi-family-project-playbook/references/*.md`
+
+## UI 组件规范
+- 默认优先使用 shadcn CLI 生成组件：`pnpm dlx shadcn@latest add <component>`。
+- 只有在组件库不存在或无法满足需求时，才允许自定义封装；需先明确原因。
+- 新增自定义 UI 组件时，需保持与现有 `src/react-app/components/ui` 风格一致（`cn` 合并、命名和导出方式一致）。
+- 修改 UI 前先搜索是否已有可复用组件，避免重复实现导致风格漂移。
 
 ## Git 提交规则
 - 本仓库 `git commit` 的 message 仅允许英文（English-only），不要使用中文。

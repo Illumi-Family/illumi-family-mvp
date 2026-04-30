@@ -58,6 +58,12 @@ Load only the sections needed for the current task.
 - Keep API behavior consistent with unified response/error conventions.
 - Preserve Hono middleware ordering and centralized error handling patterns.
 
+## UI Component Guardrails
+- Prefer shadcn CLI as the default component source: `pnpm dlx shadcn@latest add <component>`.
+- Reuse existing components under `src/react-app/components/ui` before creating new wrappers.
+- Only handcraft UI components when shadcn does not provide one or cannot satisfy requirements; document the reason in task review.
+- Keep handcrafted components aligned with project conventions (`cn` utility, naming/export pattern, Tailwind style consistency).
+
 ## Recommendation Format
 When giving advice, always provide:
 1. Current state (fact-based, from canonical files).

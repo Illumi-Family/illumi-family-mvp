@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Stream, type StreamPlayerApi } from "@cloudflare/stream-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
 	beginVideoPlaybackMetricSession,
 	markVideoPlaybackMetric,
@@ -94,7 +95,7 @@ function MainVideoPlayer(props: MainVideoPlayerProps) {
 			surface: "home-main",
 			intentEvent: "play_intent",
 		});
-		setMetricSessionId(sessionId);
+		metricSessionIdRef.current = sessionId;
 		setStartupPhase("loading");
 		requestPlayback(sessionId);
 	};
@@ -173,8 +174,28 @@ function MainVideoPlayer(props: MainVideoPlayerProps) {
 			</div>
 
 			{showLoadingOverlay ? (
-				<div className="pointer-events-none absolute inset-0 flex flex-col justify-end bg-[linear-gradient(180deg,rgba(24,20,18,0.06)_0%,rgba(24,20,18,0.62)_100%)] px-5 py-4 text-white">
-					<p className="text-sm font-medium">{loadingHint}</p>
+				<div
+					className="pointer-events-none absolute inset-0 overflow-hidden bg-[linear-gradient(180deg,rgba(24,20,18,0.08)_0%,rgba(24,20,18,0.7)_100%)]"
+					data-testid="main-video-startup-skeleton"
+					aria-live="polite"
+					aria-busy="true"
+				>
+					<div
+						aria-hidden="true"
+						className="absolute inset-0 animate-pulse bg-[radial-gradient(circle_at_22%_26%,rgba(255,255,255,0.2),transparent_44%),radial-gradient(circle_at_82%_74%,rgba(255,255,255,0.16),transparent_38%)]"
+					/>
+					<div
+						aria-hidden="true"
+						className="absolute inset-y-0 left-0 w-full animate-pulse bg-[linear-gradient(110deg,rgba(255,255,255,0)_8%,rgba(255,255,255,0.22)_42%,rgba(255,255,255,0)_74%)]"
+					/>
+					<div
+						aria-hidden="true"
+						className="absolute inset-x-5 bottom-4 flex flex-col gap-2"
+					>
+						<Skeleton className="h-3 w-40 rounded-full bg-white/45" />
+						<Skeleton className="h-2.5 w-56 rounded-full bg-white/30" />
+					</div>
+					<span className="sr-only">{loadingHint}</span>
 				</div>
 			) : null}
 
@@ -201,11 +222,23 @@ export function HomeMainVideoSection(props: HomeMainVideoSectionProps) {
 				<p className="text-xs uppercase tracking-[0.14em] text-[color:var(--brand-primary)]">
 					{t("homeVideo.heroLabel")}
 				</p>
-				<div className="relative aspect-video w-full overflow-hidden rounded-[2rem] border border-[color:rgba(166,124,82,0.24)] bg-[color:rgba(243,236,227,0.72)]">
-					<div className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,rgba(166,124,82,0.14),rgba(255,252,247,0.68),rgba(166,124,82,0.14))]" />
-					<div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
-						{t("homeVideo.heroLoading")}
+				<div
+					className="relative aspect-video w-full overflow-hidden rounded-[2rem] border border-[color:rgba(166,124,82,0.24)] bg-[color:rgba(243,236,227,0.72)]"
+					data-testid="home-main-video-query-skeleton"
+					aria-busy="true"
+				>
+					<div
+						aria-hidden="true"
+						className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,rgba(166,124,82,0.14),rgba(255,252,247,0.68),rgba(166,124,82,0.14))]"
+					/>
+					<div
+						aria-hidden="true"
+						className="absolute inset-x-6 bottom-5 flex flex-col gap-2"
+					>
+						<Skeleton className="h-3 w-44 rounded-full bg-[color:rgba(166,124,82,0.35)]" />
+						<Skeleton className="h-2.5 w-60 rounded-full bg-[color:rgba(166,124,82,0.25)]" />
 					</div>
+					<span className="sr-only">{t("homeVideo.heroLoading")}</span>
 				</div>
 			</section>
 		);

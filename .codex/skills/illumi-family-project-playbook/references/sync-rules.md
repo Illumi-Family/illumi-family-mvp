@@ -8,6 +8,7 @@ Update docs + skill references in the same change set whenever you change:
 - API route structure or response contracts
 - schema/migration strategy
 - deployment and ops commands
+- UI component governance rules (e.g., shadcn-first policy)
 
 ## 2) Mandatory Sync Targets
 - `docs/core/technical-architecture.md`
@@ -20,6 +21,7 @@ Update docs + skill references in the same change set whenever you change:
 3. Update skill references to reflect new source-of-truth facts.
 4. Verify commands in runbooks are still executable.
 5. Include update note in final delivery summary.
+6. For UI component changes, explicitly state whether shadcn CLI was used; if not used, record why.
 
 ## 4) Recommendation Quality Bar
 When the user asks "how should we do X", always:

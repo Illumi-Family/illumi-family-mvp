@@ -73,6 +73,8 @@ describe("home-main-video-section", () => {
 			}),
 		);
 
+		expect(html).toContain("home-main-video-query-skeleton");
+		expect(html).toContain("sr-only");
 		expect(html).toContain("homeVideo.heroLoading");
 		expect(html).toContain("homeVideo.heroLabel");
 		expect(html).toContain("aspect-video");
@@ -112,6 +114,21 @@ describe("home-main-video-section", () => {
 		expect(html).toContain('data-preload="metadata"');
 		expect(html).toContain('data-controls="true"');
 		expect(html).toContain("aspect-video");
+	});
+
+	it("keeps startup loading hint in markup for accessibility", () => {
+		const html = renderToStaticMarkup(
+			createElement(HomeMainVideoSection, {
+				video: createFeaturedVideo(),
+				isLoading: false,
+				isError: false,
+				errorMessage: null,
+				onRetry: () => {},
+			}),
+		);
+
+		expect(html).toContain('data-testid="stream-player"');
+		expect(html).not.toContain("主视频加载中");
 	});
 
 	it("renders retry affordance on query error", () => {
