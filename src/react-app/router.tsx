@@ -80,7 +80,7 @@ const adminVideosRoute = createRoute({
 
 const videosRoute = createRoute({
 	getParentRoute: () => rootRoute,
-	path: "/videos",
+	path: "/video",
 	component: VideosPage,
 });
 

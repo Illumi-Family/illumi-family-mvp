@@ -4,6 +4,7 @@ import { VideoListRow } from "./video-list-row";
 type VideoListProps = {
 	videos: AdminVideoRecord[];
 	isActionPending: boolean;
+	activeStreamVideoId?: string | null;
 	onPreview: (video: AdminVideoRecord) => void;
 	onPreviewIntent: (video: AdminVideoRecord) => void;
 	onPublish: (videoId: string) => void;
@@ -17,6 +18,7 @@ export function VideoList(props: VideoListProps) {
 	const {
 		videos,
 		isActionPending,
+		activeStreamVideoId = null,
 		onPreview,
 		onPreviewIntent,
 		onPublish,
@@ -33,6 +35,7 @@ export function VideoList(props: VideoListProps) {
 					key={video.id}
 					video={video}
 					isActionPending={isActionPending}
+					isActivePreview={video.streamVideoId === activeStreamVideoId}
 					onPreview={() => onPreview(video)}
 					onPreviewIntent={() => onPreviewIntent(video)}
 					onPublish={() => onPublish(video.id)}

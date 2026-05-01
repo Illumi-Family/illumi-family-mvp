@@ -12,6 +12,7 @@ type PublicVideoCardProps = {
 	onPlayIntent?: () => void;
 	disabled?: boolean;
 	ariaLabel?: string;
+	active?: boolean;
 };
 
 const formatDuration = (seconds: number | null) => {
@@ -27,7 +28,8 @@ const formatDuration = (seconds: number | null) => {
 };
 
 export function PublicVideoCard(props: PublicVideoCardProps) {
-	const { video, onPlay, onPlayIntent, disabled = false, ariaLabel } = props;
+	const { video, onPlay, onPlayIntent, disabled = false, ariaLabel, active = false } =
+		props;
 	const displayTitle = video.title.trim() || "未命名视频";
 	const playable = !disabled;
 	const resolvedAriaLabel =
@@ -35,10 +37,18 @@ export function PublicVideoCard(props: PublicVideoCardProps) {
 		(playable ? `播放视频：${displayTitle}` : `视频暂不可播放：${displayTitle}`);
 
 	return (
-		<article className="group overflow-hidden rounded-[4px] border border-border/70 bg-card/95 shadow-[0_18px_40px_-28px_rgba(0,0,0,0.45)] transition-transform duration-300 hover:-translate-y-0.5">
+		<article
+			data-active={active ? "true" : "false"}
+			className={`group overflow-hidden rounded-[4px] border bg-card/95 shadow-[0_18px_40px_-28px_rgba(0,0,0,0.45)] transition-transform duration-300 hover:-translate-y-0.5 ${
+				active
+					? "border-[color:var(--brand-primary)] ring-2 ring-[color:rgba(166,124,82,0.28)]"
+					: "border-border/70"
+			}`}
+		>
 			<button
 				type="button"
 				disabled={disabled}
+				aria-current={active ? "true" : undefined}
 				aria-label={resolvedAriaLabel}
 				className="w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-px disabled:cursor-not-allowed disabled:active:translate-y-0"
 				onClick={() => {

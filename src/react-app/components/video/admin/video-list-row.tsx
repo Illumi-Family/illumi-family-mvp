@@ -14,6 +14,7 @@ import { VideoRowMoreMenu } from "./video-row-more-menu";
 type VideoListRowProps = {
 	video: AdminVideoRecord;
 	isActionPending: boolean;
+	isActivePreview: boolean;
 	onPreview: () => void;
 	onPreviewIntent: () => void;
 	onPublish: () => void;
@@ -38,6 +39,7 @@ export function VideoListRow(props: VideoListRowProps) {
 	const {
 		video,
 		isActionPending,
+		isActivePreview,
 		onPreview,
 		onPreviewIntent,
 		onPublish,
@@ -58,7 +60,14 @@ export function VideoListRow(props: VideoListRowProps) {
 			: !actionState.canPublish || isActionPending;
 
 	return (
-		<article className="rounded-xl border border-border bg-card p-4">
+		<article
+			data-active-preview={isActivePreview ? "true" : "false"}
+			className={`rounded-xl border bg-card p-4 ${
+				isActivePreview
+					? "border-[color:var(--brand-primary)] ring-2 ring-[color:rgba(166,124,82,0.28)]"
+					: "border-border"
+			}`}
+		>
 			<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 				<div className="min-w-0 space-y-2">
 					<div className="flex flex-wrap items-center gap-2">

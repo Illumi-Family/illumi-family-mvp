@@ -1,58 +1,111 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Stream } from "@cloudflare/stream-react";
 import { useQuery } from "@tanstack/react-query";
-import { VideoPlayerModal } from "@/components/video/video-player-modal";
-import { publicVideosQueryOptions } from "@/lib/query-options";
-import type { PublicVideoRecord } from "@/lib/api";
 import { PublicVideoGrid } from "@/components/video/public/public-video-grid";
 import { Button } from "@/components/ui/button";
-import type { VideoPlaybackStartupKind } from "@/lib/video-playback-metrics";
+import type { PublicVideoRecord } from "@/lib/api";
+import { publicVideosQueryOptions } from "@/lib/query-options";
+import { warmupVideoPlaybackIntent } from "@/lib/video-player-warmup";
 import {
-	hasVideoPlaybackWarmupHit,
-	scheduleVideoPlayerSdkWarmup,
-	warmupVideoPlaybackIntent,
-} from "@/lib/video-player-warmup";
+	readStreamVideoIdFromSearch,
+	resolveActivePublicVideo,
+	shouldReplaceWatchRouteQuery,
+	VIDEO_QUERY_KEY,
+} from "@/lib/video-watch-route";
 
 const readErrorMessage = (error: unknown) =>
 	error instanceof Error ? error.message : "Unexpected error";
 
+const EMPTY_PUBLIC_VIDEOS: PublicVideoRecord[] = [];
+
+const readRequestedStreamVideoId = () => {
+	if (typeof window === "undefined") return null;
+	return readStreamVideoIdFromSearch(window.location.search);
+};
+
+const writeStreamVideoIdToUrl = (
+	streamVideoId: string | null,
+	options?: { replace?: boolean },
+) => {
+	if (typeof window === "undefined") return;
+	const nextUrl = new URL(window.location.href);
+	if (streamVideoId) {
+		nextUrl.searchParams.set(VIDEO_QUERY_KEY, streamVideoId);
+	} else {
+		nextUrl.searchParams.delete(VIDEO_QUERY_KEY);
+	}
+	const nextPath = `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
+	if (options?.replace) {
+		window.history.replaceState(window.history.state, "", nextPath);
+		return;
+	}
+	window.history.pushState(window.history.state, "", nextPath);
+};
+
 export function VideosPage() {
 	const videosQuery = useQuery(publicVideosQueryOptions());
-	const [selectedVideo, setSelectedVideo] = useState<PublicVideoRecord | null>(null);
-	const [selectedStartupKind, setSelectedStartupKind] =
-		useState<VideoPlaybackStartupKind>("cold");
+	const [requestedStreamVideoId, setRequestedStreamVideoId] = useState<string | null>(
+		() => readRequestedStreamVideoId(),
+	);
 
 	useEffect(() => {
-		void scheduleVideoPlayerSdkWarmup();
+		if (typeof window === "undefined") return;
+		const handlePopState = () => {
+			setRequestedStreamVideoId(readRequestedStreamVideoId());
+		};
+		window.addEventListener("popstate", handlePopState);
+		return () => {
+			window.removeEventListener("popstate", handlePopState);
+		};
 	}, []);
+
+	const videos = videosQuery.data ?? EMPTY_PUBLIC_VIDEOS;
+	const activeVideo = useMemo(
+		() => resolveActivePublicVideo(videos, requestedStreamVideoId),
+		[videos, requestedStreamVideoId],
+	);
+
+	useEffect(() => {
+		if (videosQuery.isLoading || videosQuery.isError) return;
+		const shouldReplace = shouldReplaceWatchRouteQuery(
+			videos,
+			requestedStreamVideoId,
+			activeVideo?.streamVideoId ?? null,
+		);
+		if (!shouldReplace) return;
+		const nextStreamVideoId = activeVideo?.streamVideoId ?? null;
+		writeStreamVideoIdToUrl(nextStreamVideoId, { replace: true });
+	}, [
+		videos,
+		activeVideo,
+		requestedStreamVideoId,
+		videosQuery.isLoading,
+		videosQuery.isError,
+	]);
 
 	const handlePlayIntent = (video: PublicVideoRecord) => {
 		void warmupVideoPlaybackIntent(video.streamVideoId);
 	};
 
-	const handleOpenVideo = (video: PublicVideoRecord) => {
-		setSelectedStartupKind(
-			hasVideoPlaybackWarmupHit(video.streamVideoId) ? "warm" : "cold",
-		);
-		setSelectedVideo(video);
-	};
-
-	const handleCloseModal = () => {
-		setSelectedVideo(null);
-		setSelectedStartupKind("cold");
+	const handlePlay = (video: PublicVideoRecord) => {
+		if (video.streamVideoId === requestedStreamVideoId) return;
+		writeStreamVideoIdToUrl(video.streamVideoId);
+		setRequestedStreamVideoId(video.streamVideoId);
+		if (typeof window !== "undefined") {
+			window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+		}
 	};
 
 	return (
 		<div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 py-8">
-			<header className="space-y-2">
-				<h1 className="text-3xl font-semibold tracking-tight">视频中心</h1>
-				<p className="text-sm text-muted-foreground">
-					点击卡片即可进入沉浸播放。
-				</p>
-			</header>
-
 			{videosQuery.isLoading ? (
-				<div className="rounded-xl border border-border bg-card px-4 py-6 text-sm text-muted-foreground">
-					正在加载视频...
+				<div className="space-y-4">
+					<div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-card/70">
+						<div className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,rgba(166,124,82,0.14),rgba(255,252,247,0.7),rgba(166,124,82,0.14))]" />
+					</div>
+					<div className="rounded-xl border border-border bg-card px-4 py-6 text-sm text-muted-foreground">
+						正在加载视频...
+					</div>
 				</div>
 			) : null}
 
@@ -65,28 +118,43 @@ export function VideosPage() {
 				</div>
 			) : null}
 
-			{videosQuery.data && videosQuery.data.length === 0 ? (
+			{!videosQuery.isLoading && !videosQuery.isError && videos.length === 0 ? (
 				<div className="rounded-xl border border-border bg-card px-4 py-6 text-sm text-muted-foreground">
 					暂无已发布视频。
 				</div>
 			) : null}
 
-			{videosQuery.data && videosQuery.data.length > 0 ? (
-				<PublicVideoGrid
-					videos={videosQuery.data}
-					onPlay={handleOpenVideo}
-					onPlayIntent={handlePlayIntent}
-				/>
+			{!videosQuery.isLoading && !videosQuery.isError && videos.length > 0 && activeVideo ? (
+				<section className="space-y-4" aria-live="polite">
+					<div className="space-y-1">
+						<h1 className="text-2xl font-semibold tracking-tight text-foreground">
+							{activeVideo.title}
+						</h1>
+					</div>
+					<div className="relative aspect-video w-full overflow-hidden rounded-[16px] border border-black/5 bg-black/5">
+						<Stream
+							key={activeVideo.streamVideoId}
+							src={activeVideo.streamVideoId}
+							controls
+							autoplay
+							muted={false}
+							loop={false}
+							preload="metadata"
+							responsive={false}
+							width="100%"
+							height="100%"
+							className="h-full w-full"
+							poster={activeVideo.posterUrl ?? undefined}
+						/>
+					</div>
+					<PublicVideoGrid
+						videos={videos}
+						activeStreamVideoId={activeVideo.streamVideoId}
+						onPlay={handlePlay}
+						onPlayIntent={handlePlayIntent}
+					/>
+				</section>
 			) : null}
-
-			<VideoPlayerModal
-				open={Boolean(selectedVideo)}
-				onClose={handleCloseModal}
-				streamVideoId={selectedVideo?.streamVideoId ?? null}
-				posterUrl={selectedVideo?.posterUrl ?? null}
-				videoTitle={selectedVideo?.title ?? null}
-				startupKind={selectedStartupKind}
-			/>
 		</div>
 	);
 }

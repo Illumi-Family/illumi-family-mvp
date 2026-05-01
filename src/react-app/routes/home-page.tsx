@@ -8,10 +8,8 @@ import {
 	homeContentQueryOptions,
 	publicVideosQueryOptions,
 } from "@/lib/query-options";
-import { VideoPlayerModal } from "@/components/video/video-player-modal";
-import type { VideoPlaybackStartupKind } from "@/lib/video-playback-metrics";
+import { buildPublicVideoWatchHref } from "@/lib/video-watch-route";
 import {
-	hasVideoPlaybackWarmupHit,
 	scheduleVideoPlayerSdkWarmup,
 	warmupVideoPlaybackIntent,
 } from "@/lib/video-player-warmup";
@@ -61,10 +59,6 @@ export function HomePage() {
 		},
 	);
 	const showFallbackHint = homeContentQuery.isError;
-	const [selectedVideo, setSelectedVideo] =
-		useState<ResolvedHomeFeaturedVideo | null>(null);
-	const [selectedStartupKind, setSelectedStartupKind] =
-		useState<VideoPlaybackStartupKind>("cold");
 	const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
 	useEffect(() => {
@@ -113,15 +107,8 @@ export function HomePage() {
 
 	const handleCharacterVideoPlay = (item: ResolvedHomeFeaturedVideo) => {
 		if (!item.video) return;
-		setSelectedStartupKind(
-			hasVideoPlaybackWarmupHit(item.video.streamVideoId) ? "warm" : "cold",
-		);
-		setSelectedVideo(item);
-	};
-
-	const handleCloseModal = () => {
-		setSelectedVideo(null);
-		setSelectedStartupKind("cold");
+		if (typeof window === "undefined") return;
+		window.location.assign(buildPublicVideoWatchHref(item.video.streamVideoId));
 	};
 
 	const publicVideoErrorMessage = readErrorMessage(publicVideosQuery.error);
@@ -291,14 +278,6 @@ export function HomePage() {
 				</div>
 			</main>
 
-			<VideoPlayerModal
-				open={Boolean(selectedVideo)}
-				onClose={handleCloseModal}
-				streamVideoId={selectedVideo?.video?.streamVideoId ?? null}
-				posterUrl={selectedVideo?.video?.posterUrl ?? null}
-				videoTitle={selectedVideo?.title ?? null}
-				startupKind={selectedStartupKind}
-			/>
 			<FooterSection content={homeData.footerContent} />
 		</div>
 	);

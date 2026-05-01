@@ -46,5 +46,8 @@ describe("admin videos page", () => {
 		expect(html).toContain("预览");
 		expect(html).toContain("发布");
 		expect(html).toContain("更多");
+		expect(html).toContain("当前预览");
+		expect(html).toContain("Video 1");
+		expect(html).toContain('data-active-preview="true"');
 	});
 });

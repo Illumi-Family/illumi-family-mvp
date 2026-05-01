@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { VideoPlayerModal } from "@/components/video/video-player-modal";
+import { Stream } from "@cloudflare/stream-react";
 import { VideoEditDrawer } from "@/components/video/admin/video-edit-drawer";
 import { VideoList } from "@/components/video/admin/video-list";
 import { VideoWorkbenchHeader } from "@/components/video/admin/video-workbench-header";
@@ -24,9 +24,7 @@ import {
 	type UploadAdminAssetInput,
 } from "@/lib/api";
 import { runVideoUploadTask, type UploadTaskStatus } from "@/lib/video-upload-task";
-import type { VideoPlaybackStartupKind } from "@/lib/video-playback-metrics";
 import {
-	hasVideoPlaybackWarmupHit,
 	scheduleVideoPlayerSdkWarmup,
 	warmupVideoPlaybackIntent,
 } from "@/lib/video-player-warmup";
@@ -77,9 +75,9 @@ export function AdminVideosPage() {
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [isRefreshing, setIsRefreshing] = useState(false);
 	const [autoRefreshUntil, setAutoRefreshUntil] = useState<number | null>(null);
-	const [selectedVideo, setSelectedVideo] = useState<AdminVideoRecord | null>(null);
-	const [selectedStartupKind, setSelectedStartupKind] =
-		useState<VideoPlaybackStartupKind>("cold");
+	const [activePreviewStreamVideoId, setActivePreviewStreamVideoId] = useState<
+		string | null
+	>(null);
 	const [editingVideo, setEditingVideo] = useState<AdminVideoRecord | null>(null);
 	const [editTitle, setEditTitle] = useState("");
 	const [editPoster, setEditPoster] = useState("");
@@ -127,6 +125,14 @@ export function AdminVideosPage() {
 		() => buildVideoListRows(adminVideos),
 		[adminVideos],
 	);
+	const activePreviewVideo = useMemo(() => {
+		if (adminVideos.length === 0) return null;
+		if (!activePreviewStreamVideoId) return adminVideos[0] ?? null;
+		const matched = adminVideos.find(
+			(video) => video.streamVideoId === activePreviewStreamVideoId,
+		);
+		return matched ?? adminVideos[0] ?? null;
+	}, [adminVideos, activePreviewStreamVideoId]);
 
 	useEffect(() => {
 		void scheduleVideoPlayerSdkWarmup();
@@ -427,16 +433,11 @@ export function AdminVideosPage() {
 	};
 
 	const handlePreviewVideo = (video: AdminVideoRecord) => {
-		setSelectedStartupKind(
-			hasVideoPlaybackWarmupHit(video.streamVideoId) ? "warm" : "cold",
-		);
-		setSelectedVideo(video);
+		setActivePreviewStreamVideoId(video.streamVideoId);
 	};
 
-	const handleClosePreview = () => {
-		setSelectedVideo(null);
-		setSelectedStartupKind("cold");
-	};
+	const activePreviewStreamVideoIdForList =
+		activePreviewVideo?.streamVideoId ?? null;
 
 	return (
 		<div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 py-8">
@@ -572,9 +573,39 @@ export function AdminVideosPage() {
 				) : null}
 
 				{videoRows.length > 0 ? (
+					<div className="space-y-4">
+						{activePreviewVideo ? (
+							<section className="space-y-2" aria-live="polite">
+								<div className="relative aspect-video w-full overflow-hidden rounded-xl border border-[color:rgba(166,124,82,0.24)] bg-black">
+									<Stream
+										key={activePreviewVideo.streamVideoId}
+										src={activePreviewVideo.streamVideoId}
+										controls
+										autoplay
+										muted={false}
+										loop={false}
+										preload="metadata"
+										responsive={false}
+										width="100%"
+										height="100%"
+										className="h-full w-full"
+										poster={activePreviewVideo.posterUrl ?? undefined}
+									/>
+								</div>
+								<div className="space-y-1">
+									<p className="text-xs uppercase tracking-[0.12em] text-[color:var(--brand-primary)]">
+										当前预览
+									</p>
+									<p className="text-sm font-medium text-foreground">
+										{activePreviewVideo.title}
+									</p>
+								</div>
+							</section>
+						) : null}
 					<VideoList
 						videos={videoRows}
 						isActionPending={isActionPending}
+						activeStreamVideoId={activePreviewStreamVideoIdForList}
 						onPreview={handlePreviewVideo}
 						onPreviewIntent={(video) =>
 							void warmupVideoPlaybackIntent(video.streamVideoId)
@@ -585,6 +616,7 @@ export function AdminVideosPage() {
 						onSyncStatus={(videoId) => void handleSyncStatus(videoId)}
 						onDeleteDraft={(videoId) => void handleDeleteDraft(videoId)}
 					/>
+					</div>
 				) : null}
 			</section>
 
@@ -601,15 +633,6 @@ export function AdminVideosPage() {
 				onPosterChange={setEditPoster}
 				onUploadPosterFile={(file) => void handleUploadPosterFile(file)}
 				onSave={() => void handleSaveMetadata()}
-			/>
-
-			<VideoPlayerModal
-				open={Boolean(selectedVideo)}
-				onClose={handleClosePreview}
-				streamVideoId={selectedVideo?.streamVideoId ?? null}
-				posterUrl={selectedVideo?.posterUrl ?? null}
-				videoTitle={selectedVideo?.title ?? null}
-				startupKind={selectedStartupKind}
 			/>
 		</div>
 	);

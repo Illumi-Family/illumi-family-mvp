@@ -1,4 +1,3 @@
-import { createElement } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -15,14 +14,6 @@ vi.mock("@/i18n/context", () => ({
 		lang: "zh",
 		switchLocale: () => {},
 	}),
-}));
-
-vi.mock("@/components/video/video-player-modal", () => ({
-	VideoPlayerModal: (props: { open: boolean }) =>
-		createElement("div", {
-			"data-testid": "home-video-modal-proxy",
-			"data-open": String(props.open),
-		}),
 }));
 
 import {
@@ -70,7 +61,7 @@ describe("home page", () => {
 		expect(steps).toEqual(["close", "raf", "scroll"]);
 	});
 
-	it("renders home shell and keeps unified video modal entry closed by default", () => {
+	it("renders home shell without public video modal entry", () => {
 		const queryClient = new QueryClient();
 		const html = renderToString(
 			<QueryClientProvider client={queryClient}>
@@ -80,8 +71,6 @@ describe("home page", () => {
 
 		expect(html).toContain('id="main-content"');
 		expect(html).toContain("家塾起源");
-		expect(html).toContain('data-testid="home-video-modal-proxy"');
-		expect(html).toContain('data-open="false"');
 		expect(html).toContain("navigation.mobileMenuOpenAriaLabel");
 		expect(html).not.toContain("navigation.mobileAriaLabel");
 	});

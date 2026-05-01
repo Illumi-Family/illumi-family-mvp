@@ -8,7 +8,7 @@ export function RootLayout() {
 	const { data: session } = authClient.useSession();
 	const isSignedIn = Boolean(session?.user);
 	const pathname = useRouterState({ select: (state) => state.location.pathname });
-	const showUtilityNav = pathname !== "/";
+	const showUtilityNav = pathname !== "/" && pathname !== "/video";
 	const skipTarget = showUtilityNav ? "#app-main-content" : "#main-content";
 
 	return (
@@ -35,7 +35,7 @@ export function RootLayout() {
 									</Button>
 								</Link>
 							) : null}
-							<Link to="/videos">
+							<Link to="/video">
 								<Button variant="ghost" size="sm">
 									{t("utilityNav.videos", { defaultValue: "Videos" })}
 								</Button>
