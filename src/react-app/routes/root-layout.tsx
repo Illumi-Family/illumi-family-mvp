@@ -8,7 +8,9 @@ export function RootLayout() {
 	const { data: session } = authClient.useSession();
 	const isSignedIn = Boolean(session?.user);
 	const pathname = useRouterState({ select: (state) => state.location.pathname });
-	const showUtilityNav = pathname !== "/" && pathname !== "/video";
+	const isPublicSurface =
+		pathname === "/" || pathname === "/video" || pathname.startsWith("/legal/");
+	const showUtilityNav = !isPublicSurface;
 	const skipTarget = showUtilityNav ? "#app-main-content" : "#main-content";
 
 	return (

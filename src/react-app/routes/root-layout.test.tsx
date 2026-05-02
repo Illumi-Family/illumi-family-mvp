@@ -32,6 +32,12 @@ describe("root layout", () => {
 		expect(html).toContain("skipToContent");
 	});
 
+	it("hides utility nav on /legal routes", () => {
+		mockPathnameState.value = "/legal/privacy";
+		const html = renderToStaticMarkup(createElement(RootLayout));
+		expect(html).not.toContain("utilityNav.ariaLabel");
+	});
+
 	it("shows utility nav on non-home and non-video paths", () => {
 		mockPathnameState.value = "/admin/videos";
 		const html = renderToStaticMarkup(createElement(RootLayout));

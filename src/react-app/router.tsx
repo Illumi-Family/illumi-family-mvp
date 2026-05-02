@@ -11,6 +11,7 @@ import { AdminPage } from "@/routes/admin-page";
 import { AdminVideosPage } from "@/routes/admin-videos-page";
 import { AuthPage } from "@/routes/auth-page";
 import { HomePage } from "@/routes/home-page";
+import { LegalPage } from "@/routes/legal-page";
 import { RootLayout } from "@/routes/root-layout";
 import { UsersPage } from "@/routes/users-page";
 import { VideosPage } from "@/routes/videos-page";
@@ -84,9 +85,30 @@ const videosRoute = createRoute({
 	component: VideosPage,
 });
 
+const legalPrivacyRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/legal/privacy",
+	component: () => <LegalPage pageKey="privacy" />,
+});
+
+const legalMinorProtectionRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/legal/minor-protection",
+	component: () => <LegalPage pageKey="minorProtection" />,
+});
+
+const legalCopyrightRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/legal/copyright",
+	component: () => <LegalPage pageKey="copyright" />,
+});
+
 const routeTree = rootRoute.addChildren([
 	homeRoute,
 	videosRoute,
+	legalPrivacyRoute,
+	legalMinorProtectionRoute,
+	legalCopyrightRoute,
 	usersRoute,
 	authRoute,
 	adminRoute,

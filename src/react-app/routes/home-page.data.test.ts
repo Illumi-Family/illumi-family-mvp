@@ -40,6 +40,21 @@ describe("official website home data", () => {
 		expect(en.homeContentMatrixContent.items).toHaveLength(4);
 	});
 
+	it("replaces footer legal placeholders with legal routes", () => {
+		const zh = getHomePageData("zh-CN");
+		const en = getHomePageData("en-US");
+		expect(zh.footerContent.links.map((link) => link.href)).toEqual([
+			"/legal/privacy",
+			"/legal/minor-protection",
+			"/legal/copyright",
+		]);
+		expect(en.footerContent.links.map((link) => link.href)).toEqual([
+			"/legal/privacy",
+			"/legal/minor-protection",
+			"/legal/copyright",
+		]);
+	});
+
 	it("keeps slogan fallback and dynamic featured videos defaults", () => {
 		const zh = getHomePageData("zh-CN");
 		expect(defaultHomeContent.heroSlogan.title).toBe(zh.heroContent.title);

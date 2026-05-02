@@ -303,9 +303,9 @@ export const footerContent = {
 	copyright: "© 2026 童蒙家塾 Tongmeng Family School. All rights reserved.",
 	contactEmail: "contact@illumi-family.com",
 	links: [
-		{ label: "隐私政策（待补充）", href: "#" },
-		{ label: "未成年人保护（待补充）", href: "#" },
-		{ label: "版权声明（待补充）", href: "#" },
+		{ label: "隐私政策", href: "/legal/privacy" },
+		{ label: "未成年人保护", href: "/legal/minor-protection" },
+		{ label: "版权声明", href: "/legal/copyright" },
 	] satisfies FooterLink[],
 };
 
@@ -556,9 +556,9 @@ const footerContentEn = {
 	copyright: "© 2026 Tongmeng Family School. All rights reserved.",
 	contactEmail: "contact@illumi-family.com",
 	links: [
-		{ label: "Privacy Policy (TBD)", href: "#" },
-		{ label: "Minor Protection (TBD)", href: "#" },
-		{ label: "Copyright Notice (TBD)", href: "#" },
+		{ label: "Privacy Policy", href: "/legal/privacy" },
+		{ label: "Minor Protection", href: "/legal/minor-protection" },
+		{ label: "Copyright Notice", href: "/legal/copyright" },
 	] satisfies FooterLink[],
 };
 
