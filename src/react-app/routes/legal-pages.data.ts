@@ -255,7 +255,7 @@ const enPages: LocalizedLegalPages = {
 		sections: [
 			{
 				heading: "1. Ownership",
-				body: "Original text, images, audio/video, character designs, and layout assets on this site are owned by Tongmeng Family School or the relevant rights holders.",
+				body: "Original text, images, audio/video, character designs, and layout assets on this site are owned by Illumi Family or the relevant rights holders.",
 			},
 			{
 				heading: "2. Usage and License",

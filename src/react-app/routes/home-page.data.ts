@@ -300,7 +300,7 @@ export const aboutContent: AboutContent = {
 export const footerContent = {
 	sloganLine1: "自家即是家塾，日常即是教育。",
 	sloganLine2: "童蒙养正，家风传世。",
-	copyright: "© 2026 童蒙家塾 Tongmeng Family School. All rights reserved.",
+	copyright: "© 2026 童蒙家塾 Illumi Family. All rights reserved.",
 	contactEmail: "contact@illumi-family.com",
 	links: [
 		{ label: "隐私政策", href: "/legal/privacy" },
@@ -379,7 +379,7 @@ export const homeBusinessContactContent: HomeBusinessContactContent = {
 };
 
 const siteMetaEn = {
-	brandName: "Tongmeng Family School",
+	brandName: "Illumi Family",
 	brandSubtitle: "Three-generation family culture in practice",
 	headerCta: { label: "Start Exploring", sectionId: "section-home-origin" as const },
 };
@@ -394,7 +394,7 @@ const siteNavigationEn: NavigationItem[] = [
 
 const heroContentEn: HeroContent = {
 	title: "A three-generation practitioner of family values and learning",
-	subtitle: "Every family can build its own Tongmeng Family School",
+	subtitle: "Every family can build its own Illumi Family",
 	descriptionLines: [
 		"Root hearts in classics, nurture character through family culture.",
 		"Stand on the foundation of three generations living together,",
@@ -536,7 +536,7 @@ const defaultHomeContentEn = {
 
 const aboutContentEn: AboutContent = {
 	name: "Teacher Xiao Luo",
-	roles: ["Mother of three", "Family education practitioner", "Founder of Tongmeng Family School"],
+	roles: ["Mother of three", "Family education practitioner", "Founder of Illumi Family"],
 	beliefs: [
 		"The best education happens at home;",
 		"The best private school is in everyday life.",
@@ -546,14 +546,14 @@ const aboutContentEn: AboutContent = {
 		"Reject anxiety and utilitarian pressure. Practice education rooted in life, with warmth and depth.",
 	portrait: {
 		src: "/images/background.png",
-		alt: "Family IP portrait of Tongmeng Family School.",
+		alt: "Family IP portrait of Illumi Family.",
 	},
 };
 
 const footerContentEn = {
 	sloganLine1: "Your home is a school, your daily life is education.",
 	sloganLine2: "Nurture character early, pass family values forward.",
-	copyright: "© 2026 Tongmeng Family School. All rights reserved.",
+	copyright: "© 2026 Illumi Family. All rights reserved.",
 	contactEmail: "contact@illumi-family.com",
 	links: [
 		{ label: "Privacy Policy", href: "/legal/privacy" },
@@ -569,7 +569,7 @@ const homeOriginContentEn: HomeOriginContent = {
 	ipIntroHeading: "IP Introduction",
 	brandVisionHeading: "Brand Vision",
 	ipIntro: [
-		"Tongmeng Family School originates from a real family rooted in traditional cultural inheritance, inspired by the real life of three generations living together.",
+		"Illumi Family originates from a real family rooted in traditional cultural inheritance, inspired by the real life of three generations living together.",
 		"All stories in this IP come from everyday family moments and real-life trajectories.",
 		"We take family as school and learning as nourishment, carrying forward Chinese family values through original animation narratives.",
 		"Root hearts in classics, nurture character through family values, enlighten with family learning, and stand with practice.",
@@ -601,22 +601,22 @@ const homeContentMatrixContentEn: HomeContentMatrixContent = {
 		{
 			platform: "Xiaohongshu",
 			qrImageSrc: "/images/social/xhs.jpg",
-			qrImageAlt: "Tongmeng Family School Xiaohongshu QR code",
+			qrImageAlt: "Illumi Family Xiaohongshu QR code",
 		},
 		{
 			platform: "Bilibili",
 			qrImageSrc: "/images/social/bilibili.jpg",
-			qrImageAlt: "Tongmeng Family School Bilibili QR code",
+			qrImageAlt: "Illumi Family Bilibili QR code",
 		},
 		{
 			platform: "Douyin",
 			qrImageSrc: "/images/social/douyin.jpg",
-			qrImageAlt: "Tongmeng Family School Douyin QR code",
+			qrImageAlt: "Illumi Family Douyin QR code",
 		},
 		{
 			platform: "WeChat Channels",
 			qrImageSrc: "/images/social/wechat.jpg",
-			qrImageAlt: "Tongmeng Family School WeChat Channels QR code",
+			qrImageAlt: "Illumi Family WeChat Channels QR code",
 		},
 	],
 };
