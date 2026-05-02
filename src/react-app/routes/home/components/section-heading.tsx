@@ -14,7 +14,7 @@ export function SectionHeading({ id, label, title, description }: SectionHeading
 				{label}
 			</Badge> */}
 			<h2 id={id} className="font-brand text-3xl leading-tight text-foreground md:text-4xl">
-				{label} - {title}
+				{label}
 			</h2>
 			{/* <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground md:text-base">
 				{description}

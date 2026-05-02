@@ -119,8 +119,8 @@ export const siteNavigation: NavigationItem[] = [
 	{ label: "家塾起源", sectionId: "section-home-origin" },
 	{ label: "角色介绍", sectionId: "section-home-character-videos" },
 	{ label: "家庭故事", sectionId: "section-home-family-stories" },
-	{ label: "内容矩阵", sectionId: "section-home-content-matrix" },
-	{ label: "商务合作", sectionId: "section-home-business" },
+	{ label: "发现更多", sectionId: "section-home-content-matrix" },
+	{ label: "联系方式", sectionId: "section-home-business" },
 ];
 
 export const heroContent: HeroContent = {
@@ -341,7 +341,7 @@ export const homeFamilyStoriesConfig: HomeFamilyStoriesConfig = {
 
 export const homeContentMatrixContent: HomeContentMatrixContent = {
 	sectionId: "section-home-content-matrix",
-	label: "内容矩阵",
+	label: "发现更多",
 	title: "多平台内容矩阵",
 	description: "本期仅展示平台二维码，不提供点击跳转。",
 	items: [
@@ -370,7 +370,7 @@ export const homeContentMatrixContent: HomeContentMatrixContent = {
 
 export const homeBusinessContactContent: HomeBusinessContactContent = {
 	sectionId: "section-home-business",
-	label: "商务合作",
+	label: "联系方式",
 	title: "商务合作与联络方式",
 	description: "欢迎品牌合作、内容合作与活动邀约。",
 	phone: "13570380204",
