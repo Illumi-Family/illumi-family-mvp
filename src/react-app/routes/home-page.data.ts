@@ -347,22 +347,22 @@ export const homeContentMatrixContent: HomeContentMatrixContent = {
 	items: [
 		{
 			platform: "小红书",
-			qrImageSrc: "/images/logo.jpg",
+			qrImageSrc: "/images/social/xhs.jpg",
 			qrImageAlt: "童蒙家塾小红书二维码",
 		},
 		{
 			platform: "B 站",
-			qrImageSrc: "/images/logo.jpg",
+			qrImageSrc: "/images/social/bilibili.jpg",
 			qrImageAlt: "童蒙家塾B站二维码",
 		},
 		{
 			platform: "抖音",
-			qrImageSrc: "/images/logo.jpg",
+			qrImageSrc: "/images/social/douyin.jpg",
 			qrImageAlt: "童蒙家塾抖音二维码",
 		},
 		{
 			platform: "微信视频号",
-			qrImageSrc: "/images/logo.jpg",
+			qrImageSrc: "/images/social/wechat.jpg",
 			qrImageAlt: "童蒙家塾微信视频号二维码",
 		},
 	],
@@ -600,22 +600,22 @@ const homeContentMatrixContentEn: HomeContentMatrixContent = {
 	items: [
 		{
 			platform: "Xiaohongshu",
-			qrImageSrc: "/images/logo.jpg",
+			qrImageSrc: "/images/social/xhs.jpg",
 			qrImageAlt: "Tongmeng Family School Xiaohongshu QR code",
 		},
 		{
 			platform: "Bilibili",
-			qrImageSrc: "/images/logo.jpg",
+			qrImageSrc: "/images/social/bilibili.jpg",
 			qrImageAlt: "Tongmeng Family School Bilibili QR code",
 		},
 		{
 			platform: "Douyin",
-			qrImageSrc: "/images/logo.jpg",
+			qrImageSrc: "/images/social/douyin.jpg",
 			qrImageAlt: "Tongmeng Family School Douyin QR code",
 		},
 		{
 			platform: "WeChat Channels",
-			qrImageSrc: "/images/logo.jpg",
+			qrImageSrc: "/images/social/wechat.jpg",
 			qrImageAlt: "Tongmeng Family School WeChat Channels QR code",
 		},
 	],
