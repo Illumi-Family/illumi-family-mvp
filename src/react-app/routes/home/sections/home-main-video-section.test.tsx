@@ -74,9 +74,9 @@ describe("home-main-video-section", () => {
 		);
 
 		expect(html).toContain("home-main-video-query-skeleton");
+		expect(html).toContain('data-testid="home-main-video-shell"');
 		expect(html).toContain("sr-only");
 		expect(html).toContain("homeVideo.heroLoading");
-		expect(html).toContain("homeVideo.heroLabel");
 		expect(html).toContain("aspect-video");
 	});
 
@@ -97,6 +97,8 @@ describe("home-main-video-section", () => {
 
 		expect(html).toContain("全家福 · 家风传承纪实");
 		expect(html).toContain("homeVideo.heroMissing");
+		expect(html).toContain('data-testid="home-main-video-shell"');
+		expect(html).toContain('data-testid="home-main-video-missing"');
 	});
 
 	it("renders stream player shell with metadata preload before play intent", () => {
@@ -113,6 +115,7 @@ describe("home-main-video-section", () => {
 		expect(html).toContain('data-testid="stream-player"');
 		expect(html).toContain('data-preload="metadata"');
 		expect(html).toContain('data-controls="true"');
+		expect(html).toContain('data-testid="home-main-video-shell"');
 		expect(html).toContain("aspect-video");
 	});
 
@@ -131,7 +134,7 @@ describe("home-main-video-section", () => {
 		expect(html).not.toContain("主视频加载中");
 	});
 
-	it("renders retry affordance on query error", () => {
+	it("renders query error in the shared main video shell", () => {
 		const html = renderToStaticMarkup(
 			createElement(HomeMainVideoSection, {
 				video: createFeaturedVideo(),
@@ -142,7 +145,33 @@ describe("home-main-video-section", () => {
 			}),
 		);
 
+		expect(html).toContain('data-testid="home-main-video-shell"');
+		expect(html).toContain('data-testid="home-main-video-query-error"');
 		expect(html).toContain("homeVideo.retry");
 		expect(html).toContain("homeVideo.heroError:request timeout");
+	});
+
+	it("renders poster fallback background marker when poster is missing", () => {
+		const html = renderToStaticMarkup(
+			createElement(HomeMainVideoSection, {
+				video: createFeaturedVideo({
+					video: {
+						id: "video-main",
+						streamVideoId: "stream-main",
+						title: "全家福主片",
+						posterUrl: null,
+						durationSeconds: 188,
+						publishedAt: "2026-04-01T00:00:00.000Z",
+					},
+				}),
+				isLoading: false,
+				isError: false,
+				errorMessage: null,
+				onRetry: () => {},
+			}),
+		);
+
+		expect(html).toContain('data-testid="home-main-video-shell"');
+		expect(html).toContain('data-testid="home-main-video-poster-fallback"');
 	});
 });

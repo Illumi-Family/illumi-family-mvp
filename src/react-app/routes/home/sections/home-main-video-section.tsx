@@ -32,6 +32,9 @@ type MainVideoPlayerProps = {
 	retryLabel: string;
 };
 
+const MAIN_VIDEO_SHELL_CLASS =
+	"relative aspect-video w-full overflow-hidden border border-[color:rgba(166,124,82,0.24)] bg-[color:rgba(255,252,247,0.82)]";
+
 const resolveMessage = (value: string | null) => {
 	const trimmed = value?.trim();
 	return trimmed && trimmed.length > 0 ? trimmed : null;
@@ -118,7 +121,7 @@ function MainVideoPlayer(props: MainVideoPlayerProps) {
 	const showErrorOverlay = hasPlayIntent && startupPhase === "error";
 
 	return (
-		<div className="relative aspect-video w-full overflow-hidden border-none">
+		<div className="relative h-full w-full overflow-hidden">
 			{posterUrl ? (
 				<img
 					src={posterUrl}
@@ -129,6 +132,7 @@ function MainVideoPlayer(props: MainVideoPlayerProps) {
 			) : (
 				<div
 					aria-hidden="true"
+					data-testid="home-main-video-poster-fallback"
 					className="absolute inset-0 bg-[radial-gradient(circle_at_18%_22%,rgba(166,124,82,0.42),transparent_52%),radial-gradient(circle_at_82%_78%,rgba(96,120,148,0.3),transparent_48%),linear-gradient(140deg,rgba(30,31,38,0.96)_0%,rgba(23,24,33,0.92)_46%,rgba(13,14,21,0.96)_100%)]"
 				/>
 			)}
@@ -175,7 +179,7 @@ function MainVideoPlayer(props: MainVideoPlayerProps) {
 
 			{showLoadingOverlay ? (
 				<div
-					className="pointer-events-none absolute inset-0 overflow-hidden bg-[linear-gradient(180deg,rgba(24,20,18,0.08)_0%,rgba(24,20,18,0.7)_100%)]"
+					className="pointer-events-none absolute inset-0 overflow-hidden bg-[linear-gradient(180deg,rgba(24,20,18,0.08)_0%,rgba(24,20,18,0.7)_100%)] transition-opacity duration-300"
 					data-testid="main-video-startup-skeleton"
 					aria-live="polite"
 					aria-busy="true"
@@ -215,92 +219,73 @@ function MainVideoPlayer(props: MainVideoPlayerProps) {
 export function HomeMainVideoSection(props: HomeMainVideoSectionProps) {
 	const { video, isLoading, isError, errorMessage, onRetry } = props;
 	const { t } = useTranslation("home");
-
-	if (isLoading) {
-		return (
-			<section id="home-main-video" className="space-y-4 py-2" aria-live="polite">
-				<p className="text-xs uppercase tracking-[0.14em] text-[color:var(--brand-primary)]">
-					{t("homeVideo.heroLabel")}
-				</p>
-				<div
-					className="relative aspect-video w-full overflow-hidden rounded-[2rem] border border-[color:rgba(166,124,82,0.24)] bg-[color:rgba(243,236,227,0.72)]"
-					data-testid="home-main-video-query-skeleton"
-					aria-busy="true"
-				>
+	const isMissing = !video.video || video.status === "missing";
+	return (
+		<section
+			id="home-main-video"
+			aria-live={isError ? "assertive" : "polite"}
+		>
+			<div className={MAIN_VIDEO_SHELL_CLASS} data-testid="home-main-video-shell">
+				{isLoading ? (
 					<div
-						aria-hidden="true"
-						className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,rgba(166,124,82,0.14),rgba(255,252,247,0.68),rgba(166,124,82,0.14))]"
-					/>
-					<div
-						aria-hidden="true"
-						className="absolute inset-x-6 bottom-5 flex flex-col gap-2"
+						className="absolute inset-0"
+						data-testid="home-main-video-query-skeleton"
+						aria-busy="true"
 					>
-						<Skeleton className="h-3 w-44 rounded-full bg-[color:rgba(166,124,82,0.35)]" />
-						<Skeleton className="h-2.5 w-60 rounded-full bg-[color:rgba(166,124,82,0.25)]" />
+						<div
+							aria-hidden="true"
+							className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,rgba(166,124,82,0.14),rgba(255,252,247,0.68),rgba(166,124,82,0.14))]"
+						/>
+						<div
+							aria-hidden="true"
+							className="absolute inset-x-6 bottom-5 flex flex-col gap-2"
+						>
+							<Skeleton className="h-3 w-44 rounded-full bg-[color:rgba(166,124,82,0.35)]" />
+							<Skeleton className="h-2.5 w-60 rounded-full bg-[color:rgba(166,124,82,0.25)]" />
+						</div>
+						<span className="sr-only">{t("homeVideo.heroLoading")}</span>
 					</div>
-					<span className="sr-only">{t("homeVideo.heroLoading")}</span>
-				</div>
-			</section>
-		);
-	}
+				) : null}
 
-	if (isError) {
-		return (
-			<section id="home-main-video" className="space-y-4 py-2" aria-live="assertive">
-				<p className="text-xs uppercase tracking-[0.14em] text-[color:var(--brand-primary)]">
-					{t("homeVideo.heroLabel")}
-				</p>
-				<div className="space-y-4 rounded-[2rem] border border-rose-300 bg-rose-50 px-6 py-8 text-rose-900">
-					<p className="text-base font-medium">{t("homeVideo.errorTitle")}</p>
-					<p className="text-sm">
-						{t("homeVideo.heroError", {
-							message: resolveMessage(errorMessage) ?? t("homeVideo.errorUnknown"),
-						})}
-					</p>
-					<div>
+				{isError ? (
+					<div
+						className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-rose-50/95 px-6 text-center text-rose-900"
+						data-testid="home-main-video-query-error"
+					>
+						<p className="text-base font-medium">{t("homeVideo.errorTitle")}</p>
+						<p className="text-sm">
+							{t("homeVideo.heroError", {
+								message: resolveMessage(errorMessage) ?? t("homeVideo.errorUnknown"),
+							})}
+						</p>
 						<Button type="button" variant="outline" onClick={onRetry}>
 							{t("homeVideo.retry")}
 						</Button>
 					</div>
-				</div>
-			</section>
-		);
-	}
+				) : null}
 
-	if (!video.video || video.status === "missing") {
-		return (
-			<section id="home-main-video" className="space-y-4 py-2" aria-live="polite">
-				<p className="text-xs uppercase tracking-[0.14em] text-[color:var(--brand-primary)]">
-					{t("homeVideo.heroLabel")}
-				</p>
-				<div className="space-y-2 rounded-[2rem] border border-[color:rgba(166,124,82,0.24)] bg-[color:rgba(255,252,247,0.82)] px-6 py-8">
-					<p className="text-base font-medium text-foreground">{video.title}</p>
-					<p className="text-sm text-muted-foreground">{t("homeVideo.heroMissing")}</p>
-				</div>
-			</section>
-		);
-	}
+				{isMissing ? (
+					<div
+						className="absolute inset-0 flex flex-col justify-center gap-2 px-6 py-8"
+						data-testid="home-main-video-missing"
+					>
+						<p className="text-base font-medium text-foreground">{video.title}</p>
+						<p className="text-sm text-muted-foreground">{t("homeVideo.heroMissing")}</p>
+					</div>
+				) : null}
 
-	return (
-		<section id="home-main-video" className="" aria-live="polite">
-			{/* <div className="flex flex-wrap items-end justify-between gap-3">
-				<div className="space-y-1">
-					<p className="text-xs uppercase tracking-[0.14em] text-[color:var(--brand-primary)]">
-						{t("homeVideo.heroLabel")}
-					</p>
-					<p className="text-sm text-muted-foreground">{video.roleLabel}</p>
-				</div>
-				<p className="text-xs text-muted-foreground">{t("homeVideo.heroDescription")}</p>
-			</div> */}
-			<MainVideoPlayer
-				key={video.video.streamVideoId}
-				streamVideoId={video.video.streamVideoId}
-				posterUrl={video.video.posterUrl}
-				loadingHint={t("homeVideo.loadingHint")}
-				errorTitle={t("homeVideo.errorTitle")}
-				errorHint={t("homeVideo.errorHint")}
-				retryLabel={t("homeVideo.retry")}
-			/>
+				{!isLoading && !isError && !isMissing ? (
+					<MainVideoPlayer
+						key={video.video.streamVideoId}
+						streamVideoId={video.video.streamVideoId}
+						posterUrl={video.video.posterUrl}
+						loadingHint={t("homeVideo.loadingHint")}
+						errorTitle={t("homeVideo.errorTitle")}
+						errorHint={t("homeVideo.errorHint")}
+						retryLabel={t("homeVideo.retry")}
+					/>
+				) : null}
+			</div>
 		</section>
 	);
 }
