@@ -24,6 +24,7 @@ export type HomeContentPayload = {
 	featuredVideos: {
 		main: MainVideoSectionContent;
 		characters: CharacterVideosSectionContent;
+		familyStories: CharacterVideosSectionContent;
 	};
 	philosophy: PhilosophySectionContent;
 	dailyNotes: DailyNotesSectionContent;
@@ -44,6 +45,9 @@ const EMPTY_HOME_CONTENT = {
 			streamVideoId: "",
 		},
 		characters: {
+			items: [],
+		},
+		familyStories: {
 			items: [],
 		},
 	},
@@ -128,6 +132,10 @@ export class ContentService {
 			"home.character_videos",
 			EMPTY_HOME_CONTENT.featuredVideos.characters,
 		);
+		const featuredFamilyStories = resolveSection(
+			"home.family_story_videos",
+			EMPTY_HOME_CONTENT.featuredVideos.familyStories,
+		);
 		const philosophy = resolveSection(
 			"home.philosophy",
 			EMPTY_HOME_CONTENT.philosophy,
@@ -150,6 +158,7 @@ export class ContentService {
 			featuredVideos: {
 				main: featuredMain,
 				characters: featuredCharacters,
+				familyStories: featuredFamilyStories,
 			},
 			philosophy,
 			dailyNotes,

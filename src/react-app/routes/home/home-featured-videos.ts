@@ -16,6 +16,7 @@ export type ResolvedHomeFeaturedVideo = {
 export type HomeFeaturedVideosResolved = {
 	main: ResolvedHomeFeaturedVideo;
 	characters: ResolvedHomeFeaturedVideo[];
+	familyStories: ResolvedHomeFeaturedVideo[];
 	duplicateConfiguredIds: string[];
 };
 
@@ -76,10 +77,14 @@ export const resolveHomeFeaturedVideos = (
 	const configuredCharacterIds = config.characters.items
 		.map((item) => normalizeStreamVideoId(item.streamVideoId))
 		.filter(Boolean);
+	const configuredFamilyStoryIds = config.familyStories.items
+		.map((item) => normalizeStreamVideoId(item.streamVideoId))
+		.filter(Boolean);
 
 	const duplicateConfiguredIds = collectDuplicateFeaturedVideoIds([
 		configuredMainId,
 		...configuredCharacterIds,
+		...configuredFamilyStoryIds,
 	]);
 	const duplicateIdSet = new Set<string>(duplicateConfiguredIds);
 
@@ -113,9 +118,19 @@ export const resolveHomeFeaturedVideos = (
 		} satisfies ResolvedHomeFeaturedVideo;
 	});
 
+	const familyStories = resolveConfiguredVideoList(videos, configuredFamilyStoryIds, {
+		locale,
+		keyPrefix: "family-story",
+		roleLabelPrefixZh: "家庭故事",
+		roleLabelPrefixEn: "Family Story",
+		titlePrefixZh: "家庭故事视频",
+		titlePrefixEn: "Family Story Video",
+	});
+
 	return {
 		main,
 		characters,
+		familyStories,
 		duplicateConfiguredIds,
 	};
 };

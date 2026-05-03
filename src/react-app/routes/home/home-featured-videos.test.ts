@@ -33,6 +33,9 @@ const createConfig = (
 				{ streamVideoId: "stream-char-2" },
 			],
 	},
+	familyStories: {
+		items: overrides?.familyStories?.items ?? [],
+	},
 });
 
 describe("home featured videos", () => {

@@ -2,7 +2,7 @@
 
 ## 0. 文档信息
 - 项目：`illumi-family-mvp`
-- 文档版本：`v1.5.0`
+- 文档版本：`v1.6.0`
 - 最近更新：`2026-04-18`
 - 运行规范入口：`docs/runbooks/development-deployment-cicd-runbook.md`
 - 当前阶段：模板初始化后已完成 UI 基础设施 + 前端路由/数据缓存（TanStack Router + Query）+ 后端基础能力（dev/prod + D1/KV/R2 + Drizzle + Hono API 分层）+ Better Auth + Resend 鉴权主链路（邮箱密码 + Google）+ Admin CMS 基础能力（白名单鉴权 + admin 子域 + D1 内容版本化 + R2 资产 + 内容发布 API）+ i18n Phase 1/2（前端双语、CMS locale、内容 fallback、locale 缓存分片）+ Cloudflare Stream 视频能力层（后台直传签发 + 导入复用 + 手动全量同步目录、webhook 状态回写、发布门禁、公网播放）+ 首页关键区块后台可编辑化（Slogan + 核心视频 + 动态角色视频、shared 双 locale 镜像发布）+ 本地模板脚手架（template:new/sync/doctor）
@@ -81,7 +81,7 @@ flowchart LR
 │   ├── react-app/          # 前端 SPA
 │   │   ├── main.tsx        # React 启动入口
 │   │   ├── router.tsx      # TanStack Router 路由树与 QueryClient
-│   │   ├── routes/         # 页面路由组件（home/users/auth/admin/admin-videos）
+│   │   ├── routes/         # 页面路由组件（home/auth/admin-profile/admin/admin-videos）
 │   │   ├── components/ui/  # shadcn 组件目录
 │   │   ├── components/video/ # 视频播放弹窗组件
 │   │   ├── lib/            # 前端工具方法与 API/Query/Auth client 配置
@@ -104,7 +104,7 @@ flowchart LR
 
 ### 4.1 前端 UI 基础设施说明
 - Tailwind v4 采用 CSS-first 模式，入口样式文件为 `src/react-app/index.css`。
-- TanStack Router 负责前端页面路由管理，当前已落地 `home/users/auth/admin/videos` 页面路由。
+- TanStack Router 负责前端页面路由管理，当前已落地 `home/auth/admin/profile/admin/cms/admin/videos` 页面路由（`/admin` 自动跳转到 `/admin/profile`）。
 - TanStack Query 负责 server-state 请求、缓存与失效刷新，当前示例接入 `/api/health` 与 `/api/users`。
 - 视频播放页采用 `@cloudflare/stream-react` 组件，配合 `VideoPlayerModal` 弹窗完成公网播放。
 - shadcn/ui 采用本地组件模式：
@@ -290,11 +290,13 @@ flowchart LR
 - 公网内容发布接口（`/api/content/home`）与 admin 内容管理接口（`/api/admin/content/home`）；
 - i18n Phase 1/2 能力：前端 `zh-CN/en-US` 切换、`/api/content/home?locale=` 契约、`cms_entries(entry_key, locale)` 维度、内容 fallback 与 `fallbackFrom`；
 - locale 缓存分片与发布失效矩阵：`cms:home:published:v1:{locale}`，共享首页 key 发布时联动失效全部受支持 locale；
-- 首页关键区块后台可编辑能力：
-  - shared entry keys：`home.hero_slogan`、`home.main_video`、`home.character_videos`；
-  - shared key save/publish 镜像写入 `zh-CN/en-US`；
-  - 发布门禁覆盖 Slogan 必填、核心视频必填、角色视频至少 1 条、视频 `ready + published` 二次校验；
-  - 首页首段/视频入口改为消费发布配置（`heroSlogan` + `featuredVideos`），移除固定 6 槽位常量依赖；
+- 首页视频配置后台能力（v1.6.0）：
+  - 后台路由收敛为 `/admin/profile`（我的账号）、`/admin/cms`（CMS 配置）与 `/admin/videos`（视频管理），`/admin` 自动跳转至 `/admin/profile`；
+  - 后台与 C 端 header 分离：`/admin*` 仅展示后台导航入口（我的账号 + CMS 配置 + 视频管理）；
+  - CMS 配置收敛为 3 个视频模块：`home.main_video`、`home.character_videos`、`home.family_story_videos`；
+  - 后台视频配置采用全局单配置编辑体验（无 locale 切换 UI）；
+  - 发布门禁覆盖核心视频必填、角色视频至少 1 条、家庭故事视频不可重复、所有引用视频需 `ready + published`；
+  - 首页视频区消费发布配置：`featuredVideos.main`、`featuredVideos.characters`、`featuredVideos.familyStories`，家庭故事视频列表不再依赖静态 `streamVideoIds`；
 - R2 资产上传与读取链路（`/api/admin/assets/upload`、`/api/content/assets/:assetId`）；
 - Cloudflare Stream 视频能力层：
   - admin 直传 URL 签发（`POST /api/admin/videos/upload-url`）；
@@ -359,3 +361,5 @@ flowchart LR
 | 2026-04-17 | v1.4.0 | 首页关键区块后台可编辑化：新增 `home.hero_slogan` / `home.main_video` / `home.character_videos` shared 配置、发布门禁、首页配置驱动渲染 |
 | 2026-04-17 | v1.4.1 | 收敛部署规范：明确 `deploy*` 不含 migration，新增“每次发布强制 schema parity gate（db:migrate + migrations list=No pending）”并统一 dev/prod 发布顺序 |
 | 2026-04-18 | v1.5.0 | 新增 Stream 目录手动全量同步链路：`POST /api/admin/videos/sync-catalog`、缺失视频双次命中下架规则、同步状态字段与前端顶部同步入口 |
+| 2026-05-02 | v1.6.0 | 后台信息架构重构：`/admin -> /admin/cms`、后台/C 端 header 分离、CMS 收敛为 3 个视频模块并新增 `home.family_story_videos`，首页家庭故事视频改为 CMS 配置驱动 |
+| 2026-05-03 | v1.7.0 | 账号与后台入口收敛：`/auth` 仅保留登录（邮箱/Google），前端下线 `/users` 独立路由，新增 `/admin/profile` 并将 `/admin` 默认跳转切换为 `/admin/profile`，后台导航扩展为“我的账号 + CMS 配置 + 视频管理” |

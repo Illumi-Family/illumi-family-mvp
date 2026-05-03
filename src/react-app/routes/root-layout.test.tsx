@@ -38,10 +38,22 @@ describe("root layout", () => {
 		expect(html).not.toContain("utilityNav.ariaLabel");
 	});
 
+	it("hides utility nav on /auth path", () => {
+		mockPathnameState.value = "/auth";
+		const html = renderToStaticMarkup(createElement(RootLayout));
+		expect(html).not.toContain("utilityNav.ariaLabel");
+	});
+
 	it("shows utility nav on non-home and non-video paths", () => {
 		mockPathnameState.value = "/admin/videos";
 		const html = renderToStaticMarkup(createElement(RootLayout));
 		expect(html).toContain("utilityNav.ariaLabel");
+		expect(html).toContain("utilityNav.adminProfile");
+		expect(html).toContain("utilityNav.adminCms");
 		expect(html).toContain("utilityNav.adminVideos");
+		expect(html).toContain("utilityNav.signOut");
+		expect(html).not.toContain("utilityNav.home");
+		expect(html).not.toContain("utilityNav.auth");
+		expect(html).not.toContain("utilityNav.profile");
 	});
 });

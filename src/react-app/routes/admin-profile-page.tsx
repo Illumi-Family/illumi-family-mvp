@@ -14,31 +14,26 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { authClient } from "@/lib/auth-client";
-import { ApiClientError, updateCurrentUser } from "@/lib/api";
 import { formatDateTime } from "@/i18n/format";
 import { useAppI18n } from "@/i18n/context";
+import { authClient } from "@/lib/auth-client";
+import { ApiClientError, updateCurrentUser } from "@/lib/api";
 import {
 	currentUserQueryKey,
 	currentUserQueryOptions,
 } from "@/lib/query-options";
 
-const readErrorMessage = (
-	error: unknown,
-	t: (key: string) => string,
-) => {
+const readErrorMessage = (error: unknown, t: (key: string) => string) => {
 	if (error instanceof ApiClientError) {
 		if (error.code === "CURRENT_USER_NOT_FOUND") {
 			return t("errors.currentUserNotFound");
 		}
-
 		return error.message;
 	}
-
 	return error instanceof Error ? error.message : t("errors.unexpected");
 };
 
-export function UsersPage() {
+export function AdminProfilePage() {
 	const { t } = useTranslation("users");
 	const { locale } = useAppI18n();
 	const navigate = useNavigate();
@@ -54,12 +49,12 @@ export function UsersPage() {
 		},
 	});
 
-	const handleSignOut = async () => {
+	const onSignOut = async () => {
 		await authClient.signOut();
 		await navigate({ to: "/auth" });
 	};
 
-	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+	const onSubmit = (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		const normalizedName = (draftName ?? currentUserQuery.data?.name ?? "").trim();
 		if (!currentUserQuery.data || !normalizedName) return;
@@ -73,38 +68,37 @@ export function UsersPage() {
 		editableName.trim() !== currentUserQuery.data.name;
 
 	return (
-		<div className="grid gap-6 md:grid-cols-2">
+		<div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">
 			<Card>
 				<CardHeader>
-					<CardTitle>{t("titles.profileSettings")}</CardTitle>
-					<CardDescription>
-						{t("descriptions.profileSettings")}
-					</CardDescription>
+					<CardTitle className="flex items-center justify-between">
+						<span>{t("titles.profileSettings")}</span>
+						<Badge variant="secondary">{t("labels.currentUser")}</Badge>
+					</CardTitle>
+					<CardDescription>{t("descriptions.profileSettings")}</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
 					<div className="flex flex-wrap items-center gap-2">
 						<Badge variant={currentUserQuery.isSuccess ? "default" : "outline"}>
 							{currentUserQuery.status}
 						</Badge>
-						{currentUserQuery.isFetching && (
+						{currentUserQuery.isFetching ? (
 							<Badge variant="secondary">{t("status.fetching")}</Badge>
-						)}
+						) : null}
 					</div>
 
-					{currentUserQuery.isPending && (
-						<p className="text-sm text-muted-foreground">
-							{t("descriptions.pending")}
-						</p>
-					)}
+					{currentUserQuery.isPending ? (
+						<p className="text-sm text-muted-foreground">{t("descriptions.pending")}</p>
+					) : null}
 
-					{currentUserQuery.isError && (
+					{currentUserQuery.isError ? (
 						<p className="text-sm text-destructive">
 							{readErrorMessage(currentUserQuery.error, t)}
 						</p>
-					)}
+					) : null}
 
-					{currentUserQuery.isSuccess && (
-						<form className="space-y-3" onSubmit={handleSubmit}>
+					{currentUserQuery.isSuccess ? (
+						<form className="space-y-3" onSubmit={onSubmit}>
 							<div className="space-y-2">
 								<Label htmlFor="email">{t("labels.email")}</Label>
 								<Input
@@ -123,70 +117,33 @@ export function UsersPage() {
 									placeholder={t("labels.displayNamePlaceholder")}
 								/>
 							</div>
-							<Button
-								type="submit"
-								disabled={updateProfileMutation.isPending || !isDirty}
-							>
-								{updateProfileMutation.isPending
-									? t("buttons.saving")
-									: t("buttons.save")}
+							<div className="grid gap-3 rounded-md border p-3 text-sm sm:grid-cols-2">
+								<div>
+									<p className="text-xs text-muted-foreground">{t("labels.createdAt")}</p>
+									<p>{formatDateTime(currentUserQuery.data.createdAt, locale)}</p>
+								</div>
+								<div>
+									<p className="text-xs text-muted-foreground">{t("labels.updatedAt")}</p>
+									<p>{formatDateTime(currentUserQuery.data.updatedAt, locale)}</p>
+								</div>
+								<div className="sm:col-span-2">
+									<p className="text-xs text-muted-foreground">{t("labels.userId")}</p>
+									<p className="font-mono text-xs">{currentUserQuery.data.id}</p>
+								</div>
+							</div>
+							<Button type="submit" disabled={updateProfileMutation.isPending || !isDirty}>
+								{updateProfileMutation.isPending ? t("buttons.saving") : t("buttons.save")}
 							</Button>
 						</form>
-					)}
+					) : null}
 
-					{updateProfileMutation.isError && (
+					{updateProfileMutation.isError ? (
 						<p className="text-sm text-destructive">
 							{readErrorMessage(updateProfileMutation.error, t)}
 						</p>
-					)}
+					) : null}
 				</CardContent>
-				<CardFooter className="text-xs text-muted-foreground">
-					{t("descriptions.footer")}
-				</CardFooter>
-			</Card>
-
-			<Card>
-				<CardHeader>
-					<CardTitle className="flex items-center justify-between">
-						<span>{t("titles.profileSnapshot")}</span>
-						<Badge variant="secondary">{t("labels.currentUser")}</Badge>
-					</CardTitle>
-					<CardDescription>{t("descriptions.snapshot")}</CardDescription>
-				</CardHeader>
-				<CardContent className="space-y-3">
-					{currentUserQuery.isPending && (
-						<p className="text-sm text-muted-foreground">
-							{t("descriptions.waiting")}
-						</p>
-					)}
-
-					{currentUserQuery.isError && (
-						<p className="text-sm text-destructive">
-							{readErrorMessage(currentUserQuery.error, t)}
-						</p>
-					)}
-
-					{currentUserQuery.isSuccess && (
-						<div className="space-y-3 text-sm">
-							<div className="rounded-md border p-3">
-								<p className="text-xs text-muted-foreground">{t("labels.userId")}</p>
-								<p className="font-mono text-xs">{currentUserQuery.data.id}</p>
-							</div>
-							<div className="rounded-md border p-3">
-								<p className="text-xs text-muted-foreground">{t("labels.createdAt")}</p>
-								<p>{formatDateTime(currentUserQuery.data.createdAt, locale)}</p>
-							</div>
-							<div className="rounded-md border p-3">
-								<p className="text-xs text-muted-foreground">{t("labels.updatedAt")}</p>
-								<p>{formatDateTime(currentUserQuery.data.updatedAt, locale)}</p>
-							</div>
-						</div>
-					)}
-				</CardContent>
-				<CardFooter className="flex justify-end">
-					<Button type="button" variant="ghost" onClick={handleSignOut}>
-						{t("buttons.signOut")}
-					</Button>
+				<CardFooter className="flex flex-wrap justify-end gap-2">
 					<Button
 						type="button"
 						variant="outline"
@@ -194,6 +151,9 @@ export function UsersPage() {
 						disabled={currentUserQuery.isFetching}
 					>
 						{currentUserQuery.isFetching ? t("buttons.refreshing") : t("buttons.refresh")}
+					</Button>
+					<Button type="button" variant="ghost" onClick={onSignOut}>
+						{t("buttons.signOut")}
 					</Button>
 				</CardFooter>
 			</Card>

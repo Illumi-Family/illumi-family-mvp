@@ -48,7 +48,7 @@ export function HomePage() {
 	);
 	const familyStoryVideos = resolveConfiguredVideoList(
 		videos,
-		homeData.homeFamilyStoriesConfig.streamVideoIds,
+		homeContent.featuredVideos.familyStories.items.map((item) => item.streamVideoId),
 		{
 			locale,
 			keyPrefix: "family-story",

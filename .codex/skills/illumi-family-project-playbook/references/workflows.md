@@ -121,16 +121,19 @@ pnpm run deploy:prod
 
 ## 5.2) Admin Home Shared-Section Workflow
 1. Editable shared keys are:
-   - `home.hero_slogan`
    - `home.main_video`
    - `home.character_videos`
+   - `home.family_story_videos`
 2. Save/publish for shared keys is mirrored to both locales (`zh-CN` + `en-US`) even when operator edits from a single locale tab.
 3. Publish gate for shared keys enforces:
-   - slogan title/subtitle required,
    - main video required,
    - character videos >= 1,
+   - family story videos must not contain duplicate `streamVideoId`,
    - selected videos must still be `ready + published`.
 4. Cache invalidation for shared-key publish always clears all supported home locales (`cms:home:published:v1:zh-CN` + `cms:home:published:v1:en-US`).
+5. Admin frontend route baseline:
+   - `/admin` redirects to `/admin/profile`
+   - `/admin/profile`, `/admin/cms`, and `/admin/videos` are the backend navigation entries in admin header.
 
 ## 6) Post-Deploy Smoke Checks
 - Health endpoint should match target environment:
@@ -155,7 +158,8 @@ curl -s https://illumi-family-mvp.lguangcong0712.workers.dev/api/health
   - `GET /api/admin/videos` (unauthenticated should return `401`)
   - `POST /api/admin/videos/import` (unauthenticated should return `401`)
   - `POST /api/admin/videos/sync-catalog` (unauthenticated should return `401`)
-  - `HEAD /admin` on admin domains returns `200` HTML
+  - `HEAD /admin` on admin domains returns redirect to `/admin/profile`
+  - `HEAD /admin/cms` on admin domains returns `200` HTML
 
 ## 6.1) Auth Secrets Setup (Before Auth Deploy)
 Set secrets per environment with Wrangler (do not commit secrets):

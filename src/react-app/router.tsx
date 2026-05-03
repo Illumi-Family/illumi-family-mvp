@@ -13,7 +13,7 @@ import { AuthPage } from "@/routes/auth-page";
 import { HomePage } from "@/routes/home-page";
 import { LegalPage } from "@/routes/legal-page";
 import { RootLayout } from "@/routes/root-layout";
-import { UsersPage } from "@/routes/users-page";
+import { AdminProfilePage } from "@/routes/admin-profile-page";
 import { VideosPage } from "@/routes/videos-page";
 
 export const queryClient = new QueryClient({
@@ -33,18 +33,6 @@ const homeRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/",
 	component: HomePage,
-});
-
-const usersRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/users",
-	beforeLoad: async () => {
-		const session = await authClient.getSession();
-		if (!session.data) {
-			throw redirect({ to: "/auth" });
-		}
-	},
-	component: UsersPage,
 });
 
 const authRoute = createRoute({
@@ -68,6 +56,23 @@ const requireAdminAccess = async () => {
 const adminRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/admin",
+	beforeLoad: async () => {
+		await requireAdminAccess();
+		throw redirect({ to: "/admin/profile" });
+	},
+	component: () => null,
+});
+
+const adminProfileRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/admin/profile",
+	beforeLoad: requireAdminAccess,
+	component: AdminProfilePage,
+});
+
+const adminCmsRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/admin/cms",
 	beforeLoad: requireAdminAccess,
 	component: AdminPage,
 });
@@ -109,9 +114,10 @@ const routeTree = rootRoute.addChildren([
 	legalPrivacyRoute,
 	legalMinorProtectionRoute,
 	legalCopyrightRoute,
-	usersRoute,
 	authRoute,
 	adminRoute,
+	adminProfileRoute,
+	adminCmsRoute,
 	adminVideosRoute,
 ]);
 

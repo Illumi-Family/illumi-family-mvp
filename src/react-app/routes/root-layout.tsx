@@ -10,8 +10,14 @@ export function RootLayout() {
 	const pathname = useRouterState({ select: (state) => state.location.pathname });
 	const isPublicSurface =
 		pathname === "/" || pathname === "/video" || pathname.startsWith("/legal/");
-	const showUtilityNav = !isPublicSurface;
+	const isAuthSurface = pathname === "/auth";
+	const isAdminSurface = pathname === "/admin" || pathname.startsWith("/admin/");
+	const showUtilityNav = !isPublicSurface && !isAuthSurface;
 	const skipTarget = showUtilityNav ? "#app-main-content" : "#main-content";
+
+	const onSignOut = async () => {
+		await authClient.signOut();
+	};
 
 	return (
 		<div className="min-h-screen bg-background text-foreground">
@@ -25,40 +31,55 @@ export function RootLayout() {
 				<header className="fixed inset-x-0 top-0 z-40 border-b border-border/80 bg-[color:rgba(255,252,247,0.84)] backdrop-blur-md">
 					<div className="flex w-full items-center justify-between px-4 py-3 md:px-6">
 						<nav className="flex items-center gap-2 text-sm" aria-label={t("utilityNav.ariaLabel")}>
-							<Link to="/">
-								<Button variant="ghost" size="sm">
-									{t("utilityNav.home")}
-								</Button>
-							</Link>
-							{!isSignedIn ? (
-								<Link to="/users">
-									<Button variant="ghost" size="sm">
-										{t("utilityNav.profile")}
+							{isAdminSurface ? (
+								<>
+									<Link to="/admin/profile">
+										<Button variant="ghost" size="sm">
+											{t("utilityNav.adminProfile", { defaultValue: "我的账号" })}
+										</Button>
+									</Link>
+									<Link to="/admin/cms">
+										<Button variant="ghost" size="sm">
+											{t("utilityNav.adminCms", { defaultValue: "CMS 配置" })}
+										</Button>
+									</Link>
+									<Link to="/admin/videos">
+										<Button variant="ghost" size="sm">
+											{t("utilityNav.adminVideos", { defaultValue: "视频管理" })}
+										</Button>
+									</Link>
+									<Button variant="ghost" size="sm" onClick={onSignOut}>
+										{t("utilityNav.signOut", { defaultValue: "退出登录" })}
 									</Button>
-								</Link>
-							) : null}
-							<Link to="/video">
-								<Button variant="ghost" size="sm">
-									{t("utilityNav.videos", { defaultValue: "Videos" })}
-								</Button>
-							</Link>
-							{!isSignedIn ? (
-								<Link to="/auth">
-									<Button variant="ghost" size="sm">
-										{t("utilityNav.auth")}
-									</Button>
-								</Link>
-							) : null}
-							<Link to="/admin">
-								<Button variant="ghost" size="sm">
-									{t("utilityNav.admin")}
-								</Button>
-							</Link>
-							<Link to="/admin/videos">
-								<Button variant="ghost" size="sm">
-									{t("utilityNav.adminVideos", { defaultValue: "Admin Videos" })}
-								</Button>
-							</Link>
+								</>
+							) : (
+								<>
+									<Link to="/">
+										<Button variant="ghost" size="sm">
+											{t("utilityNav.home")}
+										</Button>
+									</Link>
+									<Link to="/video">
+										<Button variant="ghost" size="sm">
+											{t("utilityNav.videos", { defaultValue: "Videos" })}
+										</Button>
+									</Link>
+									{!isSignedIn ? (
+										<Link to="/auth">
+											<Button variant="ghost" size="sm">
+												{t("utilityNav.auth")}
+											</Button>
+										</Link>
+									) : null}
+									{!isSignedIn ? null : (
+										<Link to="/admin/profile">
+											<Button variant="ghost" size="sm">
+												{t("utilityNav.admin", { defaultValue: "Admin" })}
+											</Button>
+										</Link>
+									)}
+								</>
+							)}
 						</nav>
 						<div className="flex items-center gap-3">
 							<p className="text-xs text-muted-foreground">

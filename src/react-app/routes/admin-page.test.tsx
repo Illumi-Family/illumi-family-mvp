@@ -24,24 +24,10 @@ const createSectionRecord = (overrides: {
 	updatedAt: "2026-04-17T00:00:00.000Z",
 });
 
-describe("admin page", () => {
-	it("keeps new tab editable even when backend has no revision for that key yet", () => {
+describe("admin cms page", () => {
+	it("renders only three cms modules and hides removed modules", () => {
 		const queryClient = new QueryClient();
-		queryClient.setQueryData(adminHomeSectionsQueryKey("zh-CN"), [
-			createSectionRecord({
-				entryKey: "home.colearning",
-				latestContentJson: {
-					intro: "以陪伴为灯，以共学为路，以成长为果。",
-					methods: [],
-					benefits: [],
-					caseHighlight: {
-						title: "",
-						summary: "",
-						cta: { label: "", href: "#" },
-					},
-				},
-			}),
-		]);
+		queryClient.setQueryData(adminHomeSectionsQueryKey("zh-CN"), []);
 		queryClient.setQueryData(adminVideosQueryKey, []);
 
 		const html = renderToString(
@@ -50,35 +36,16 @@ describe("admin page", () => {
 			</QueryClientProvider>,
 		);
 
-		expect(html).toContain("Slogan 模块");
-		expect(html).toContain("主句");
-		expect(html).toContain("副句");
-	});
-
-	it("renders new editable module entries for slogan and videos", () => {
-		const queryClient = new QueryClient();
-		queryClient.setQueryData(adminHomeSectionsQueryKey("zh-CN"), [
-			createSectionRecord({
-				entryKey: "home.hero_slogan",
-				latestContentJson: {
-					title: "三代同堂家风家学传承践行者",
-					subtitle: "每个家庭都能有属于自己的童蒙家塾",
-				},
-			}),
-		]);
-		queryClient.setQueryData(adminVideosQueryKey, []);
-
-		const html = renderToString(
-			<QueryClientProvider client={queryClient}>
-				<AdminPage />
-			</QueryClientProvider>,
-		);
-
-		expect(html).toContain("首屏 Slogan");
-		expect(html).toContain("首页核心视频");
+		expect(html).toContain("首屏核心视频");
 		expect(html).toContain("角色视频列表");
-		expect(html).toContain("主句");
-		expect(html).toContain("副句");
+		expect(html).toContain("家庭故事列表");
+		expect(html).not.toContain("首屏 Slogan");
+		expect(html).not.toContain("家风家学·理念");
+		expect(html).not.toContain("践行感悟·日思");
+		expect(html).not.toContain("三代同堂·故事");
+		expect(html).not.toContain("家庭共学·陪伴");
+		expect(html).not.toContain("ZH");
+		expect(html).not.toContain("EN");
 	});
 
 	it("renders main video selector with ready+published candidates only", () => {
@@ -166,10 +133,49 @@ describe("admin page", () => {
 			</QueryClientProvider>,
 		);
 
-		expect(html).toContain("角色视频列表（最多");
-		expect(html).toContain("12");
+		expect(html).toContain("角色视频列表");
+		expect(html).toContain("最多 12 条");
 		expect(html).toContain("Role Video");
 		expect(html).toContain("上移");
 		expect(html).toContain("下移");
+	});
+
+	it("renders family story videos editor without max limit", () => {
+		const queryClient = new QueryClient();
+		queryClient.setQueryData(adminHomeSectionsQueryKey("zh-CN"), [
+			createSectionRecord({
+				entryKey: "home.family_story_videos",
+				latestContentJson: {
+					items: [{ streamVideoId: "stream-story-1" }],
+				},
+			}),
+		]);
+		queryClient.setQueryData(adminVideosQueryKey, [
+			{
+				id: "video-story",
+				streamVideoId: "stream-story-1",
+				processingStatus: "ready",
+				publishStatus: "published",
+				title: "Family Story Video",
+				posterUrl: null,
+				durationSeconds: null,
+				createdByAuthUserId: "auth-1",
+				updatedByAuthUserId: "auth-1",
+				createdAt: "2026-04-16T00:00:00.000Z",
+				updatedAt: "2026-04-16T00:00:00.000Z",
+				publishedAt: "2026-04-16T00:00:00.000Z",
+			},
+		]);
+
+		const html = renderToString(
+			<QueryClientProvider client={queryClient}>
+				<AdminPage initialEntryKey="home.family_story_videos" />
+			</QueryClientProvider>,
+		);
+
+		expect(html).toContain("家庭故事列表");
+		expect(html).toContain("不设条数上限");
+		expect(html).not.toContain("最多 12 条");
+		expect(html).toContain("Family Story Video");
 	});
 });

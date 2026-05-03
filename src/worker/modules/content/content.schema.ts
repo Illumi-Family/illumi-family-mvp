@@ -4,6 +4,7 @@ export const HOME_SECTION_ENTRY_KEYS = [
 	"home.hero_slogan",
 	"home.main_video",
 	"home.character_videos",
+	"home.family_story_videos",
 	"home.philosophy",
 	"home.daily_notes",
 	"home.stories",
@@ -41,6 +42,10 @@ export const characterVideoItemSchema = z.object({
 
 export const characterVideosSectionContentSchema = z.object({
 	items: z.array(characterVideoItemSchema).max(12),
+});
+
+export const familyStoryVideosSectionContentSchema = z.object({
+	items: z.array(characterVideoItemSchema),
 });
 
 export const philosophySectionContentSchema = z.object({
@@ -100,6 +105,7 @@ export const homeSectionContentSchemaByKey = {
 	"home.hero_slogan": heroSloganSectionContentSchema,
 	"home.main_video": mainVideoSectionContentSchema,
 	"home.character_videos": characterVideosSectionContentSchema,
+	"home.family_story_videos": familyStoryVideosSectionContentSchema,
 	"home.philosophy": philosophySectionContentSchema,
 	"home.daily_notes": dailyNotesSectionContentSchema,
 	"home.stories": storiesSectionContentSchema,
@@ -147,6 +153,9 @@ export type MainVideoSectionContent = z.infer<
 export type CharacterVideoItem = z.infer<typeof characterVideoItemSchema>;
 export type CharacterVideosSectionContent = z.infer<
 	typeof characterVideosSectionContentSchema
+>;
+export type FamilyStoryVideosSectionContent = z.infer<
+	typeof familyStoryVideosSectionContentSchema
 >;
 export type PhilosophySectionContent = z.infer<
 	typeof philosophySectionContentSchema

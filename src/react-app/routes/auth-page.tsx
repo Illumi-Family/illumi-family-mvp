@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import {
@@ -7,16 +7,12 @@ import {
 	CheckCircle2,
 	LoaderCircle,
 	Mail,
-	UserRound,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
-
-type AuthMode = "sign-in" | "sign-up";
 
 const readErrorMessage = (error: unknown, fallbackMessage: string) => {
 	if (!error) return null;
@@ -58,31 +54,12 @@ function GoogleMark() {
 export function AuthPage() {
 	const { t } = useTranslation("auth");
 	const navigate = useNavigate();
-	const { data: sessionData, isPending } = authClient.useSession();
-	const [mode, setMode] = useState<AuthMode>("sign-in");
-	const [name, setName] = useState("");
+	const { data: sessionData } = authClient.useSession();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [infoMessage, setInfoMessage] = useState<string | null>(null);
-
-	const modeCopy: Record<AuthMode, { title: string; subtitle: string; action: string }> = useMemo(
-		() => ({
-			"sign-in": {
-				title: t("mode.signIn.title"),
-				subtitle: t("mode.signIn.subtitle"),
-				action: t("mode.signIn.action"),
-			},
-			"sign-up": {
-				title: t("mode.signUp.title"),
-				subtitle: t("mode.signUp.subtitle"),
-				action: t("mode.signUp.action"),
-			},
-		}),
-		[t],
-	);
-	const modeMeta = modeCopy[mode];
 	const isAuthenticated = Boolean(sessionData?.user);
 
 	const resetMessages = () => {
@@ -96,34 +73,10 @@ export function AuthPage() {
 		setIsSubmitting(true);
 
 		try {
-			if (mode === "sign-up") {
-				const normalizedName = name.trim();
-				if (!normalizedName) {
-					setErrorMessage(t("messages.requireName"));
-					return;
-				}
-
-				const result = await authClient.signUp.email({
-					name: normalizedName,
-					email: email.trim().toLowerCase(),
-					password,
-					callbackURL: "/users",
-				});
-
-				if (result.error) {
-					setErrorMessage(readErrorMessage(result.error, t("messages.authenticationFailed")));
-					return;
-				}
-
-				setInfoMessage(t("messages.registerSuccess"));
-				setMode("sign-in");
-				return;
-			}
-
 			const result = await authClient.signIn.email({
 				email: email.trim().toLowerCase(),
 				password,
-				callbackURL: "/users",
+				callbackURL: "/admin/profile",
 			});
 
 			if (result.error) {
@@ -131,7 +84,7 @@ export function AuthPage() {
 				return;
 			}
 
-			await navigate({ to: "/users" });
+			await navigate({ to: "/admin/profile" });
 		} catch (error) {
 			setErrorMessage(readErrorMessage(error, t("messages.authenticationFailed")));
 		} finally {
@@ -145,7 +98,7 @@ export function AuthPage() {
 		try {
 			const result = await authClient.signIn.social({
 				provider: "google",
-				callbackURL: "/users",
+				callbackURL: "/admin/profile",
 			});
 			if (result.error) {
 				setErrorMessage(readErrorMessage(result.error, t("messages.authenticationFailed")));
@@ -174,7 +127,7 @@ export function AuthPage() {
 
 			const result = await authClient.sendVerificationEmail({
 				email: normalizedEmail,
-				callbackURL: "/users",
+				callbackURL: "/admin/profile",
 			});
 			if (result.error) {
 				setErrorMessage(readErrorMessage(result.error, t("messages.authenticationFailed")));
@@ -197,78 +150,21 @@ export function AuthPage() {
 			<div className="pointer-events-none absolute -top-24 left-1/2 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-blue-200/45 blur-3xl" />
 			<div className="pointer-events-none absolute -bottom-24 -left-16 -z-10 h-72 w-72 rounded-full bg-slate-200/60 blur-3xl" />
 			<div className="mx-auto flex items-center justify-center min-h-[calc(100vh-57px)] w-full  max-w-6xl px-4 py-8 sm:px-6 lg:gap-10 lg:py-14">
-				<section className="motion-enter [animation-delay:120ms]">
+				<section className="motion-enter w-full max-w-2xl [animation-delay:120ms]">
 					<Card className="overflow-hidden rounded-3xl border-slate-200/80 bg-white/87 shadow-[0_40px_120px_-72px_rgba(15,23,42,0.85)] backdrop-blur-xl">
-						<CardHeader className="space-y-5 p-6 sm:p-8">
-							<div className="flex items-start justify-between gap-3">
-								<div>
-									<p className="text-xs font-medium tracking-wide text-slate-500">
-										{t("meta.badge")}
-									</p>
-									<CardTitle className="mt-1 text-2xl font-semibold text-slate-900">
-										{modeMeta.title}
-									</CardTitle>
-									<p className="mt-1.5 text-sm text-slate-600">{modeMeta.subtitle}</p>
-								</div>
-								<Badge
-									variant="secondary"
-									className="border border-slate-200/90 bg-white/85 text-slate-700"
-								>
-									{isAuthenticated ? t("status.authenticated") : t("status.guest")}
-								</Badge>
-							</div>
-
-							<div className="grid grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-slate-100/80 p-1">
-								<button
-									type="button"
-									onClick={() => setMode("sign-in")}
-									className={`cursor-pointer rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
-										mode === "sign-in"
-											? "bg-white text-slate-900 shadow-sm"
-											: "text-slate-600 hover:text-slate-900"
-									}`}
-								>
-									{t("mode.signIn.tab")}
-								</button>
-								<button
-									type="button"
-									onClick={() => setMode("sign-up")}
-									className={`cursor-pointer rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
-										mode === "sign-up"
-											? "bg-white text-slate-900 shadow-sm"
-											: "text-slate-600 hover:text-slate-900"
-									}`}
-								>
-									{t("mode.signUp.tab")}
-								</button>
-							</div>
+						<CardHeader className="p-8 pb-4 sm:p-10 sm:pb-4">
+							<CardTitle className="text-4xl font-semibold text-slate-900">
+								{t("mode.signIn.title")}
+							</CardTitle>
 						</CardHeader>
 
-						<CardContent className="space-y-5 p-6 pt-0 sm:p-8 sm:pt-0">
+						<CardContent className="space-y-5 p-8 pt-0 sm:p-10 sm:pt-0">
 							<form
-								className="space-y-4"
+								className="space-y-5"
 								onSubmit={onSubmit}
 								aria-busy={isSubmitting}
 								noValidate
 							>
-								{mode === "sign-up" && (
-									<div className="space-y-2">
-										<Label htmlFor="name" className="text-slate-700">
-											{t("fields.name")}
-										</Label>
-										<div className="relative">
-											<UserRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-											<Input
-												id="name"
-												value={name}
-												onChange={(event) => setName(event.target.value)}
-												required
-												placeholder={t("fields.namePlaceholder")}
-												className="h-11 rounded-xl border-slate-200/90 bg-white/90 pl-10 text-[15px] placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500/70"
-											/>
-										</div>
-									</div>
-								)}
 								<div className="space-y-2">
 									<Label htmlFor="email" className="text-slate-700">
 										{t("fields.email")}
@@ -282,7 +178,7 @@ export function AuthPage() {
 											onChange={(event) => setEmail(event.target.value)}
 											required
 											placeholder={t("fields.emailPlaceholder")}
-											className="h-11 rounded-xl border-slate-200/90 bg-white/90 pl-10 text-[15px] placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500/70"
+											className="h-12 rounded-xl border-slate-200/90 bg-white/90 pl-10 text-base placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500/70"
 										/>
 									</div>
 								</div>
@@ -298,25 +194,25 @@ export function AuthPage() {
 										required
 										minLength={8}
 										placeholder={t("fields.passwordPlaceholder")}
-										className="h-11 rounded-xl border-slate-200/90 bg-white/90 text-[15px] placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500/70"
+										className="h-12 rounded-xl border-slate-200/90 bg-white/90 text-base placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500/70"
 									/>
 								</div>
 								<Button
 									type="submit"
 									disabled={isSubmitting}
-									className="h-11 w-full cursor-pointer rounded-xl bg-slate-900 text-white transition-all duration-200 hover:bg-slate-800"
+									className="h-12 w-full cursor-pointer rounded-xl bg-slate-900 text-lg text-white transition-all duration-200 hover:bg-slate-800"
 								>
-									{isSubmitting ? (
-										<>
-											<LoaderCircle className="h-4 w-4 animate-spin" />
-											{t("buttons.submitting")}
-										</>
-									) : (
-										<>
-											{modeMeta.action}
-											<ArrowRight className="h-4 w-4" />
-										</>
-									)}
+											{isSubmitting ? (
+												<>
+													<LoaderCircle className="h-4 w-4 animate-spin" />
+													{t("buttons.submitting")}
+												</>
+											) : (
+												<>
+													{t("mode.signIn.action")}
+													<ArrowRight className="h-4 w-4" />
+												</>
+											)}
 								</Button>
 							</form>
 
@@ -334,7 +230,7 @@ export function AuthPage() {
 								variant="outline"
 								onClick={onGoogleSignIn}
 								disabled={isSubmitting}
-								className="h-11 w-full cursor-pointer rounded-xl border-slate-300 bg-white text-slate-700 transition-all duration-200 hover:bg-slate-50"
+								className="h-12 w-full cursor-pointer rounded-xl border-slate-300 bg-white text-lg text-slate-700 transition-all duration-200 hover:bg-slate-50"
 							>
 								<GoogleMark />
 								{t("buttons.google")}
@@ -362,12 +258,6 @@ export function AuthPage() {
 							</div>
 
 							<div aria-live="polite" aria-atomic="true" className="space-y-2">
-								{isPending && (
-									<p className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100/70 px-3 py-2 text-sm text-slate-700">
-										<LoaderCircle className="h-4 w-4 animate-spin text-slate-500" />
-										{t("status.checkingSession")}
-									</p>
-								)}
 								{errorMessage && (
 									<p
 										role="alert"

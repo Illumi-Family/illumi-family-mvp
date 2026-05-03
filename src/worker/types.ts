@@ -24,6 +24,7 @@ export type ContextVariables = {
 		| "home.hero_slogan"
 		| "home.main_video"
 		| "home.character_videos"
+		| "home.family_story_videos"
 		| "home.philosophy"
 		| "home.daily_notes"
 		| "home.stories"

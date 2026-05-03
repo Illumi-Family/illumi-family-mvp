@@ -262,6 +262,9 @@ export const defaultHomeContent = {
 		characters: {
 			items: [],
 		},
+		familyStories: {
+			items: [],
+		},
 	},
 	philosophy: {
 		intro: philosophyIntro,
@@ -418,6 +421,9 @@ const defaultHomeContentEn = {
 			streamVideoId: "",
 		},
 		characters: {
+			items: [],
+		},
+		familyStories: {
 			items: [],
 		},
 	},

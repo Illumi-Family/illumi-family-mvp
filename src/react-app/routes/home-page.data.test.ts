@@ -61,5 +61,6 @@ describe("official website home data", () => {
 		expect(defaultHomeContent.heroSlogan.subtitle).toBe(zh.heroContent.subtitle);
 		expect(defaultHomeContent.featuredVideos.main.streamVideoId).toBe("");
 		expect(defaultHomeContent.featuredVideos.characters.items).toEqual([]);
+		expect(defaultHomeContent.featuredVideos.familyStories.items).toEqual([]);
 	});
 });

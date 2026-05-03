@@ -1,6 +1,6 @@
 # Illumi Family MVP Current State
 
-Last verified: 2026-04-18
+Last verified: 2026-05-02
 
 ## 1) Canonical Fact Sources
 - `wrangler.json`
@@ -67,9 +67,9 @@ Last verified: 2026-04-18
 - `GET /api/content/home?locale=zh-CN|en-US|alias` (invalid locale falls back to `zh-CN`)
 - `GET /api/content/assets/:assetId`
 - `GET /api/admin/me` (whitelist + verified email required)
-- `GET /api/admin/content/home?locale=...` (whitelist + verified email required; invalid locale => 400)
-- `PUT /api/admin/content/home/:entryKey?locale=...` (whitelist + verified email required; invalid locale => 400)
-- `POST /api/admin/content/home/:entryKey/publish?locale=...` (whitelist + verified email required; invalid locale => 400)
+- `GET /api/admin/content/home?locale=...` (whitelist + verified email required; locale query currently retained for compatibility)
+- `PUT /api/admin/content/home/:entryKey?locale=...` (whitelist + verified email required; locale query currently retained for compatibility)
+- `POST /api/admin/content/home/:entryKey/publish?locale=...` (whitelist + verified email required; locale query currently retained for compatibility)
 - `POST /api/admin/assets/upload` (whitelist + verified email required)
 - `GET /api/admin/videos` (whitelist + verified email required)
 - `POST /api/admin/videos/upload-url` (whitelist + verified email required)
@@ -109,24 +109,26 @@ Last verified: 2026-04-18
 ## 8) Known Execution Notes
 - In sandbox, Wrangler may print `EPERM` log-path warnings for `~/Library/Preferences/.wrangler`; command exit code is the true success signal.
 - For dry-run checks in multi-env config, always pass explicit `--env`.
-- Asset routing strategy uses `assets.run_worker_first = ["/api/*"]`, so SPA routes (`/auth`, `/users`, etc.) are handled by the asset layer, while API paths are handled by Worker.
+- Asset routing strategy uses `assets.run_worker_first = ["/api/*"]`, so SPA routes (`/auth`, `/admin/profile`, etc.) are handled by the asset layer, while API paths are handled by Worker.
 - Email/password auth path uses a custom `PBKDF2(SHA-256)` hasher (`src/worker/shared/auth/password-hasher.ts`) to stay within Worker CPU limits; re-benchmark sign-up/sign-in if hash parameters change.
 - Admin access is enforced by hard-coded whitelist + verified-email check (`src/worker/shared/auth/admin-access.ts` + `requireAdminSession`).
 - Public home content is served by `GET /api/content/home?locale=...` backed by D1 published revisions with KV cache key `cms:home:published:v1:{locale}`.
 - Home content fallback rule: missing/invalid target-locale section falls back to `zh-CN` and returns `fallbackFrom`.
 - Public home payload includes editable hero/video blocks: `heroSlogan` + `featuredVideos` (main + dynamic character list).
 - Admin home shared-section keys:
-  - `home.hero_slogan`
   - `home.main_video`
   - `home.character_videos`
-- Shared-section save/publish is mirrored to both locales (`zh-CN` + `en-US`) to preserve global consistency.
+  - `home.family_story_videos`
+- Admin CMS surface is split into `/admin/profile` + `/admin/cms` + `/admin/videos`; `/admin` redirects to `/admin/profile`.
+- Admin CMS video-configuration UI uses a single global editing mode (locale switch removed from UI).
+- Shared-section save/publish is mirrored to both locales (`zh-CN` + `en-US`) for video configuration consistency.
 - Shared-section publish gate validates:
-  - slogan title/subtitle required,
   - main video required,
   - character video list requires at least 1 item,
+  - family story video list disallows duplicate video IDs,
   - selected videos must remain `ready + published` in `video_assets`.
 - Admin publish cache invalidation matrix:
-  - publish shared keys (`home.hero_slogan` / `home.main_video` / `home.character_videos`) => invalidate all supported locale home caches (currently `zh-CN`, `en-US`)
+  - publish shared keys (`home.main_video` / `home.character_videos` / `home.family_story_videos`) => invalidate all supported locale home caches (currently `zh-CN`, `en-US`)
   - publish non-shared `zh-CN` key => invalidate all supported locale home caches
   - publish non-shared `en-US` key => invalidate `en-US` home cache only
 - Public video list cache key: `videos:public:v1` (publish/unpublish + ready-state drift triggers invalidation)

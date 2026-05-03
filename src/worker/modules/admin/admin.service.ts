@@ -12,6 +12,7 @@ import {
 	type AdminPublishHomeSectionBody,
 	type AdminUpsertHomeSectionBody,
 	type CharacterVideosSectionContent,
+	type FamilyStoryVideosSectionContent,
 	type HeroSloganSectionContent,
 	type HomeSectionEntryKey,
 	type MainVideoSectionContent,
@@ -23,11 +24,13 @@ const SHARED_HOME_SECTION_ENTRY_KEYS: ReadonlySet<HomeSectionEntryKey> = new Set
 	"home.hero_slogan",
 	"home.main_video",
 	"home.character_videos",
+	"home.family_story_videos",
 ]);
 
 const VIDEO_HOME_SECTION_ENTRY_KEYS: ReadonlySet<HomeSectionEntryKey> = new Set([
 	"home.main_video",
 	"home.character_videos",
+	"home.family_story_videos",
 ]);
 
 type ValidationIssue = {
@@ -172,6 +175,33 @@ export class AdminService {
 			});
 		}
 
+		if (entryKey === "home.family_story_videos") {
+			const content = contentJson as FamilyStoryVideosSectionContent;
+			const seen = new Set<string>();
+			content.items.forEach((item, index) => {
+				const streamVideoId = normalizeStreamVideoId(item.streamVideoId);
+				if (!streamVideoId) {
+					issues.push({
+						code: "REQUIRED",
+						field: `contentJson.items[${index}].streamVideoId`,
+						message: "家庭故事视频不能为空",
+						locale,
+					});
+					return;
+				}
+				if (seen.has(streamVideoId)) {
+					issues.push({
+						code: "DUPLICATE",
+						field: `contentJson.items[${index}].streamVideoId`,
+						message: "家庭故事视频不能重复",
+						locale,
+					});
+					return;
+				}
+				seen.add(streamVideoId);
+			});
+		}
+
 		if (issues.length > 0) {
 			this.throwValidationError(
 				"Publish gate validation failed",
@@ -205,6 +235,18 @@ export class AdminService {
 
 		if (input.entryKey === "home.character_videos") {
 			const content = input.contentJson as CharacterVideosSectionContent;
+			content.items.forEach((item, index) => {
+				const streamVideoId = normalizeStreamVideoId(item.streamVideoId);
+				if (!streamVideoId) return;
+				refs.push({
+					field: `contentJson.items[${index}].streamVideoId`,
+					streamVideoId,
+				});
+			});
+		}
+
+		if (input.entryKey === "home.family_story_videos") {
+			const content = input.contentJson as FamilyStoryVideosSectionContent;
 			content.items.forEach((item, index) => {
 				const streamVideoId = normalizeStreamVideoId(item.streamVideoId);
 				if (!streamVideoId) return;

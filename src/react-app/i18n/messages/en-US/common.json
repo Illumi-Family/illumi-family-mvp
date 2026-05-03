@@ -4,8 +4,13 @@
     "ariaLabel": "System navigation",
     "home": "Home",
     "profile": "Profile",
+    "videos": "Videos",
     "auth": "Auth",
-    "admin": "Admin"
+    "admin": "Admin",
+    "adminProfile": "My Account",
+    "adminCms": "CMS Config",
+    "adminVideos": "Video Admin",
+    "signOut": "Sign out"
   },
   "session": {
     "signedInAs": "Signed in as {{email}}",

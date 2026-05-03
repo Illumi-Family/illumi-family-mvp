@@ -94,7 +94,7 @@ describe("i18n locale detector", () => {
 	it("updates URL query lang when switching locale", () => {
 		const replaceState = vi.fn();
 		vi.stubGlobal("window", {
-			location: { href: "https://illumi-family.com/users?foo=1" },
+			location: { href: "https://illumi-family.com/admin/profile?foo=1" },
 			history: {
 				state: { from: "test" },
 				replaceState,
@@ -105,7 +105,7 @@ describe("i18n locale detector", () => {
 		expect(replaceState).toHaveBeenCalledWith(
 			{ from: "test" },
 			"",
-			"https://illumi-family.com/users?foo=1&lang=en",
+			"https://illumi-family.com/admin/profile?foo=1&lang=en",
 		);
 	});
 });

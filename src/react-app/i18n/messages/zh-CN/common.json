@@ -7,7 +7,10 @@
     "videos": "视频",
     "auth": "登录",
     "admin": "后台",
-    "adminVideos": "视频管理"
+    "adminProfile": "我的账号",
+    "adminCms": "CMS 配置",
+    "adminVideos": "视频管理",
+    "signOut": "退出登录"
   },
   "session": {
     "signedInAs": "已登录：{{email}}",
