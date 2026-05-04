@@ -96,7 +96,9 @@ pnpm run db:migrate:dev
 pnpm exec wrangler d1 migrations list DB --env dev --remote | grep -q 'No migrations to apply'
 pnpm run deploy
 ```
-Current routing baseline: `assets.run_worker_first = ["/api/*"]` (SPA routes handled by assets, Worker handles API).
+Current routing baseline: `assets.run_worker_first = ["/api/*", "/", "/video/*"]`:
+- Worker-first: `/api/*`, `/`, `/video/*`
+- Assets fallback: other SPA routes
 
 ### Deploy prod
 ```bash
@@ -108,6 +110,48 @@ pnpm exec wrangler d1 migrations list DB --remote | grep -q 'No migrations to ap
 pnpm run deploy:prod
 ```
 `deploy:prod` uses `wrangler deploy --config wrangler.json --env=""` to explicitly target top-level prod config.
+
+### 5.3) Manual Deployment SOP (Operator Checklist)
+Before any deploy:
+1. Confirm deploy target and workspace state:
+```bash
+git rev-parse --short HEAD
+git status --short --branch
+```
+2. If you want to deploy exactly committed code only (exclude unstaged/staged local changes), use isolated worktree:
+```bash
+git worktree add /tmp/illumi-deploy-$(git rev-parse --short HEAD) HEAD
+cd /tmp/illumi-deploy-$(git rev-parse --short HEAD)
+pnpm install
+```
+3. Deploy from current workspace (or isolated worktree):
+- dev:
+```bash
+pnpm test
+pnpm run check
+pnpm run db:migrate:dev
+pnpm exec wrangler d1 migrations list DB --env dev --remote | grep -q 'No migrations to apply'
+pnpm run deploy
+curl -s https://dev.illumi-family.com/api/health | grep -q '"appEnv":"dev"'
+```
+- prod:
+```bash
+pnpm test
+pnpm run check:prod
+pnpm exec wrangler d1 migrations list DB --env dev --remote | grep -q 'No migrations to apply'
+pnpm run db:migrate:prod
+pnpm exec wrangler d1 migrations list DB --remote | grep -q 'No migrations to apply'
+pnpm run deploy:prod
+curl -s https://illumi-family.com/api/health | grep -q '"appEnv":"prod"'
+```
+4. If deployed from temporary worktree, cleanup:
+```bash
+cd /path/to/repo-root
+git worktree remove /tmp/illumi-deploy-$(git rev-parse --short HEAD)
+```
+5. Rollback principle:
+- No destructive DB rollback by default.
+- Roll forward preferred; if needed, redeploy previous stable commit to target env.
 
 ## 5.1) Stream Video Reuse Workflow (Across local/dev/prod)
 1. First upload can happen in any environment via `POST /api/admin/videos/upload-url`.

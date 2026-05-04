@@ -228,6 +228,9 @@ flowchart LR
 
 ### 6.3 部署
 - `deploy*` 脚本仅发布 Worker 与静态资产，不包含 D1 migration。
+- 手动部署统一执行口径见：
+  - `.codex/skills/illumi-family-project-playbook/references/workflows.md` 的 `5.3 Manual Deployment SOP`
+  - 包含两类流程：常规部署（允许工作区改动）与“仅部署已提交代码”（`git worktree add ... HEAD` 隔离发布）
 - dev 标准顺序（强制）：
   1. `pnpm run check`
   2. `pnpm run db:migrate:dev`
@@ -363,3 +366,4 @@ flowchart LR
 | 2026-04-18 | v1.5.0 | 新增 Stream 目录手动全量同步链路：`POST /api/admin/videos/sync-catalog`、缺失视频双次命中下架规则、同步状态字段与前端顶部同步入口 |
 | 2026-05-02 | v1.6.0 | 后台信息架构重构：`/admin -> /admin/cms`、后台/C 端 header 分离、CMS 收敛为 3 个视频模块并新增 `home.family_story_videos`，首页家庭故事视频改为 CMS 配置驱动 |
 | 2026-05-03 | v1.7.0 | 账号与后台入口收敛：`/auth` 仅保留登录（邮箱/Google），前端下线 `/users` 独立路由，新增 `/admin/profile` 并将 `/admin` 默认跳转切换为 `/admin/profile`，后台导航扩展为“我的账号 + CMS 配置 + 视频管理” |
+| 2026-05-04 | v1.7.1 | 部署运行文档补充“手动部署 SOP”，新增“仅部署已提交代码（worktree 隔离发布）”标准流程并统一 dev/prod 命令清单入口 |
