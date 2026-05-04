@@ -8,6 +8,7 @@ describe("videos page", () => {
 	it("registers public watch route at /video and removes /videos route", () => {
 		const paths = router.routeTree.children.map((route) => route.path);
 		expect(paths).toContain("video");
+		expect(paths).toContain("video/$streamVideoId");
 		expect(paths).not.toContain("videos");
 	});
 
@@ -30,6 +31,7 @@ describe("videos page", () => {
 		);
 
 		expect(html).toContain("示例视频标题");
+		expect(html).toContain("打开微信分享");
 		expect(html).not.toContain("视频中心");
 		expect(html).not.toContain("顶部主播放区负责播放，点击下方卡片可切换视频。");
 		expect(html).not.toContain("点击卡片即可进入沉浸播放。");

@@ -1,4 +1,7 @@
 export type AppBindings = Env & {
+	ASSETS: {
+		fetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+	};
 	APP_ENV: string;
 	API_VERSION: string;
 	BETTER_AUTH_SECRET: string;

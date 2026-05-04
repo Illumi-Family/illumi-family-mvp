@@ -3,6 +3,7 @@ import { adminRouter } from "./modules/admin/admin.router";
 import { authRouter } from "./modules/auth/auth.router";
 import { contentRouter } from "./modules/content/content.router";
 import { healthRouter } from "./modules/health/health.router";
+import { seoRouter } from "./modules/seo/seo.router";
 import { usersRouter } from "./modules/users/users.router";
 import { streamWebhookRouter } from "./modules/video/stream-webhook.router";
 import { handleAppError } from "./shared/http/middleware/error-handler";
@@ -22,6 +23,7 @@ export const createApp = () => {
 	app.route("/api/admin", adminRouter);
 	app.route("/api/content", contentRouter);
 	app.route("/api/webhooks", streamWebhookRouter);
+	app.route("/", seoRouter);
 
 	app.all("/api/*", (c) =>
 		jsonFailure(

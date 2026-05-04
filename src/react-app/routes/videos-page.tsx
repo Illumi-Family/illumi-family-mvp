@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { Stream } from "@cloudflare/stream-react";
 import { useQuery } from "@tanstack/react-query";
+import { MobileShareFab } from "@/components/share/mobile-share-fab";
 import { PublicVideoGrid } from "@/components/video/public/public-video-grid";
 import { Button } from "@/components/ui/button";
 import type { PublicVideoRecord } from "@/lib/api";
 import { publicVideosQueryOptions } from "@/lib/query-options";
 import { warmupVideoPlaybackIntent } from "@/lib/video-player-warmup";
 import {
+	buildPublicVideoWatchHref,
+	readStreamVideoIdFromPathname,
 	readStreamVideoIdFromSearch,
 	resolveActivePublicVideo,
 	shouldReplaceWatchRouteQuery,
-	VIDEO_QUERY_KEY,
 } from "@/lib/video-watch-route";
 
 const readErrorMessage = (error: unknown) =>
@@ -20,6 +22,8 @@ const EMPTY_PUBLIC_VIDEOS: PublicVideoRecord[] = [];
 
 const readRequestedStreamVideoId = () => {
 	if (typeof window === "undefined") return null;
+	const streamVideoIdFromPath = readStreamVideoIdFromPathname(window.location.pathname);
+	if (streamVideoIdFromPath) return streamVideoIdFromPath;
 	return readStreamVideoIdFromSearch(window.location.search);
 };
 
@@ -28,18 +32,14 @@ const writeStreamVideoIdToUrl = (
 	options?: { replace?: boolean },
 ) => {
 	if (typeof window === "undefined") return;
-	const nextUrl = new URL(window.location.href);
-	if (streamVideoId) {
-		nextUrl.searchParams.set(VIDEO_QUERY_KEY, streamVideoId);
-	} else {
-		nextUrl.searchParams.delete(VIDEO_QUERY_KEY);
-	}
-	const nextPath = `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
+	const nextPath = streamVideoId ? buildPublicVideoWatchHref(streamVideoId) : "/video";
+	const nextUrl = new URL(nextPath, window.location.origin);
+	const nextHistoryPath = `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
 	if (options?.replace) {
-		window.history.replaceState(window.history.state, "", nextPath);
+		window.history.replaceState(window.history.state, "", nextHistoryPath);
 		return;
 	}
-	window.history.pushState(window.history.state, "", nextPath);
+	window.history.pushState(window.history.state, "", nextHistoryPath);
 };
 
 export function VideosPage() {
@@ -155,6 +155,7 @@ export function VideosPage() {
 					/>
 				</section>
 			) : null}
+			<MobileShareFab />
 		</div>
 	);
 }

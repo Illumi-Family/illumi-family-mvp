@@ -4,6 +4,17 @@ import app from "./index";
 const testEnv = {
 	APP_ENV: "dev",
 	API_VERSION: "v1",
+	ASSETS: {
+		fetch: vi.fn(async () =>
+			new Response(
+				`<!doctype html><html><head><meta name="description" content="old" /><title>old</title></head><body></body></html>`,
+				{
+					status: 200,
+					headers: { "content-type": "text/html; charset=UTF-8" },
+				},
+			),
+		),
+	},
 } as const;
 
 describe("worker api", () => {
@@ -30,6 +41,14 @@ describe("worker api", () => {
 		};
 		expect(body.success).toBe(false);
 		expect(body.error.code).toBe("ROUTE_NOT_FOUND");
+	});
+
+	it("renders seo html for home route", async () => {
+		const response = await app.request("/", {}, testEnv as never);
+		expect(response.status).toBe(200);
+		const text = await response.text();
+		expect(text).toContain("童蒙家塾｜传播传统文化｜家庭教育系统");
+		expect(text).toContain('property="og:title"');
 	});
 
 	it("requires auth session for /api/users/me", async () => {

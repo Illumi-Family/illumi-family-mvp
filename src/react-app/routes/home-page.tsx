@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Menu, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { MobileShareFab } from "@/components/share/mobile-share-fab";
 import { getHomePageData } from "@/routes/home-page.data";
 import { useAppI18n } from "@/i18n/context";
 import {
@@ -278,6 +279,7 @@ export function HomePage() {
 				</div>
 			</main>
 
+			<MobileShareFab />
 			<FooterSection content={homeData.footerContent} />
 		</div>
 	);

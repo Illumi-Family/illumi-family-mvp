@@ -1,6 +1,7 @@
 import type { PublicVideoRecord } from "@/lib/api";
 
 export const VIDEO_QUERY_KEY = "v";
+const VIDEO_PATH_PREFIX = "/video/";
 
 export const normalizeStreamVideoId = (value: string | null | undefined) => {
 	const trimmed = value?.trim();
@@ -12,10 +13,21 @@ export const readStreamVideoIdFromSearch = (search: string) => {
 	return normalizeStreamVideoId(params.get(VIDEO_QUERY_KEY));
 };
 
+export const readStreamVideoIdFromPathname = (pathname: string) => {
+	if (!pathname.startsWith(VIDEO_PATH_PREFIX)) return null;
+	const rawSegment = pathname.slice(VIDEO_PATH_PREFIX.length);
+	if (!rawSegment) return null;
+	const firstSegment = rawSegment.split("/")[0] ?? "";
+	if (!firstSegment) return null;
+	try {
+		return normalizeStreamVideoId(decodeURIComponent(firstSegment));
+	} catch {
+		return null;
+	}
+};
+
 export const buildPublicVideoWatchHref = (streamVideoId: string) => {
-	const params = new URLSearchParams();
-	params.set(VIDEO_QUERY_KEY, streamVideoId);
-	return `/video?${params.toString()}`;
+	return `/video/${encodeURIComponent(streamVideoId)}`;
 };
 
 export const resolveActivePublicVideo = (

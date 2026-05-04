@@ -3,6 +3,7 @@ import type { PublicVideoRecord } from "@/lib/api";
 import {
 	buildPublicVideoWatchHref,
 	normalizeStreamVideoId,
+	readStreamVideoIdFromPathname,
 	readStreamVideoIdFromSearch,
 	resolveActivePublicVideo,
 	shouldReplaceWatchRouteQuery,
@@ -36,8 +37,15 @@ describe("video-watch-route", () => {
 		expect(readStreamVideoIdFromSearch("?foo=1")).toBeNull();
 	});
 
+	it("reads stream id from pathname", () => {
+		expect(readStreamVideoIdFromPathname("/video/stream-1")).toBe("stream-1");
+		expect(readStreamVideoIdFromPathname("/video/%20stream-2%20")).toBe("stream-2");
+		expect(readStreamVideoIdFromPathname("/video/")).toBeNull();
+		expect(readStreamVideoIdFromPathname("/videos/stream-1")).toBeNull();
+	});
+
 	it("builds shareable watch href", () => {
-		expect(buildPublicVideoWatchHref("stream-1")).toBe("/video?v=stream-1");
+		expect(buildPublicVideoWatchHref("stream-1")).toBe("/video/stream-1");
 	});
 
 	it("resolves active video by requested stream id", () => {

@@ -9,7 +9,7 @@ export function RootLayout() {
 	const isSignedIn = Boolean(session?.user);
 	const pathname = useRouterState({ select: (state) => state.location.pathname });
 	const isPublicSurface =
-		pathname === "/" || pathname === "/video" || pathname.startsWith("/legal/");
+		pathname === "/" || pathname.startsWith("/video") || pathname.startsWith("/legal/");
 	const isAuthSurface = pathname === "/auth";
 	const isAdminSurface = pathname === "/admin" || pathname.startsWith("/admin/");
 	const showUtilityNav = !isPublicSurface && !isAuthSurface;

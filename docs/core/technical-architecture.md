@@ -2,8 +2,8 @@
 
 ## 0. 文档信息
 - 项目：`illumi-family-mvp`
-- 文档版本：`v1.6.0`
-- 最近更新：`2026-04-18`
+- 文档版本：`v1.8.0`
+- 最近更新：`2026-05-04`
 - 运行规范入口：`docs/runbooks/development-deployment-cicd-runbook.md`
 - 当前阶段：模板初始化后已完成 UI 基础设施 + 前端路由/数据缓存（TanStack Router + Query）+ 后端基础能力（dev/prod + D1/KV/R2 + Drizzle + Hono API 分层）+ Better Auth + Resend 鉴权主链路（邮箱密码 + Google）+ Admin CMS 基础能力（白名单鉴权 + admin 子域 + D1 内容版本化 + R2 资产 + 内容发布 API）+ i18n Phase 1/2（前端双语、CMS locale、内容 fallback、locale 缓存分片）+ Cloudflare Stream 视频能力层（后台直传签发 + 导入复用 + 手动全量同步目录、webhook 状态回写、发布门禁、公网播放）+ 首页关键区块后台可编辑化（Slogan + 核心视频 + 动态角色视频、shared 双 locale 镜像发布）+ 本地模板脚手架（template:new/sync/doctor）
 
@@ -91,7 +91,7 @@ flowchart LR
 │       ├── app.ts          # Hono app 组装（middleware + route + error）
 │       ├── types.ts        # Worker Bindings 与 Context 类型
 │       ├── config/env.ts   # APP_ENV/API_VERSION 运行时读取
-│       ├── modules/        # 领域模块（health/users/auth/admin/content/video）
+│       ├── modules/        # 领域模块（health/users/auth/admin/content/video/seo）
 │       └── shared/         # 跨模块能力（http/db/storage/auth/email/integrations）
 ├── drizzle.config.ts       # Drizzle Kit 配置
 ├── drizzle/migrations/     # Drizzle SQL 迁移文件
@@ -104,9 +104,10 @@ flowchart LR
 
 ### 4.1 前端 UI 基础设施说明
 - Tailwind v4 采用 CSS-first 模式，入口样式文件为 `src/react-app/index.css`。
-- TanStack Router 负责前端页面路由管理，当前已落地 `home/auth/admin/profile/admin/cms/admin/videos` 页面路由（`/admin` 自动跳转到 `/admin/profile`）。
+- TanStack Router 负责前端页面路由管理，当前已落地 `home/auth/video/video-detail/admin/profile/admin/cms/admin/videos` 页面路由（`/admin` 自动跳转到 `/admin/profile`）。
 - TanStack Query 负责 server-state 请求、缓存与失效刷新，当前示例接入 `/api/health` 与 `/api/users`。
-- 视频播放页采用 `@cloudflare/stream-react` 组件，配合 `VideoPlayerModal` 弹窗完成公网播放。
+- 视频播放页采用 `@cloudflare/stream-react` 组件，公共分享主路径为 `/video/{streamVideoId}`（保留旧 query 链接兼容收敛）。
+- 首页与视频页支持移动端右下角悬浮分享入口（微信分享指引浮层 + 复制 canonical 链接）。
 - shadcn/ui 采用本地组件模式：
   - 组件规范文件：`components.json`；
   - 通用工具：`src/react-app/lib/utils.ts`（`cn`）。
@@ -117,6 +118,7 @@ flowchart LR
 - `src/worker/modules/admin/*`：后台白名单鉴权后的内容管理与资产上传 API。
 - `src/worker/modules/content/*`：公网内容读取与资产回源 API。
 - `src/worker/modules/video/*`：视频上传签发、状态同步、生命周期管理与公网视频读取 API。
+- `src/worker/modules/seo/*`：首页与视频详情页服务端 SEO 卡片渲染（title/description/image）。
 - `src/worker/shared/integrations/stream/*`：Stream API 与 webhook 校验封装。
 - `src/worker/shared/db/schema/cms.ts`：CMS 主档/版本/资产/关联表定义。
 - `src/worker/shared/db/schema/video.ts`：视频能力层表结构定义（`video_assets`，含同步状态字段）。
@@ -131,7 +133,7 @@ flowchart LR
 - `observability.enabled: true`：启用可观测性；
 - `assets.directory: "./dist/client"`：将前端构建产物作为静态资产；
 - `assets.not_found_handling: "single-page-application"`：SPA 回退路由策略。
-- `assets.run_worker_first: ["/api/*"]`：仅 API 请求先进入 Worker，前端路由由资产层处理。
+- `assets.run_worker_first: ["/api/*", "/", "/video/*"]`：API + 首页 + 视频详情页先进入 Worker（用于服务端卡片输出），其余前端路由由资产层处理。
 - Stream 运行配置（通过 vars/secrets 注入）：
   - `STREAM_ACCOUNT_ID`
   - `STREAM_API_TOKEN`（secret）
@@ -306,7 +308,8 @@ flowchart LR
   - 视频生命周期管理（list/edit/publish/unpublish/sync）；
   - 同步治理规则：新增默认 `draft`、元数据覆盖保留 `publishStatus`、远端缺失连续 2 次才自动下架、分页失败跳过缺失下架；
   - 行为日志字段（`actionType`、`streamVideoId`、`operator`、`env`）用于区分“新上传”与“导入复用”；
-  - 公网视频列表与播放（`GET /api/content/videos` + `/videos` 弹窗播放器）；
+  - 公网视频列表与播放（`GET /api/content/videos` + `/video/{streamVideoId}` 页面播放器）；
+  - 首页与视频详情页服务端卡片输出（worker 直出 `title/description/image`，用于微信抓取）；
 - 业务用户身份映射与审计模型（`app_users`、`user_identities`、`user_security_events`）；
 - `dev/prod` 双环境与独立自定义域名（`illumi-family.com` / `dev.illumi-family.com` / `admin.illumi-family.com` / `admin-dev.illumi-family.com`）+ workers.dev 回退域名；
 - D1/KV/R2 数据存储绑定；
@@ -363,3 +366,4 @@ flowchart LR
 | 2026-04-18 | v1.5.0 | 新增 Stream 目录手动全量同步链路：`POST /api/admin/videos/sync-catalog`、缺失视频双次命中下架规则、同步状态字段与前端顶部同步入口 |
 | 2026-05-02 | v1.6.0 | 后台信息架构重构：`/admin -> /admin/cms`、后台/C 端 header 分离、CMS 收敛为 3 个视频模块并新增 `home.family_story_videos`，首页家庭故事视频改为 CMS 配置驱动 |
 | 2026-05-03 | v1.7.0 | 账号与后台入口收敛：`/auth` 仅保留登录（邮箱/Google），前端下线 `/users` 独立路由，新增 `/admin/profile` 并将 `/admin` 默认跳转切换为 `/admin/profile`，后台导航扩展为“我的账号 + CMS 配置 + 视频管理” |
+| 2026-05-04 | v1.8.0 | 移动端微信分享与 SEO 卡片首发：公共视频 canonical 路径切换为 `/video/{streamVideoId}`（兼容 query 收敛），首页/视频页新增移动端分享 FAB，Worker 新增 `seo` 模块并通过 `run_worker_first` 为 `/` 与 `/video/*` 输出动态分享卡片 |

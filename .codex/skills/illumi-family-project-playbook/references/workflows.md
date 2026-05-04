@@ -96,7 +96,9 @@ pnpm run db:migrate:dev
 pnpm exec wrangler d1 migrations list DB --env dev --remote | grep -q 'No migrations to apply'
 pnpm run deploy
 ```
-Current routing baseline: `assets.run_worker_first = ["/api/*"]` (SPA routes handled by assets, Worker handles API).
+Current routing baseline: `assets.run_worker_first = ["/api/*", "/", "/video/*"]`:
+- Worker-first: `/api/*`, `/`, `/video/*`
+- Assets fallback: other SPA routes
 
 ### Deploy prod
 ```bash

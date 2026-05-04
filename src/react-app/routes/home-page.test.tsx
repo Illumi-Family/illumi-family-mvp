@@ -72,6 +72,7 @@ describe("home page", () => {
 		expect(html).toContain('id="main-content"');
 		expect(html).toContain("家塾起源");
 		expect(html).toContain("navigation.mobileMenuOpenAriaLabel");
+		expect(html).toContain("打开微信分享");
 		expect(html).not.toContain("navigation.mobileAriaLabel");
 	});
 });

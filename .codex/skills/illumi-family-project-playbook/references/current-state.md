@@ -1,6 +1,6 @@
 # Illumi Family MVP Current State
 
-Last verified: 2026-05-02
+Last verified: 2026-05-04
 
 ## 1) Canonical Fact Sources
 - `wrangler.json`
@@ -109,7 +109,11 @@ Last verified: 2026-05-02
 ## 8) Known Execution Notes
 - In sandbox, Wrangler may print `EPERM` log-path warnings for `~/Library/Preferences/.wrangler`; command exit code is the true success signal.
 - For dry-run checks in multi-env config, always pass explicit `--env`.
-- Asset routing strategy uses `assets.run_worker_first = ["/api/*"]`, so SPA routes (`/auth`, `/admin/profile`, etc.) are handled by the asset layer, while API paths are handled by Worker.
+- Asset routing strategy uses `assets.run_worker_first = ["/api/*", "/", "/video/*"]`:
+  - `/api/*`, `/`, `/video/*` are handled by Worker first.
+  - Other SPA routes (`/auth`, `/admin/profile`, etc.) are handled by the asset layer fallback.
+- Public watch canonical URL uses path semantics: `/video/{streamVideoId}` (legacy `?v=` links are compatibility inputs and should be normalized to canonical path links in sharing flows).
+- Worker `seo` module renders server-side share cards for `/` and `/video/:streamVideoId` with dynamic `title/description/image` (video image prefers `posterUrl`, fallback to default site image).
 - Email/password auth path uses a custom `PBKDF2(SHA-256)` hasher (`src/worker/shared/auth/password-hasher.ts`) to stay within Worker CPU limits; re-benchmark sign-up/sign-in if hash parameters change.
 - Admin access is enforced by hard-coded whitelist + verified-email check (`src/worker/shared/auth/admin-access.ts` + `requireAdminSession`).
 - Public home content is served by `GET /api/content/home?locale=...` backed by D1 published revisions with KV cache key `cms:home:published:v1:{locale}`.

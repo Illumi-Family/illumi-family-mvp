@@ -90,6 +90,12 @@ const videosRoute = createRoute({
 	component: VideosPage,
 });
 
+const videoDetailRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/video/$streamVideoId",
+	component: VideosPage,
+});
+
 const legalPrivacyRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/legal/privacy",
@@ -111,6 +117,7 @@ const legalCopyrightRoute = createRoute({
 const routeTree = rootRoute.addChildren([
 	homeRoute,
 	videosRoute,
+	videoDetailRoute,
 	legalPrivacyRoute,
 	legalMinorProtectionRoute,
 	legalCopyrightRoute,
