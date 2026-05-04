@@ -37,6 +37,7 @@ import {
 	pickProcessingVideoIds,
 	summarizeProcessingVideoSync,
 } from "@/lib/video-sync";
+import { isDeleteDraftConfirmationMatch } from "@/routes/admin-videos-page.delete-confirm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -78,6 +79,9 @@ export function AdminVideosPage() {
 	const [activePreviewStreamVideoId, setActivePreviewStreamVideoId] = useState<
 		string | null
 	>(null);
+	const [pendingDeleteVideo, setPendingDeleteVideo] =
+		useState<AdminVideoRecord | null>(null);
+	const [deleteConfirmStreamInput, setDeleteConfirmStreamInput] = useState("");
 	const [editingVideo, setEditingVideo] = useState<AdminVideoRecord | null>(null);
 	const [editTitle, setEditTitle] = useState("");
 	const [editPoster, setEditPoster] = useState("");
@@ -413,19 +417,42 @@ export function AdminVideosPage() {
 		}
 	};
 
-	const handleDeleteDraft = async (videoId: string) => {
+	const handleDeleteDraft = (video: AdminVideoRecord) => {
 		resetNotice();
-		const shouldDelete = globalThis.confirm?.(
-			`删除草稿 ${videoId} ？该操作不可恢复。`,
-		);
-		if (!shouldDelete) return;
+		setPendingDeleteVideo(video);
+		setDeleteConfirmStreamInput("");
+	};
+
+	const handleCancelDeleteDraft = () => {
+		if (!pendingDeleteVideo) return;
+		const canceledVideoId = pendingDeleteVideo.id;
+		setPendingDeleteVideo(null);
+		setDeleteConfirmStreamInput("");
+		setStatusMessage(`已取消删除草稿 ${canceledVideoId}`);
+	};
+
+	const handleConfirmDeleteDraft = async () => {
+		if (!pendingDeleteVideo) return;
+		resetNotice();
+		if (
+			!isDeleteDraftConfirmationMatch(
+				deleteConfirmStreamInput,
+				pendingDeleteVideo.streamVideoId,
+			)
+		) {
+			setErrorMessage("输入的 Stream Video ID 不匹配，已阻止删除");
+			return;
+		}
 
 		try {
-			await deleteDraftMutation.mutateAsync(videoId);
-			if (editingVideo?.id === videoId) {
+			const deletedVideoId = pendingDeleteVideo.id;
+			await deleteDraftMutation.mutateAsync(deletedVideoId);
+			if (editingVideo?.id === deletedVideoId) {
 				closeEditDrawer();
 			}
-			setStatusMessage(`已删除草稿 ${videoId}`);
+			setPendingDeleteVideo(null);
+			setDeleteConfirmStreamInput("");
+			setStatusMessage(`已删除草稿 ${deletedVideoId}`);
 			await invalidateVideoQueries();
 		} catch (error) {
 			setErrorMessage(readErrorMessage(error));
@@ -438,6 +465,12 @@ export function AdminVideosPage() {
 
 	const activePreviewStreamVideoIdForList =
 		activePreviewVideo?.streamVideoId ?? null;
+	const isDeleteConfirmationMatched = pendingDeleteVideo
+		? isDeleteDraftConfirmationMatch(
+				deleteConfirmStreamInput,
+				pendingDeleteVideo.streamVideoId,
+			)
+		: false;
 
 	return (
 		<div className="mx-auto w-full max-w-[1400px] space-y-6 px-4 py-8">
@@ -554,6 +587,62 @@ export function AdminVideosPage() {
 					</div>
 				) : null}
 
+				{pendingDeleteVideo ? (
+					<div className="space-y-3 rounded-xl border border-rose-300 bg-rose-50 px-4 py-4 text-sm text-rose-900">
+						<div className="space-y-1">
+							<p className="font-semibold">删除草稿（高风险操作）</p>
+							<p>
+								此操作会删除 Cloudflare Stream 源文件，不仅是当前环境本地草稿记录。
+							</p>
+							<p>
+								dev 与 prod 当前共用同一 Stream 资源池，任一环境删除都会影响另一环境。
+							</p>
+							<p>删除后不可恢复，需要重新上传或重新导入才能恢复。</p>
+							<p className="text-xs text-rose-700">
+								目标视频：{pendingDeleteVideo.id}（Stream Video ID：
+								{pendingDeleteVideo.streamVideoId}）
+							</p>
+						</div>
+
+						<div className="space-y-2">
+							<Label htmlFor="delete-draft-confirm-stream-video-id">
+								请输入目标 Stream Video ID 以确认删除
+							</Label>
+							<Input
+								id="delete-draft-confirm-stream-video-id"
+								value={deleteConfirmStreamInput}
+								onChange={(event) =>
+									setDeleteConfirmStreamInput(event.target.value)
+								}
+								placeholder={pendingDeleteVideo.streamVideoId}
+								autoComplete="off"
+								spellCheck={false}
+								disabled={deleteDraftMutation.isPending}
+							/>
+						</div>
+
+						<div className="flex flex-wrap items-center gap-2">
+							<Button
+								type="button"
+								variant="outline"
+								onClick={handleCancelDeleteDraft}
+								disabled={deleteDraftMutation.isPending}
+							>
+								取消删除
+							</Button>
+							<Button
+								type="button"
+								onClick={() => void handleConfirmDeleteDraft()}
+								disabled={
+									deleteDraftMutation.isPending || !isDeleteConfirmationMatched
+								}
+							>
+								{deleteDraftMutation.isPending ? "删除中..." : "确认删除草稿"}
+							</Button>
+						</div>
+					</div>
+				) : null}
+
 				{videosQuery.isLoading ? (
 					<div className="rounded-xl border border-border bg-card px-4 py-6 text-sm text-muted-foreground">
 						正在加载视频列表...
@@ -614,7 +703,7 @@ export function AdminVideosPage() {
 						onUnpublish={(videoId) => void handleUnpublish(videoId)}
 						onOpenEdit={(video) => handleOpenEditDrawer(video)}
 						onSyncStatus={(videoId) => void handleSyncStatus(videoId)}
-						onDeleteDraft={(videoId) => void handleDeleteDraft(videoId)}
+						onDeleteDraft={(video) => handleDeleteDraft(video)}
 					/>
 					</div>
 				) : null}

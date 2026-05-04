@@ -11,7 +11,7 @@ type VideoListProps = {
 	onUnpublish: (videoId: string) => void;
 	onOpenEdit: (video: AdminVideoRecord) => void;
 	onSyncStatus: (videoId: string) => void;
-	onDeleteDraft: (videoId: string) => void;
+	onDeleteDraft: (video: AdminVideoRecord) => void;
 };
 
 export function VideoList(props: VideoListProps) {
@@ -42,7 +42,7 @@ export function VideoList(props: VideoListProps) {
 					onUnpublish={() => onUnpublish(video.id)}
 					onOpenEdit={() => onOpenEdit(video)}
 					onSyncStatus={() => onSyncStatus(video.id)}
-					onDeleteDraft={() => onDeleteDraft(video.id)}
+					onDeleteDraft={() => onDeleteDraft(video)}
 				/>
 			))}
 		</div>
