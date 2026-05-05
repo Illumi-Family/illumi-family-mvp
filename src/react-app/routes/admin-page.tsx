@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
 	ApiClientError,
+	type AdminHomeSectionRecord,
 	type HomeSectionEntryKey,
 	publishAdminHomeSection,
 	saveAdminHomeSectionDraft,
@@ -177,6 +178,98 @@ const hasDuplicateStreamVideoId = (items: Array<{ streamVideoId: string }>) => {
 	return false;
 };
 
+type SectionVisualState = {
+	key:
+		| "uninitialized"
+		| "draft_only"
+		| "published_synced"
+		| "published_with_draft"
+		| "inconsistent";
+	label: string;
+	description: string;
+	badgeClassName: string;
+	cardClassName: string;
+};
+
+const resolveSectionVisualState = (
+	section: AdminHomeSectionRecord | null | undefined,
+): SectionVisualState => {
+	if (!section || !section.latestRevisionId) {
+		return {
+			key: "uninitialized",
+			label: "未创建",
+			description: "当前模块还没有任何版本",
+			badgeClassName:
+				"border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300",
+			cardClassName: "border-slate-300/70 bg-slate-50/70",
+		};
+	}
+
+	if (section.status === "published") {
+		if (!section.publishedRevisionId) {
+			return {
+				key: "inconsistent",
+				label: "状态异常",
+				description: "状态标记为已发布，但缺少发布版本号",
+				badgeClassName:
+					"border-red-300 bg-red-100 text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200",
+				cardClassName: "border-red-300/70 bg-red-50/70",
+			};
+		}
+
+		if (section.latestRevisionId !== section.publishedRevisionId) {
+			return {
+				key: "published_with_draft",
+				label: "草稿未发布",
+				description: `当前编辑是 rev ${section.latestRevisionNo ?? "-"}，线上仍为已发布旧版本`,
+				badgeClassName:
+					"border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200",
+				cardClassName: "border-amber-300/70 bg-amber-50/70",
+			};
+		}
+
+		return {
+			key: "published_synced",
+			label: "已发布",
+			description: `当前线上版本为 rev ${section.latestRevisionNo ?? "-"}`,
+			badgeClassName:
+				"border-emerald-300 bg-emerald-100 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200",
+			cardClassName: "border-emerald-300/70 bg-emerald-50/70",
+		};
+	}
+
+	if (section.status === "draft") {
+		if (section.publishedRevisionId) {
+			return {
+				key: "published_with_draft",
+				label: "草稿未发布",
+				description: `当前编辑是 rev ${section.latestRevisionNo ?? "-"}，线上仍为已发布旧版本`,
+				badgeClassName:
+					"border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200",
+				cardClassName: "border-amber-300/70 bg-amber-50/70",
+			};
+		}
+
+		return {
+			key: "draft_only",
+			label: "草稿待发布",
+			description: "已有草稿，但线上还没有可见版本",
+			badgeClassName:
+				"border-blue-300 bg-blue-100 text-blue-800 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200",
+			cardClassName: "border-blue-300/70 bg-blue-50/70",
+		};
+	}
+
+	return {
+		key: "inconsistent",
+		label: "状态异常",
+		description: `未知状态：${section.status}`,
+		badgeClassName:
+			"border-red-300 bg-red-100 text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200",
+		cardClassName: "border-red-300/70 bg-red-50/70",
+	};
+};
+
 export function AdminPage({
 	initialEntryKey = "home.main_video",
 }: AdminPageProps = {}) {
@@ -198,6 +291,10 @@ export function AdminPage({
 	const selectedSection = useMemo(
 		() => sectionMap.get(activeEntryKey),
 		[sectionMap, activeEntryKey],
+	);
+	const selectedSectionVisualState = useMemo(
+		() => resolveSectionVisualState(selectedSection),
+		[selectedSection],
 	);
 
 	const baselineFormState = useMemo<DraftFormState>(
@@ -624,6 +721,8 @@ export function AdminPage({
 						<div className="space-y-2">
 							{ENTRY_KEY_OPTIONS.map((option) => {
 								const active = option.value === activeEntryKey;
+								const optionSection = sectionMap.get(option.value);
+								const optionVisualState = resolveSectionVisualState(optionSection);
 								return (
 									<button
 										key={option.value}
@@ -640,7 +739,15 @@ export function AdminPage({
 												: "border-border/70 bg-background hover:border-[color:rgba(166,124,82,0.35)]",
 										].join(" ")}
 									>
-										<p className="text-sm font-medium text-foreground">{option.label}</p>
+										<div className="flex items-center justify-between gap-2">
+											<p className="text-sm font-medium text-foreground">{option.label}</p>
+											<Badge
+												variant="outline"
+												className={optionVisualState.badgeClassName}
+											>
+												{optionVisualState.label}
+											</Badge>
+										</div>
 										<p className="mt-1 text-xs text-muted-foreground">
 											{SECTION_EDITOR_META[option.value].moduleName}
 										</p>
@@ -651,6 +758,30 @@ export function AdminPage({
 					</aside>
 
 					<section className="rounded-2xl border border-border/70 bg-[color:rgba(255,252,247,0.78)] px-4 py-4 md:px-6">
+						<div
+							className={[
+								"mb-4 rounded-xl border px-3 py-3",
+								selectedSectionVisualState.cardClassName,
+							].join(" ")}
+						>
+							<div className="flex flex-wrap items-center gap-2">
+								<Badge
+									variant="outline"
+									className={selectedSectionVisualState.badgeClassName}
+								>
+									{selectedSectionVisualState.label}
+								</Badge>
+								<p className="text-xs font-medium text-foreground">
+									{selectedSectionVisualState.key === "inconsistent"
+										? "系统状态异常，建议先排查后再操作"
+										: "系统状态正常，可继续操作"}
+								</p>
+							</div>
+							<p className="mt-2 text-sm text-foreground/80">
+								{selectedSectionVisualState.description}
+							</p>
+						</div>
+
 						{!hasAnyHistory ? (
 							<div className="mb-4 rounded-xl border border-dashed border-border/80 bg-background/70 p-3 text-sm text-muted-foreground">
 								当前还没有历史版本，正在创建首个草稿。

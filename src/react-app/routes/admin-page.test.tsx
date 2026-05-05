@@ -10,13 +10,17 @@ import { AdminPage } from "./admin-page";
 const createSectionRecord = (overrides: {
 	entryKey: string;
 	latestContentJson: unknown;
+	status?: string;
+	publishedRevisionId?: string | null;
+	latestRevisionId?: string | null;
+	latestRevisionNo?: number | null;
 }) => ({
 	entryKey: overrides.entryKey,
 	locale: "zh-CN" as const,
-	status: "draft",
-	publishedRevisionId: null,
-	latestRevisionId: "rev-1",
-	latestRevisionNo: 1,
+	status: overrides.status ?? "draft",
+	publishedRevisionId: overrides.publishedRevisionId ?? null,
+	latestRevisionId: overrides.latestRevisionId ?? "rev-1",
+	latestRevisionNo: overrides.latestRevisionNo ?? 1,
 	latestTitle: "section-title",
 	latestSummaryMd: null,
 	latestBodyMd: null,
@@ -177,5 +181,58 @@ describe("admin cms page", () => {
 		expect(html).toContain("不设条数上限");
 		expect(html).not.toContain("最多 12 条");
 		expect(html).toContain("Family Story Video");
+	});
+
+	it("renders published status for synchronized published revision", () => {
+		const queryClient = new QueryClient();
+		queryClient.setQueryData(adminHomeSectionsQueryKey("zh-CN"), [
+			createSectionRecord({
+				entryKey: "home.main_video",
+				latestContentJson: {
+					streamVideoId: "stream-ready-1",
+				},
+				status: "published",
+				publishedRevisionId: "rev-1",
+				latestRevisionId: "rev-1",
+				latestRevisionNo: 1,
+			}),
+		]);
+		queryClient.setQueryData(adminVideosQueryKey, []);
+
+		const html = renderToString(
+			<QueryClientProvider client={queryClient}>
+				<AdminPage initialEntryKey="home.main_video" />
+			</QueryClientProvider>,
+		);
+
+		expect(html).toContain("已发布");
+		expect(html).toContain("系统状态正常，可继续操作");
+		expect(html).toContain("当前线上版本为 rev 1");
+	});
+
+	it("renders draft-not-published warning when latest differs from published revision", () => {
+		const queryClient = new QueryClient();
+		queryClient.setQueryData(adminHomeSectionsQueryKey("zh-CN"), [
+			createSectionRecord({
+				entryKey: "home.main_video",
+				latestContentJson: {
+					streamVideoId: "stream-ready-1",
+				},
+				status: "published",
+				publishedRevisionId: "rev-1",
+				latestRevisionId: "rev-2",
+				latestRevisionNo: 2,
+			}),
+		]);
+		queryClient.setQueryData(adminVideosQueryKey, []);
+
+		const html = renderToString(
+			<QueryClientProvider client={queryClient}>
+				<AdminPage initialEntryKey="home.main_video" />
+			</QueryClientProvider>,
+		);
+
+		expect(html).toContain("草稿未发布");
+		expect(html).toContain("线上仍为已发布旧版本");
 	});
 });
