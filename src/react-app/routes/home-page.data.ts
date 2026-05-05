@@ -134,7 +134,7 @@ export const heroContent: HeroContent = {
 	primaryCta: { label: "阅读理念", href: "#" },
 	secondaryCta: { label: "认识小罗老师", href: "#" },
 	image: {
-		src: "/images/background.png",
+		src: "/images/background.jpg",
 		alt: "童蒙家塾三代同堂家庭 IP 合照，展现温暖陪伴与家学传承。",
 	},
 };
@@ -295,7 +295,7 @@ export const aboutContent: AboutContent = {
 	closing:
 		"不焦虑、不内卷、不功利，只做扎根生命、温润心灵的真教育。愿与万千家庭同行：一人觉醒，一家书香，一门家学，三代传承。",
 	portrait: {
-		src: "/images/background.png",
+		src: "/images/background.jpg",
 		alt: "童蒙家塾主理人家庭 IP 形象。",
 	},
 };
@@ -401,7 +401,7 @@ const heroContentEn: HeroContent = {
 	primaryCta: { label: "Read the origin", href: "#" },
 	secondaryCta: { label: "Contact us", href: "#" },
 	image: {
-		src: "/images/background.png",
+		src: "/images/background.jpg",
 		alt: "Family portrait showing warm companionship and cultural inheritance.",
 	},
 };
@@ -546,7 +546,7 @@ const aboutContentEn: AboutContent = {
 	closing:
 		"Reject anxiety and utilitarian pressure. Practice education rooted in life, with warmth and depth.",
 	portrait: {
-		src: "/images/background.png",
+		src: "/images/background.jpg",
 		alt: "Family IP portrait of Illumi Family.",
 	},
 };

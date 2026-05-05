@@ -15,8 +15,8 @@ export function FooterSection({ content }: FooterSectionProps) {
 		<footer className="border-t border-[color:rgba(166,124,82,0.24)] bg-[color:rgba(255,252,247,0.82)] px-4 py-10 md:px-8">
 			<div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
 				<div className="space-y-2">
-					<p className="font-brand text-2xl text-foreground">{content.sloganLine1}</p>
-					<p className="font-brand text-2xl text-foreground">{content.sloganLine2}</p>
+					<p className="font-brand text-xl text-foreground">{content.sloganLine1}</p>
+					<p className="font-brand text-xl text-foreground">{content.sloganLine2}</p>
 				</div>
 				<div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
 					{content.links.map((link) => (
