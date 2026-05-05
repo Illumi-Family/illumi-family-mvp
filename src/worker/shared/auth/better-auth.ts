@@ -14,16 +14,31 @@ const parseHostname = (url: string) => {
 	}
 };
 
-export const buildAllowedAuthHosts = (env: AppBindings) => {
-	const hosts = new Set<string>([
+const getEnvironmentHosts = (appEnv: string): string[] => {
+	if (appEnv === "prod") {
+		return [
+			"illumi-family.com",
+			"admin.illumi-family.com",
+			"illumi-family-mvp.lguangcong0712.workers.dev",
+		];
+	}
+
+	return [
 		"dev.illumi-family.com",
 		"admin-dev.illumi-family.com",
-		"admin.illumi-family.com",
 		"illumi-family-mvp-dev.lguangcong0712.workers.dev",
-		"illumi-family-mvp.lguangcong0712.workers.dev",
 		"localhost",
 		"127.0.0.1",
-	]);
+	];
+};
+
+const toHttpsOrigins = (hosts: string[]) =>
+	hosts
+		.filter((host) => host !== "localhost" && host !== "127.0.0.1")
+		.map((host) => `https://${host}`);
+
+export const buildAllowedAuthHosts = (env: AppBindings) => {
+	const hosts = new Set<string>(getEnvironmentHosts(env.APP_ENV));
 
 	const baseUrlHost = parseHostname(env.BETTER_AUTH_BASE_URL);
 	if (baseUrlHost) hosts.add(baseUrlHost);
@@ -36,14 +51,19 @@ export const buildTrustedOrigins = (
 	request?: Request,
 ): string[] => {
 	const origin = request?.headers.get("origin");
-	return [
+	const trustedOriginCandidates = [
 		env.BETTER_AUTH_BASE_URL,
-		"https://dev.illumi-family.com",
-		"https://admin-dev.illumi-family.com",
-		"https://admin.illumi-family.com",
-		"https://illumi-family-mvp-dev.lguangcong0712.workers.dev",
-		"http://localhost:5173",
-		"http://127.0.0.1:5173",
+		...toHttpsOrigins(getEnvironmentHosts(env.APP_ENV)),
+	];
+	if (env.APP_ENV !== "prod") {
+		trustedOriginCandidates.push(
+			"http://localhost:5173",
+			"http://127.0.0.1:5173",
+		);
+	}
+
+	return [
+		...trustedOriginCandidates,
 		origin,
 	].filter((value): value is string => Boolean(value));
 };
