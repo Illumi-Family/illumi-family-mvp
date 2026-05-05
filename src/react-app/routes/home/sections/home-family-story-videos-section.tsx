@@ -58,13 +58,7 @@ export function HomeFamilyStoryVideosSection(props: HomeFamilyStoryVideosSection
 				</div>
 			) : null}
 
-			{!isLoading && !isError && items.length === 0 ? (
-				<div className="rounded-2xl border border-dashed border-border/70 bg-background/70 px-4 py-5 text-sm text-muted-foreground">
-					{t("home.familyStoriesEmpty")}
-				</div>
-			) : null}
-
-			{!isLoading && !isError && items.length > 0 ? (
+			{!isLoading && !isError ? (
 				<div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
 					{items.map((item) => {
 						const playable = item.status === "ready" && Boolean(item.video);
@@ -89,6 +83,55 @@ export function HomeFamilyStoryVideosSection(props: HomeFamilyStoryVideosSection
 							/>
 						);
 					})}
+					<article
+						data-testid="home-family-story-placeholder-card"
+						aria-label={t("home.familyStoriesPlaceholder")}
+						className="overflow-hidden rounded-[4px] border border-dashed border-border/70 bg-card/95 shadow-[0_18px_40px_-28px_rgba(0,0,0,0.45)]"
+					>
+						<div className="relative aspect-video overflow-hidden bg-[color:rgba(243,236,227,0.66)]">
+							<div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
+								<span
+									aria-hidden="true"
+									className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-[color:rgba(166,124,82,0.28)] bg-white/80 text-[color:rgba(115,94,73,0.95)] shadow-[0_10px_20px_-12px_rgba(0,0,0,0.35)]"
+								>
+									<svg
+										viewBox="0 0 24 24"
+										fill="none"
+										className="h-7 w-7"
+										data-testid="home-family-story-placeholder-icon"
+									>
+										<rect
+											x="3.5"
+											y="6.5"
+											width="17"
+											height="11"
+											rx="2.5"
+											stroke="currentColor"
+											strokeWidth="1.6"
+										/>
+										<path
+											d="M10.2 10.1L14.7 12L10.2 13.9V10.1Z"
+											fill="currentColor"
+										/>
+										<path
+											d="M7 4.8H17"
+											stroke="currentColor"
+											strokeWidth="1.6"
+											strokeLinecap="round"
+										/>
+										<circle cx="7.5" cy="19.2" r="0.9" fill="currentColor" />
+										<circle cx="16.5" cy="19.2" r="0.9" fill="currentColor" />
+									</svg>
+								</span>
+								<p className="text-base font-semibold tracking-tight text-[color:rgba(86,78,70,0.95)]">
+									{t("home.familyStoriesPlaceholder")}
+								</p>
+								<p className="text-xs font-medium tracking-[0.08em] text-[color:rgba(120,108,95,0.92)]">
+									{t("home.familyStoriesPlaceholderHint")}
+								</p>
+							</div>
+						</div>
+					</article>
 				</div>
 			) : null}
 		</section>

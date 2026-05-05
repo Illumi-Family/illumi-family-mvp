@@ -33,6 +33,8 @@
   "fallbackNotice": "Content service is temporarily unavailable. Showing local fallback content.",
   "home": {
     "familyStoriesEmpty": "Family story videos are in preparation.",
+    "familyStoriesPlaceholder": "More family story videos are in preparation.",
+    "familyStoriesPlaceholderHint": "Coming soon",
     "familyStoriesPlayAria": "Play family story video: ",
     "familyStoriesUnavailableAria": "Family story video unavailable: "
   },

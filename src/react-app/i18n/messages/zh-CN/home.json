@@ -33,6 +33,8 @@
   "fallbackNotice": "内容服务暂时不可用，当前展示本地兜底内容。",
   "home": {
     "familyStoriesEmpty": "家庭故事视频正在筹备中。",
+    "familyStoriesPlaceholder": "更多家庭故事视频正在筹备中",
+    "familyStoriesPlaceholderHint": "敬请期待 · 即将上线",
     "familyStoriesPlayAria": "播放家庭故事视频：",
     "familyStoriesUnavailableAria": "家庭故事视频待配置："
   },
