@@ -40,6 +40,49 @@ const resolveMessage = (value: string | null) => {
 	return trimmed && trimmed.length > 0 ? trimmed : null;
 };
 
+function HomeMainVideoLoadingLogo() {
+	return (
+		<div
+			aria-hidden="true"
+			data-testid="home-main-video-loading-logo"
+			className="absolute inset-0 flex items-center justify-center"
+		>
+			<div className="relative h-20 w-20">
+				<svg
+					viewBox="0 0 96 96"
+					className="h-20 w-20 text-[color:rgba(166,124,82,0.92)]"
+					fill="none"
+					xmlns="http://www.w3.org/2000/svg"
+				>
+					<circle
+						cx="48"
+						cy="48"
+						r="34"
+						stroke="currentColor"
+						strokeWidth="6"
+						strokeOpacity="0.22"
+					/>
+					<path
+						d="M48 14a34 34 0 0 1 31.18 20.48"
+						stroke="currentColor"
+						strokeWidth="6"
+						strokeLinecap="round"
+						className="origin-center animate-spin"
+					/>
+					<circle cx="48" cy="48" r="10" fill="currentColor" fillOpacity="0.26" />
+					<path
+						d="M40 48h16M48 40v16"
+						stroke="currentColor"
+						strokeWidth="3"
+						strokeLinecap="round"
+						strokeOpacity="0.8"
+					/>
+				</svg>
+			</div>
+		</div>
+	);
+}
+
 function MainVideoPlayer(props: MainVideoPlayerProps) {
 	const {
 		streamVideoId,
@@ -219,7 +262,7 @@ function MainVideoPlayer(props: MainVideoPlayerProps) {
 export function HomeMainVideoSection(props: HomeMainVideoSectionProps) {
 	const { video, isLoading, isError, errorMessage, onRetry } = props;
 	const { t } = useTranslation("home");
-	const isMissing = !video.video || video.status === "missing";
+	const isMissing = !isLoading && !isError && (!video.video || video.status === "missing");
 	return (
 		<section
 			id="home-main-video"
@@ -236,6 +279,7 @@ export function HomeMainVideoSection(props: HomeMainVideoSectionProps) {
 							aria-hidden="true"
 							className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,rgba(166,124,82,0.14),rgba(255,252,247,0.68),rgba(166,124,82,0.14))]"
 						/>
+						<HomeMainVideoLoadingLogo />
 						<div
 							aria-hidden="true"
 							className="absolute inset-x-6 bottom-5 flex flex-col gap-2"
@@ -270,7 +314,6 @@ export function HomeMainVideoSection(props: HomeMainVideoSectionProps) {
 						data-testid="home-main-video-missing"
 					>
 						<p className="text-base font-medium text-foreground">{video.title}</p>
-						<p className="text-sm text-muted-foreground">{t("homeVideo.heroMissing")}</p>
 					</div>
 				) : null}
 

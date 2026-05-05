@@ -75,9 +75,11 @@ describe("home-main-video-section", () => {
 
 		expect(html).toContain("home-main-video-query-skeleton");
 		expect(html).toContain('data-testid="home-main-video-shell"');
+		expect(html).toContain('data-testid="home-main-video-loading-logo"');
 		expect(html).toContain("sr-only");
 		expect(html).toContain("homeVideo.heroLoading");
 		expect(html).toContain("aspect-video");
+		expect(html).not.toContain("全家福主片");
 	});
 
 	it("renders missing fallback state when main video is not configured", () => {
@@ -96,7 +98,6 @@ describe("home-main-video-section", () => {
 		);
 
 		expect(html).toContain("全家福 · 家风传承纪实");
-		expect(html).toContain("homeVideo.heroMissing");
 		expect(html).toContain('data-testid="home-main-video-shell"');
 		expect(html).toContain('data-testid="home-main-video-missing"');
 	});
