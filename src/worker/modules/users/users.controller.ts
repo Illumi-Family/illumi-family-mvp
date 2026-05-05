@@ -31,8 +31,12 @@ const requireJsonBody = factory.createMiddleware(async (c, next) => {
 export const getCurrentUserHandlers = factory.createHandlers(
 	requireAuthSession,
 	async (c) => {
+		const authUserId = c.get("authUserId");
+		if (!authUserId) {
+			throw new AppError("UNAUTHORIZED", "Authentication required", 401);
+		}
 		const service = buildUsersService(c.env);
-		const user = await service.getCurrentUser();
+		const user = await service.getCurrentUser(authUserId);
 		if (!user) {
 			throw new AppError(
 				"CURRENT_USER_NOT_FOUND",
@@ -50,8 +54,12 @@ export const updateCurrentUserHandlers = factory.createHandlers(
 	requireJsonBody,
 	zValidator("json", updateCurrentUserBodySchema),
 	async (c) => {
+		const authUserId = c.get("authUserId");
+		if (!authUserId) {
+			throw new AppError("UNAUTHORIZED", "Authentication required", 401);
+		}
 		const service = buildUsersService(c.env);
-		const user = await service.updateCurrentUser(c.req.valid("json"));
+		const user = await service.updateCurrentUser(authUserId, c.req.valid("json"));
 		return jsonSuccess(c, { user });
 	},
 );
