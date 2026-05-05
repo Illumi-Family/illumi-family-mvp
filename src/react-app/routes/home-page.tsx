@@ -112,6 +112,7 @@ export function HomePage() {
 	};
 
 	const publicVideoErrorMessage = readErrorMessage(publicVideosQuery.error);
+	const isMainVideoLoading = homeContentQuery.isLoading || publicVideosQuery.isLoading;
 	const scrollToSection = (sectionId: string) => {
 		if (typeof document === "undefined") return;
 		const section = document.getElementById(sectionId);
@@ -241,7 +242,7 @@ export function HomePage() {
 				<div className="">
 					<HomeMainVideoSection
 						video={featuredVideos.main}
-						isLoading={publicVideosQuery.isLoading}
+						isLoading={isMainVideoLoading}
 						isError={publicVideosQuery.isError}
 						errorMessage={publicVideoErrorMessage}
 						onRetry={() => void publicVideosQuery.refetch()}
