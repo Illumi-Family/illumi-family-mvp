@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Stream } from "@cloudflare/stream-react";
+import { Menu, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { PublicVideoGrid } from "@/components/video/public/public-video-grid";
 import { useAppI18n } from "@/i18n/context";
@@ -52,6 +53,7 @@ export function VideosPage() {
 	const videosQuery = useQuery(publicVideosQueryOptions());
 	const homeContentQuery = useQuery(homeContentQueryOptions(locale));
 	const homeContent = homeContentQuery.data ?? homeData.defaultHomeContent;
+	const [mobileNavOpen, setMobileNavOpen] = useState(false);
 	const [requestedStreamVideoId, setRequestedStreamVideoId] = useState<string | null>(
 		() => readRequestedStreamVideoId(),
 	);
@@ -66,6 +68,28 @@ export function VideosPage() {
 			window.removeEventListener("popstate", handlePopState);
 		};
 	}, []);
+
+	useEffect(() => {
+		if (!mobileNavOpen) return;
+		const previousOverflow = document.body.style.overflow;
+		document.body.style.overflow = "hidden";
+		return () => {
+			document.body.style.overflow = previousOverflow;
+		};
+	}, [mobileNavOpen]);
+
+	useEffect(() => {
+		if (!mobileNavOpen) return;
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.key !== "Escape") return;
+			event.preventDefault();
+			setMobileNavOpen(false);
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [mobileNavOpen]);
 
 	const videos = videosQuery.data ?? EMPTY_PUBLIC_VIDEOS;
 	const activeVideo = useMemo(
@@ -110,8 +134,83 @@ export function VideosPage() {
 		setRequestedStreamVideoId(video.streamVideoId);
 	};
 
+	const closeMobileNav = () => {
+		setMobileNavOpen(false);
+	};
+
 	return (
 		<div className="w-full pb-8">
+			<header className="sticky top-0 z-40">
+				<div className="mx-auto flex w-full items-center justify-between gap-3 border-b border-[color:rgba(166,124,82,0.24)] bg-[color:rgba(255,252,247,0.85)] px-4 py-2 backdrop-blur-md">
+					<a href="/" className="flex min-w-0 items-center gap-3">
+						<img
+							src="/images/logo.jpg"
+							alt="童蒙家塾 logo"
+							className="h-14 w-auto rounded-md bg-card p-1"
+						/>
+					</a>
+
+					<div className="flex flex-1 items-center justify-end gap-2">
+						<nav className="hidden items-center gap-1 lg:flex" aria-label="主导航">
+							{homeData.siteNavigation.map((item) => (
+								<a
+									key={item.sectionId}
+									href={`/#${item.sectionId}`}
+									className="rounded-full px-3 py-2 text-sm text-muted-foreground transition-colors duration-200 hover:bg-[color:rgba(166,124,82,0.12)] hover:text-foreground"
+								>
+									{item.label}
+								</a>
+							))}
+						</nav>
+						<button
+							type="button"
+							className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:rgba(166,124,82,0.3)] bg-[color:rgba(255,252,247,0.95)] text-muted-foreground transition-colors duration-200 hover:bg-[color:rgba(243,236,227,0.92)] hover:text-foreground lg:hidden"
+							aria-controls="video-mobile-nav-drawer"
+							aria-expanded={mobileNavOpen}
+							aria-label={mobileNavOpen ? "关闭移动端导航菜单" : "打开移动端导航菜单"}
+							onClick={() => setMobileNavOpen((prev) => !prev)}
+						>
+							{mobileNavOpen ? (
+								<X aria-hidden="true" className="h-4 w-4" />
+							) : (
+								<Menu aria-hidden="true" className="h-4 w-4" />
+							)}
+						</button>
+					</div>
+				</div>
+			</header>
+
+			{mobileNavOpen ? (
+				<div className="fixed inset-0 z-50 lg:hidden">
+					<button
+						type="button"
+						aria-label="关闭移动端导航菜单"
+						className="absolute inset-0 bg-black/35"
+						onClick={closeMobileNav}
+					/>
+					<div
+						id="video-mobile-nav-drawer"
+						role="dialog"
+						aria-modal="true"
+						aria-label="移动端导航抽屉"
+						className="absolute inset-x-0 top-0 border-b border-[color:rgba(166,124,82,0.24)] bg-[color:rgba(255,252,247,0.97)] p-4 shadow-xl backdrop-blur-md"
+					>
+						<nav className="flex flex-col gap-2" aria-label="移动端快捷导航">
+							{homeData.siteNavigation.map((item) => (
+								<a
+									key={`video-mobile-drawer-${item.sectionId}`}
+									href={`/#${item.sectionId}`}
+									onClick={closeMobileNav}
+									className="w-full rounded-full bg-[color:rgba(243,236,227,0.9)] px-4 py-2 text-left text-sm text-muted-foreground transition-colors duration-200 hover:bg-[color:rgba(212,184,133,0.3)] hover:text-foreground"
+								>
+									{item.label}
+								</a>
+							))}
+						</nav>
+					</div>
+				</div>
+			) : null}
+
 			{videosQuery.isLoading ? (
 				<div className="mx-auto w-full max-w-[1200px] space-y-4 px-4 pt-6">
 					<div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-card/70">
@@ -145,7 +244,7 @@ export function VideosPage() {
 					data-testid="video-watch-page"
 				>
 					<div
-						className="sticky top-0 z-30 space-y-2 bg-[color:rgba(255,252,247,0.96)] pt-2 shadow-[0_10px_24px_-20px_rgba(0,0,0,0.5)] backdrop-blur-sm sm:pt-3"
+						className="sticky top-[4.5rem] z-30 space-y-2 bg-[color:rgba(255,252,247,0.96)] pt-2 shadow-[0_10px_24px_-20px_rgba(0,0,0,0.5)] backdrop-blur-sm sm:pt-3"
 						data-testid="video-watch-sticky-player-shell"
 					>
 						<div className="space-y-1">
@@ -171,7 +270,7 @@ export function VideosPage() {
 						</div>
 					</div>
 
-					<div className="space-y-4 lg:max-h-[calc(100dvh-1.5rem)] lg:overflow-y-auto lg:pr-1">
+					<div className="space-y-4 lg:max-h-[calc(100dvh-5.25rem)] lg:overflow-y-auto lg:pr-1">
 						{collections.map((collection) => (
 							<section
 								key={collection.key}
