@@ -139,12 +139,16 @@ export function VideosPage() {
 			) : null}
 
 			{!videosQuery.isLoading && !videosQuery.isError && videos.length > 0 && activeVideo ? (
-				<section className="space-y-4" aria-live="polite" data-testid="video-watch-page">
+				<section
+					className="mx-auto w-full max-w-[1380px] space-y-4 px-3 sm:px-4 lg:grid lg:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.9fr)] lg:items-start lg:gap-5 lg:space-y-0"
+					aria-live="polite"
+					data-testid="video-watch-page"
+				>
 					<div
 						className="sticky top-0 z-30 space-y-2 bg-[color:rgba(255,252,247,0.96)] pt-2 shadow-[0_10px_24px_-20px_rgba(0,0,0,0.5)] backdrop-blur-sm sm:pt-3"
 						data-testid="video-watch-sticky-player-shell"
 					>
-						<div className="space-y-1 px-3 sm:px-4">
+						<div className="space-y-1">
 							<h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
 								{activeVideo.title}
 							</h1>
@@ -167,7 +171,7 @@ export function VideosPage() {
 						</div>
 					</div>
 
-					<div className="mx-auto w-full max-w-[1080px] space-y-4 px-3 sm:px-4">
+					<div className="space-y-4 lg:max-h-[calc(100dvh-1.5rem)] lg:overflow-y-auto lg:pr-1">
 						{collections.map((collection) => (
 							<section
 								key={collection.key}

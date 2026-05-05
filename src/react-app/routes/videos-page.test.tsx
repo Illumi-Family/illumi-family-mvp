@@ -79,6 +79,8 @@ describe("videos page", () => {
 
 		expect(html).toContain("示例视频标题");
 		expect(html).toContain("video-watch-sticky-player-shell");
+		expect(html).toContain("lg:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.9fr)]");
+		expect(html).toContain("lg:max-h-[calc(100dvh-1.5rem)]");
 		expect(html).toContain("video-watch-collection-characters");
 		expect(html).toContain("video-watch-collection-familyStories");
 		expect(html).toContain("video-watch-collection-public");
